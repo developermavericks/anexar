@@ -1,6 +1,6 @@
 /* eslint-disable no-unused-vars */
-import React, { useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import React, { useState, useEffect } from 'react';
+import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { Card, CardContent } from '../components/ui/Card';
 import { Button } from '../components/ui/Button';
@@ -14,8 +14,22 @@ export default function Signup() {
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
     const [confirmPassword, setConfirmPassword] = useState('');
-    const [role, setRole] = useState('Client');
     const [error, setError] = useState('');
+
+    const [searchParams] = useSearchParams();
+    const urlRole = searchParams.get('role');
+
+    // 'Employee' corresponds to Mavericks internally
+    const [role, setRole] = useState(urlRole === 'mavericks' ? 'Employee' : 'Client');
+
+    // Sync tab with URL parameter changes
+    useEffect(() => {
+        if (urlRole === 'mavericks') {
+            setRole('Employee');
+        } else if (urlRole === 'client') {
+            setRole('Client');
+        }
+    }, [urlRole]);
 
     const { register, oauthLogin, loginWithGoogle } = useAuth();
     const navigate = useNavigate();
@@ -37,13 +51,8 @@ export default function Signup() {
         }
     };
 
-    const handleGoogleSignIn = () => {
-        const loggedInUser = oauthLogin('google');
-        navigate('/dashboard');
-    };
-
     return (
-        <div className="min-h-screen flex items-center justify-center p-4 relative overflow-hidden">
+        <div className="min-h-screen flex items-center justify-center p-4 relative overflow-hidden bg-brand-beige/30">
             {/* Background Decor */}
             <div className="absolute top-[-10%] left-[-10%] w-[50%] h-[50%] bg-brand-amber/20 rounded-full blur-[120px] pointer-events-none" />
             <div className="absolute bottom-[-10%] right-[-10%] w-[50%] h-[50%] bg-brand-gray/10 rounded-full blur-[120px] pointer-events-none" />
@@ -58,12 +67,9 @@ export default function Signup() {
                     <Link to="/" className="inline-block mb-3">
                         <div className="w-16 h-16 rounded-xl bg-white shadow-md flex items-center justify-center p-2 mx-auto border border-brand-border/20">
                             <svg viewBox="0 0 100 100" className="w-full h-full" xmlns="http://www.w3.org/2000/svg">
-                                {/* Three red dots */}
                                 <circle cx="35" cy="25" r="5" fill="#E62222" />
                                 <circle cx="50" cy="25" r="5" fill="#E62222" />
                                 <circle cx="65" cy="25" r="5" fill="#E62222" />
-
-                                {/* Black curvy M shape */}
                                 <path d="M 25,60 C 25,35 40,35 40,55 C 40,35 50,35 50,55 C 50,35 60,35 60,55 C 60,35 75,35 75,60 C 75,75 60,70 60,55 C 60,70 50,70 50,55 C 50,70 40,70 40,55 C 40,70 25,75 25,60 Z"
                                     fill="none"
                                     stroke="#000000"
@@ -76,24 +82,54 @@ export default function Signup() {
                     </Link>
                     <Link to="/" className="block">
                         <h1 className="text-3xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-brand-charcoal to-brand-gray">
-                            The <span className="text-brand-amber">Mavericks Dashboard</span>
+                            The <span className="text-brand-amber">Mavericks Platform</span>
                         </h1>
                     </Link>
-                    <p className="text-brand-gray mt-2">Create your account to get started</p>
+                    <p className="text-brand-gray mt-2">
+                        Create your {role === 'Employee' ? 'Mavericks' : 'Client'} account to get started
+                    </p>
                 </div>
 
-                <Card>
+                <Card className="shadow-lg border border-brand-border/30">
                     <CardContent className="pt-6">
+                        {/* Custom Role Selector tabs */}
+                        <div className="mb-6">
+                            <div className="flex p-1 bg-brand-border/10 rounded-2xl border border-brand-border/20">
+                                <button
+                                    type="button"
+                                    onClick={() => setRole('Client')}
+                                    className={`flex-1 py-2.5 text-xs font-bold rounded-xl transition-all duration-350 cursor-pointer ${
+                                        role === 'Client'
+                                            ? 'bg-brand-charcoal text-white shadow-md'
+                                            : 'text-brand-gray hover:text-brand-charcoal'
+                                    }`}
+                                >
+                                    Sign Up as Client
+                                </button>
+                                <button
+                                    type="button"
+                                    onClick={() => setRole('Employee')}
+                                    className={`flex-1 py-2.5 text-xs font-bold rounded-xl transition-all duration-350 cursor-pointer ${
+                                        role === 'Employee'
+                                            ? 'bg-brand-charcoal text-white shadow-md'
+                                            : 'text-brand-gray hover:text-brand-charcoal'
+                                    }`}
+                                >
+                                    Sign Up as Mavericks
+                                </button>
+                            </div>
+                        </div>
+
                         <form onSubmit={handleSubmit} className="space-y-4">
                             {error && (
-                                <div className="p-3 bg-red-50 text-red-600 text-sm rounded-lg border border-red-100">
+                                <div className="p-3.5 bg-red-50 text-red-600 text-xs font-semibold rounded-xl border border-red-100 leading-relaxed">
                                     {error}
                                 </div>
                             )}
 
                             <Input
                                 label="Full Name"
-                                placeholder="John Doe"
+                                placeholder={role === 'Employee' ? "Your Name (Staff / Core)" : "Company Name"}
                                 value={name}
                                 onChange={(e) => setName(e.target.value)}
                                 required
@@ -101,7 +137,7 @@ export default function Signup() {
                             <Input
                                 label="Email"
                                 type="email"
-                                placeholder="john@example.com"
+                                placeholder={role === 'Employee' ? "employee@themavericks.com" : "client@company.com"}
                                 value={email}
                                 onChange={(e) => setEmail(e.target.value)}
                                 required
@@ -123,32 +159,9 @@ export default function Signup() {
                                 required
                             />
 
-                            {/* Role Selection Toggle */}
-                            <div className="pt-2">
-                                <label className="text-sm font-medium text-brand-charcoal block mb-2">Account Type</label>
-                                <div className="flex p-1 bg-brand-border/20 radius-pill">
-                                    <button
-                                        type="button"
-                                        onClick={() => setRole('Client')}
-                                        className={`flex-1 py-2 text-sm font-medium radius-pill transition-all ${role === 'Client' ? 'bg-brand-charcoal text-white shadow-soft' : 'text-brand-gray hover:text-brand-charcoal'
-                                            }`}
-                                    >
-                                        Create as Client
-                                    </button>
-                                    <button
-                                        type="button"
-                                        onClick={() => setRole('Employee')}
-                                        className={`flex-1 py-2 text-sm font-medium radius-pill transition-all ${role === 'Employee' ? 'bg-brand-charcoal text-white shadow-soft' : 'text-brand-gray hover:text-brand-charcoal'
-                                            }`}
-                                    >
-                                        Create as Employee
-                                    </button>
-                                </div>
-                            </div>
-
                             <div className="pt-4">
-                                <Button type="submit" className="w-full" size="lg">
-                                    Create Account
+                                <Button type="submit" className="w-full cursor-pointer" size="lg">
+                                    Sign Up as {role === 'Employee' ? 'Mavericks' : 'Client'}
                                 </Button>
                             </div>
                         </form>
@@ -158,17 +171,17 @@ export default function Signup() {
                                 <div className="absolute inset-0 flex items-center">
                                     <div className="w-full border-t border-brand-border/50"></div>
                                 </div>
-                                <div className="relative flex justify-center text-sm">
-                                    <span className="px-2 bg-white text-brand-gray">Or continue with</span>
+                                <div className="relative flex justify-center text-xs">
+                                    <span className="px-3 bg-white text-brand-gray font-semibold uppercase tracking-wider">Or continue with</span>
                                 </div>
                             </div>
 
-                            <div className="mt-6 flex justify-center">
+                            <div className="mt-5 flex justify-center">
                                 <GoogleLogin
                                     onSuccess={(credentialResponse) => {
                                         const decoded = jwtDecode(credentialResponse.credential);
                                         console.log("User Info:", decoded);
-                                        const loggedInUser = loginWithGoogle(decoded);
+                                        const loggedInUser = loginWithGoogle({ ...decoded, role });
                                         navigate('/dashboard');
                                     }}
                                     onError={() => {
@@ -178,10 +191,13 @@ export default function Signup() {
                             </div>
                         </div>
 
-                        <div className="mt-8 text-center text-sm text-brand-gray">
+                        <div className="mt-8 text-center text-xs text-brand-gray font-medium">
                             Already have an account?{' '}
-                            <Link to="/login" className="text-brand-amber font-medium hover:underline">
-                                Sign In
+                            <Link
+                                to={role === 'Employee' ? "/login?role=mavericks" : "/login?role=client"}
+                                className="text-brand-amber font-bold hover:underline"
+                            >
+                                Sign In as {role === 'Employee' ? 'Mavericks' : 'Client'}
                             </Link>
                         </div>
                     </CardContent>

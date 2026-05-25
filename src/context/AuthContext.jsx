@@ -112,7 +112,7 @@ export function AuthProvider({ children }) {
             email: googleUser.email,
             picture: googleUser.picture,
             provider: "google",
-            role: "Client"
+            role: googleUser.role || "Client"
         };
 
         localStorage.setItem(CURRENT_USER_KEY, JSON.stringify(userData));

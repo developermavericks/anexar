@@ -13,9 +13,12 @@ import {
     Bell,
     Settings,
     Menu,
-    X
+    X,
+    LogOut
 } from 'lucide-react';
 import { useUser } from '../../context/UserContext';
+import { useAuth } from '../../context/AuthContext';
+import { useNavigate } from 'react-router-dom';
 import { hasProAccess } from '../../utils/checkAccess';
 
 const SidebarItem = ({ icon: Icon, label, to }) => (
@@ -36,7 +39,14 @@ const SidebarItem = ({ icon: Icon, label, to }) => (
 
 const ClientLayout = () => {
     const { user } = useUser();
+    const { logout } = useAuth();
+    const navigate = useNavigate();
     const [isMobileMenuOpen, setIsMobileMenuOpen] = React.useState(false);
+
+    const handleLogout = () => {
+        logout();
+        navigate('/login');
+    };
 
     const menuItems = [
         { icon: LayoutDashboard, label: 'Dashboard', to: '/client' },
@@ -71,8 +81,15 @@ const ClientLayout = () => {
                     ))}
                 </nav>
 
-                <div className="p-4 border-t border-[#EAE8E4] dark:border-slate-800">
+                <div className="p-4 border-t border-[#EAE8E4] dark:border-slate-800 space-y-1">
                     <SidebarItem icon={Settings} label="Settings" to="/client/settings" />
+                    <button
+                        onClick={handleLogout}
+                        className="w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all text-red-500 hover:bg-red-50 dark:hover:bg-red-500/10 cursor-pointer text-left"
+                    >
+                        <LogOut size={20} />
+                        <span className="font-medium">Log Out</span>
+                    </button>
                 </div>
             </aside>
 
@@ -125,6 +142,16 @@ const ClientLayout = () => {
                                 </div>
                             </div>
                         </div>
+
+                        <div className="h-8 w-[1px] bg-[#EAE8E4] dark:bg-slate-800 hidden sm:block" />
+
+                        <button
+                            onClick={handleLogout}
+                            title="Log Out"
+                            className="p-2 text-gray-500 dark:text-slate-400 hover:text-red-500 dark:hover:text-red-400 transition-colors cursor-pointer rounded-xl hover:bg-gray-100 dark:hover:bg-slate-800"
+                        >
+                            <LogOut size={20} />
+                        </button>
                     </div>
                 </header>
 

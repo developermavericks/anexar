@@ -53,20 +53,10 @@ export default function Landing() {
                             </p>
                         </div>
 
-                        <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
-                            <Link to="/signup">
-                                <Button size="lg" className="h-14 px-10 text-lg w-full sm:w-auto">
+                        <div className="flex justify-center">
+                            <Link to="/login">
+                                <Button size="lg" className="h-14 px-12 text-lg shadow-lg shadow-brand-amber/20 hover:shadow-brand-amber/30 transition-all duration-300">
                                     Join Platform
-                                </Button>
-                            </Link>
-                            <Link to="/login">
-                                <Button variant="pill" size="lg" className="h-14 px-10 text-lg w-full sm:w-auto">
-                                    Client Login
-                                </Button>
-                            </Link>
-                            <Link to="/login">
-                                <Button variant="pill" size="lg" className="h-14 px-10 text-lg w-full sm:w-auto">
-                                    Employee Login
                                 </Button>
                             </Link>
                         </div>
