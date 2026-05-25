@@ -1,0 +1,56 @@
+@import "tailwindcss";
+
+@import "@fontsource/inter/400.css";
+@import "@fontsource/inter/500.css";
+@import "@fontsource/inter/600.css";
+@import "@fontsource/inter/700.css";
+@import "@fontsource/plus-jakarta-sans/600.css";
+@import "@fontsource/plus-jakarta-sans/700.css";
+
+@theme {
+  --color-brand-beige: #F6F1E8;
+  --color-brand-amber: #D6A73F;
+  --color-brand-charcoal: #1C1C1C;
+  --color-brand-gray: #6B7280;
+  --color-brand-border: #E0E0E0;
+  
+  --font-sans: 'Inter', system-ui, sans-serif;
+  --font-heading: 'Plus Jakarta Sans', system-ui, sans-serif;
+}
+
+@layer base {
+  body {
+    background-color: var(--color-brand-beige);
+    color: var(--color-brand-charcoal);
+    font-family: var(--font-sans);
+    -webkit-font-smoothing: antialiased;
+  }
+
+  h1, h2, h3, h4, h5, h6 {
+    font-family: var(--font-heading);
+    font-weight: 700;
+  }
+}
+
+/* Custom Soft Shadows and utilities */
+@layer utilities {
+  .shadow-soft {
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.05);
+  }
+  
+  .radius-main {
+    border-radius: 32px;
+  }
+  
+  .radius-button {
+    border-radius: 24px;
+  }
+  
+  .radius-pill {
+    border-radius: 24px;
+  }
+  
+  .radius-small {
+    border-radius: 12px;
+  }
+}
