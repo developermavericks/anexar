@@ -22,7 +22,7 @@ export default function EmployeeDashboard() {
 
     const handleLogout = () => {
         logout();
-        navigate('/login');
+        navigate('/');
     };
 
     // Simulated tasks for the employee

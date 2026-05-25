@@ -8,6 +8,7 @@ import { Input } from '../components/ui/Input';
 import { useAuth } from '../context/AuthContext';
 import { GoogleLogin } from '@react-oauth/google';
 import { jwtDecode } from "jwt-decode";
+import { ArrowLeft } from 'lucide-react';
 
 export default function Login() {
     const [email, setEmail] = useState('');
@@ -59,6 +60,15 @@ export default function Login() {
 
     return (
         <div className="min-h-screen flex items-center justify-center p-4 relative overflow-hidden bg-brand-beige/30">
+            {/* Floating Back Arrow Button */}
+            <Link
+                to="/"
+                className="absolute top-6 left-6 z-50 flex items-center gap-2 text-xs font-bold text-brand-charcoal hover:text-brand-amber transition-all duration-300 bg-white/85 backdrop-blur-md border border-brand-border/25 px-4.5 py-3 rounded-full shadow-soft hover:-translate-x-1"
+            >
+                <ArrowLeft size={14} className="stroke-[3px]" />
+                Back to Home
+            </Link>
+
             {/* Background Decor */}
             <div className="absolute top-[-10%] left-[-10%] w-[50%] h-[50%] bg-brand-amber/20 rounded-full blur-[120px] pointer-events-none" />
             <div className="absolute bottom-[-10%] right-[-10%] w-[50%] h-[50%] bg-brand-gray/10 rounded-full blur-[120px] pointer-events-none" />

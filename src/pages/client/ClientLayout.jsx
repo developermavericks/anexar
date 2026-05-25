@@ -45,7 +45,7 @@ const ClientLayout = () => {
 
     const handleLogout = () => {
         logout();
-        navigate('/login');
+        navigate('/');
     };
 
     const menuItems = [
