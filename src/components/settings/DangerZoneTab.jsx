@@ -47,7 +47,7 @@ const DangerZoneTab = () => {
                 <div className="p-6 border-b border-rose-100 flex flex-col md:flex-row md:items-center justify-between gap-4">
                     <div>
                         <h3 className="font-bold text-gray-900 dark:text-white">Remove Organization</h3>
-                        <p className="text-sm text-gray-600 dark:text-gray-400 dark:text-gray-500 mt-1">Detach the current company profile from your Maverick's account.</p>
+                        <p className="text-sm text-gray-600 dark:text-gray-400 dark:text-gray-500 mt-1">Detach the current company profile from your Anexar account.</p>
                     </div>
                     <button
                         onClick={() => openModal('remove')}

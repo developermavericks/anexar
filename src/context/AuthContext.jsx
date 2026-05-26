@@ -4,8 +4,8 @@ import React, { createContext, useContext, useState, useEffect } from 'react';
 const AuthContext = createContext(undefined);
 
 // For simulation, we store users and CurrentUser in localStorage
-const USERS_KEY = 'mavericks_users_db';
-const CURRENT_USER_KEY = 'mavericks_current_user';
+const USERS_KEY = 'anexar_users_db';
+const CURRENT_USER_KEY = 'anexar_current_user';
 
 export function AuthProvider({ children }) {
     const [user, setUser] = useState(null);

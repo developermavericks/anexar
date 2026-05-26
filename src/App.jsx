@@ -20,8 +20,16 @@ import MeetTeam from './pages/client/MeetTeam';
 import Subscription from './pages/client/Subscription';
 import Settings from './pages/client/Settings';
 
-// Employee Dashboard import
-import EmployeeDashboard from './pages/EmployeeDashboard';
+// Employee Dashboard imports
+import EmployeeLayout from './pages/employee/EmployeeLayout';
+import EmployeeDashboard from './pages/employee/Dashboard';
+import Clients from './pages/employee/Clients';
+import TimeAllocation from './pages/employee/TimeAllocation';
+import UploadCoverage from './pages/employee/UploadCoverage';
+import AnalysisBoard from './pages/employee/AnalysisBoard';
+import EventsAwardsEmployee from './pages/employee/EventsAwards';
+import JournalistSource from './pages/employee/JournalistSource';
+import SettingsEmployee from './pages/employee/Settings';
 
 // Helper component to redirect logged in users according to their roles
 function RoleRedirect() {
@@ -76,15 +84,24 @@ function App() {
               <Route path="settings" element={<Settings />} />
             </Route>
 
-            {/* Employee Portal Sandbox Route */}
+            {/* Employee Portal Routes */}
             <Route
               path="/employee"
               element={
                 <ProtectedRoute>
-                  <EmployeeDashboard />
+                  <EmployeeLayout />
                 </ProtectedRoute>
               }
-            />
+            >
+              <Route index element={<EmployeeDashboard />} />
+              <Route path="clients" element={<Clients />} />
+              <Route path="time-allocation" element={<TimeAllocation />} />
+              <Route path="upload" element={<UploadCoverage />} />
+              <Route path="analysis" element={<AnalysisBoard />} />
+              <Route path="events" element={<EventsAwardsEmployee />} />
+              <Route path="journalists" element={<JournalistSource />} />
+              <Route path="settings" element={<SettingsEmployee />} />
+            </Route>
 
             {/* Fallback Catch-All */}
             <Route path="*" element={<Navigate to="/" replace />} />

@@ -20,12 +20,12 @@ export default function Signup() {
     const [searchParams] = useSearchParams();
     const urlRole = searchParams.get('role');
 
-    // 'Employee' corresponds to Mavericks internally
-    const [role, setRole] = useState(urlRole === 'mavericks' ? 'Employee' : 'Client');
+    // 'Employee' corresponds to Anexar internally
+    const [role, setRole] = useState(urlRole === 'anexar' ? 'Employee' : 'Client');
 
     // Sync tab with URL parameter changes
     useEffect(() => {
-        if (urlRole === 'mavericks') {
+        if (urlRole === 'anexar') {
             setRole('Employee');
         } else if (urlRole === 'client') {
             setRole('Client');
@@ -139,7 +139,7 @@ export default function Signup() {
 
                             <Input
                                 label="Full Name"
-                                placeholder={role === 'Employee' ? "Your Name (Staff / Core)" : "Company Name"}
+                                placeholder={role === 'Employee' ? "Your Name (Mavericks Staff)" : "Company Name"}
                                 value={name}
                                 onChange={(e) => setName(e.target.value)}
                                 required
@@ -147,7 +147,7 @@ export default function Signup() {
                             <Input
                                 label="Email"
                                 type="email"
-                                placeholder={role === 'Employee' ? "employee@themavericks.com" : "client@company.com"}
+                                placeholder={role === 'Employee' ? "strategist@mavericks.com" : "client@company.com"}
                                 value={email}
                                 onChange={(e) => setEmail(e.target.value)}
                                 required
@@ -204,7 +204,7 @@ export default function Signup() {
                         <div className="mt-8 text-center text-xs text-brand-gray font-medium">
                             Already have an account?{' '}
                             <Link
-                                to={role === 'Employee' ? "/login?role=mavericks" : "/login?role=client"}
+                                to={role === 'Employee' ? "/login?role=anexar" : "/login?role=client"}
                                 className="text-brand-amber font-bold hover:underline"
                             >
                                 Sign In as {role === 'Employee' ? 'Mavericks' : 'Client'}

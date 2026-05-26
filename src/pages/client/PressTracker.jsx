@@ -1,12 +1,19 @@
 import React, { useState } from 'react';
-import { pressReleases } from '../../mock/clientData';
+import { pressReleases as defaultPress } from '../../mock/clientData';
 import { Search, Filter, TrendingUp, TrendingDown, Minus } from 'lucide-react';
 
 const PressTracker = () => {
     const [filter, setFilter] = useState('All');
     const [searchTerm, setSearchTerm] = useState('');
+    const [pressList] = useState(() => {
+        const saved = localStorage.getItem('anexar_press_releases');
+        if (saved) {
+            try { return JSON.parse(saved); } catch (e) { console.error(e); }
+        }
+        return defaultPress;
+    });
 
-    const filteredPress = pressReleases.filter(pr => {
+    const filteredPress = pressList.filter(pr => {
         const matchesFilter = filter === 'All' || pr.sentiment === filter;
         const matchesSearch = pr.title.toLowerCase().includes(searchTerm.toLowerCase());
         return matchesFilter && matchesSearch;
@@ -16,7 +23,7 @@ const PressTracker = () => {
         switch (sentiment) {
             case 'Positive': return <TrendingUp size={16} className="text-emerald-400" />;
             case 'Negative': return <TrendingDown size={16} className="text-rose-400" />;
-            default: return <Minus size={16} className="text-gray-500 dark:text-gray-400 dark:text-gray-500" />;
+            default: return <Minus size={16} className="text-gray-500 dark:text-gray-400 dark:text-gray-400" />;
         }
     };
 

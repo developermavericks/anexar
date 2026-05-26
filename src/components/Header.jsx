@@ -31,7 +31,7 @@ export default function Header() {
                         </svg>
                     </div>
                     <Link to="/" className="font-bold text-xl tracking-tight text-brand-charcoal">
-                        The Mavericks Dashboard
+                        The Anexar Dashboard
                     </Link>
                 </div>
 
@@ -65,7 +65,7 @@ export default function Header() {
                                 <Link to="/login?role=client" className="px-3.5 py-2 text-xs font-semibold text-brand-charcoal hover:bg-brand-beige/50 hover:text-brand-amber rounded-lg transition-colors">
                                     Sign In as Client
                                 </Link>
-                                <Link to="/login?role=mavericks" className="px-3.5 py-2 text-xs font-semibold text-brand-charcoal hover:bg-brand-beige/50 hover:text-brand-amber rounded-lg transition-colors">
+                                <Link to="/login?role=anexar" className="px-3.5 py-2 text-xs font-semibold text-brand-charcoal hover:bg-brand-beige/50 hover:text-brand-amber rounded-lg transition-colors">
                                     Sign In as Mavericks
                                 </Link>
                             </div>
@@ -87,7 +87,7 @@ export default function Header() {
                                 <Link to="/signup?role=client" className="px-3.5 py-2 text-xs font-semibold text-brand-charcoal hover:bg-brand-beige/50 hover:text-brand-amber rounded-lg transition-colors">
                                     Sign Up as Client
                                 </Link>
-                                <Link to="/signup?role=mavericks" className="px-3.5 py-2 text-xs font-semibold text-brand-charcoal hover:bg-brand-beige/50 hover:text-brand-amber rounded-lg transition-colors">
+                                <Link to="/signup?role=anexar" className="px-3.5 py-2 text-xs font-semibold text-brand-charcoal hover:bg-brand-beige/50 hover:text-brand-amber rounded-lg transition-colors">
                                     Sign Up as Mavericks
                                 </Link>
                             </div>

@@ -26,7 +26,7 @@ export const UserProvider = ({ children }) => {
             language: 'en'
         },
         organization: {
-            companyName: authUser?.role === 'Employee' ? 'Mavericks Corp' : "Visionary Media Pvt Ltd",
+            companyName: authUser?.role === 'Employee' ? 'Anexar Corp' : "Visionary Media Pvt Ltd",
             industry: "Fintech",
             website: "https://visionary.media",
             companySize: "51-200",
@@ -68,7 +68,7 @@ export const UserProvider = ({ children }) => {
                 organization: {
                     ...prev.organization,
                     primaryContact: authUser.name,
-                    companyName: authUser.role === 'Employee' ? 'Mavericks Corp' : "Visionary Media Pvt Ltd",
+                    companyName: authUser.role === 'Employee' ? 'Anexar Corp' : "Visionary Media Pvt Ltd",
                 }
             }));
         }

@@ -40,16 +40,16 @@ export default function Landing() {
                         className="relative z-10 max-w-4xl mx-auto"
                     >
                         <h1 className="text-5xl md:text-7xl font-bold tracking-tight text-brand-charcoal mb-6">
-                            The <span className="text-brand-amber">Mavericks</span> Dashboard
+                            The <span className="text-brand-amber">Anexar</span> Dashboard
                         </h1>
 
                         <p className="text-xl md:text-2xl text-gray-800 font-medium mb-8 max-w-3xl mx-auto leading-relaxed drop-shadow-sm">
-                            The Mavericks Dashboard is a centralized operational command center that integrates real-time media intelligence, campaign management, performance tracking, and collaborative execution workflows.
+                            The Anexar Dashboard is a centralized operational command center that integrates real-time media intelligence, campaign management, performance tracking, and collaborative execution workflows.
                         </p>
 
                         <div className="bg-white/50 backdrop-blur-sm border border-brand-border/50 radius-pill p-6 max-w-2xl mx-auto mb-10 shadow-soft">
                             <p className="text-lg font-medium italic text-brand-charcoal">
-                                "Where the Mavericks Core Team transforms intelligence into measurable market dominance."
+                                "Where the Anexar Core Team transforms intelligence into measurable market dominance."
                             </p>
                         </div>
 
@@ -76,7 +76,7 @@ export default function Landing() {
                             Strategic Intelligence. Structured Execution.
                         </h2>
                         <p className="text-lg text-gray-800 font-medium leading-relaxed mb-6">
-                            The Mavericks Dashboard is a centralized operational command center that integrates real-time media intelligence, campaign management, performance tracking, and collaborative execution workflows.
+                            The Anexar Dashboard is a centralized operational command center that integrates real-time media intelligence, campaign management, performance tracking, and collaborative execution workflows.
                         </p>
                         <p className="text-lg text-gray-800 font-medium leading-relaxed">
                             Built for precision and transparency, it enables seamless coordination between clients and our internal core team — ensuring every initiative is measurable and strategically aligned.
@@ -169,9 +169,9 @@ export default function Landing() {
                     <div className="absolute inset-0 bg-brand-charcoal/80 backdrop-blur-[2px]" />
 
                     <div className="relative z-10 max-w-4xl mx-auto">
-                        <h2 className="text-4xl font-bold mb-6">About The Mavericks Communication LLP</h2>
+                        <h2 className="text-4xl font-bold mb-6">About Mavericks Communications LLP</h2>
                         <p className="text-lg text-brand-border/80 leading-relaxed mb-6">
-                            The Mavericks Communication LLP is a strategic communications and intelligence-driven firm committed to delivering structured growth and measurable visibility for brands and organizations.
+                            Mavericks Communications LLP is a strategic communications and intelligence-driven firm committed to delivering structured growth and measurable visibility for brands and organizations.
                         </p>
                         <p className="text-lg text-brand-border/80 leading-relaxed">
                             Our core team combines analytical precision, media expertise, and strategic execution to ensure every client achieves sustainable market leadership.

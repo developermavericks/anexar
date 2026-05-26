@@ -43,28 +43,34 @@ const PreferencesTab = () => {
                     <label className="block text-sm font-bold text-gray-900 dark:text-white mb-3">Theme Preference</label>
                     <div className="flex gap-4">
                         <button
-                            onClick={() => setUser({ ...user, theme: 'light' })}
-                            className={`flex-1 flex flex-col items-center gap-3 p-4 rounded-2xl border-2 transition-all ${user.theme === 'light' ? 'border-[#1A1A1A] bg-gray-50 dark:bg-[#1F2937]' : 'border-[#EAE8E4] dark:border-white/10 bg-white dark:bg-[#1E293B] hover:border-gray-300'
-                                }`}
+                            onClick={() => setPrefs({ ...prefs, theme: 'light' })}
+                            className={`flex-1 flex flex-col items-center gap-3 p-4 rounded-2xl border-2 transition-all cursor-pointer ${
+                                prefs.theme === 'light'
+                                    ? 'border-brand-amber bg-gray-50 dark:bg-[#1F2937]'
+                                    : 'border-[#EAE8E4] dark:border-white/10 bg-white dark:bg-[#1E293B] hover:border-gray-300'
+                            }`}
                         >
                             <div className="w-12 h-12 bg-[#FDFBF7] dark:bg-[#0B0F19] rounded-full border border-[#EAE8E4] dark:border-white/10 flex items-center justify-center text-amber-500 dark:text-amber-400">
                                 <Sun size={24} />
                             </div>
                             <span className="font-bold text-gray-900 dark:text-white flex items-center gap-2">
-                                Soft Light {user.theme === 'light' && <Check size={16} className="text-emerald-500 dark:text-emerald-400" />}
+                                Soft Light {prefs.theme === 'light' && <Check size={16} className="text-emerald-500 dark:text-emerald-400" />}
                             </span>
                         </button>
 
                         <button
-                            onClick={() => setUser({ ...user, theme: 'dark' })}
-                            className={`flex-1 flex flex-col items-center gap-3 p-4 rounded-2xl border-2 transition-all ${user.theme === 'dark' ? 'border-[#1A1A1A] dark:border-cyan-500/50 bg-gray-50 dark:bg-[#1F2937]' : 'border-[#EAE8E4] dark:border-white/10 bg-white dark:bg-[#1E293B] hover:border-gray-300 dark:hover:border-slate-600'
-                                }`}
+                            onClick={() => setPrefs({ ...prefs, theme: 'dark' })}
+                            className={`flex-1 flex flex-col items-center gap-3 p-4 rounded-2xl border-2 transition-all cursor-pointer ${
+                                prefs.theme === 'dark'
+                                    ? 'border-brand-amber bg-gray-50 dark:bg-[#1F2937]'
+                                    : 'border-[#EAE8E4] dark:border-white/10 bg-white dark:bg-[#1E293B] hover:border-gray-300 dark:hover:border-slate-600'
+                            }`}
                         >
                             <div className="w-12 h-12 bg-slate-900 dark:bg-[#0F172A] rounded-full border border-slate-700 dark:border-slate-800 flex items-center justify-center text-cyan-400">
                                 <Moon size={24} />
                             </div>
                             <span className="font-bold text-gray-900 dark:text-white flex items-center gap-2">
-                                Midnight Dark {user.theme === 'dark' && <Check size={16} className="text-emerald-500 dark:text-emerald-400" />}
+                                Midnight Dark {prefs.theme === 'dark' && <Check size={16} className="text-emerald-500 dark:text-emerald-400" />}
                             </span>
                         </button>
                     </div>

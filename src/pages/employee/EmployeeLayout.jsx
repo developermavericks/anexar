@@ -1,33 +1,31 @@
 import React from 'react';
-import { NavLink, Outlet } from 'react-router-dom';
+import { NavLink, Outlet, useNavigate } from 'react-router-dom';
 import {
     LayoutDashboard,
-    Megaphone,
-    FileText,
-    Lightbulb,
-    Award,
-    Target,
-    BarChart,
     Users,
-    CreditCard,
-    Bell,
+    Clock,
+    BrainCircuit,
+    Award,
+    Newspaper,
     Settings,
+    LogOut,
+    Bell,
     Menu,
     X,
-    LogOut
+    Sparkles,
+    FileText
 } from 'lucide-react';
 import { useUser } from '../../context/UserContext';
 import { useAuth } from '../../context/AuthContext';
-import { useNavigate } from 'react-router-dom';
-import { hasProAccess } from '../../utils/checkAccess';
 
 const SidebarItem = ({ icon: Icon, label, to }) => (
     <NavLink
         to={to}
-        end={to === "/client"}
+        end={to === "/employee"}
         className={({ isActive }) =>
-            `flex items-center gap-3 px-4 py-3 rounded-xl transition-all ${isActive
-                ? 'bg-[#1A1A1A] dark:bg-cyan-500/10 text-white dark:text-cyan-400 dark:border-l-4 dark:border-cyan-500 shadow-md'
+            `flex items-center gap-3 px-4 py-3 rounded-xl transition-all cursor-pointer ${
+                isActive
+                ? 'bg-[#1A1A1A] dark:bg-amber-500/10 text-white dark:text-amber-400 dark:border-l-4 dark:border-amber-500 shadow-md'
                 : 'text-gray-500 dark:text-slate-400 hover:bg-white dark:hover:bg-white/5 hover:text-gray-900 dark:hover:text-white'
             }`
         }
@@ -37,11 +35,12 @@ const SidebarItem = ({ icon: Icon, label, to }) => (
     </NavLink>
 );
 
-const ClientLayout = () => {
+const EmployeeLayout = () => {
     const { user } = useUser();
     const { logout } = useAuth();
     const navigate = useNavigate();
     const [isMobileMenuOpen, setIsMobileMenuOpen] = React.useState(false);
+    const [showNotifications, setShowNotifications] = React.useState(false);
 
     const handleLogout = () => {
         logout();
@@ -49,15 +48,13 @@ const ClientLayout = () => {
     };
 
     const menuItems = [
-        { icon: LayoutDashboard, label: 'Dashboard', to: '/client' },
-        { icon: Megaphone, label: 'Campaign Overview', to: '/client/campaigns' },
-        { icon: FileText, label: 'Press Release Tracker', to: '/client/press' },
-        { icon: Lightbulb, label: 'Thought Leadership', to: '/client/thought-leadership' },
-        { icon: Award, label: 'Events & Awards', to: '/client/events' },
-        { icon: Target, label: 'Goals & Commitment', to: '/client/goals' },
-        { icon: BarChart, label: 'Reports', to: '/client/reports' },
-        { icon: Users, label: 'Meet Your Team', to: '/client/team' },
-        { icon: CreditCard, label: 'Subscription', to: '/client/subscription' },
+        { icon: LayoutDashboard, label: 'Dashboard', to: '/employee' },
+        { icon: Users, label: 'Clients', to: '/employee/clients' },
+        { icon: Clock, label: 'Time Allocation', to: '/employee/time-allocation' },
+        { icon: FileText, label: 'Upload Coverage', to: '/employee/upload' },
+        { icon: BrainCircuit, label: 'Analysis Board', to: '/employee/analysis' },
+        { icon: Award, label: 'Events and Awards', to: '/employee/events' },
+        { icon: Newspaper, label: 'Journalist Source', to: '/employee/journalists' },
     ];
 
     return (
@@ -66,11 +63,11 @@ const ClientLayout = () => {
             <aside className="w-64 flex-shrink-0 border-r border-[#EAE8E4] dark:border-slate-800 bg-[#FDFBF7] dark:bg-[#1E293B] hidden md:flex flex-col">
                 <div className="p-6 border-b border-[#EAE8E4] dark:border-slate-800 dark:bg-[#1e293b]/50">
                     <div className="flex items-center gap-3">
-                        <div className="bg-white/80 p-1.5 rounded-lg dark:bg-white/10 dark:backdrop-blur-sm">
-                            <img src="/mav%20logo.png" alt="Logomark" className="h-8 w-auto object-contain drop-shadow-sm" onError={(e) => e.target.style.display = 'none'} />
+                        <div className="bg-[#1A1A1A] dark:bg-white/10 p-1.5 rounded-lg flex items-center justify-center">
+                            <span className="text-brand-amber font-bold text-lg leading-none">A</span>
                         </div>
-                        <h1 className="text-lg font-bold bg-gradient-to-r from-[#1A1A1A] to-gray-700 dark:from-white dark:to-slate-300 bg-clip-text text-transparent leading-tight hidden xl:block">
-                            Anexar<br />Client Portal
+                        <h1 className="text-lg font-bold bg-gradient-to-r from-[#1A1A1A] to-gray-700 dark:from-white dark:to-slate-300 bg-clip-text text-transparent leading-tight">
+                            Anexar<br />Employee Portal
                         </h1>
                     </div>
                 </div>
@@ -82,13 +79,13 @@ const ClientLayout = () => {
                 </nav>
 
                 <div className="p-4 border-t border-[#EAE8E4] dark:border-slate-800 space-y-1">
-                    <SidebarItem icon={Settings} label="Settings" to="/client/settings" />
+                    <SidebarItem icon={Settings} label="Settings" to="/employee/settings" />
                     <button
                         onClick={handleLogout}
-                        className="w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all text-red-500 hover:bg-red-50 dark:hover:bg-red-500/10 cursor-pointer text-left"
+                        className="w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all text-red-500 hover:bg-red-50 dark:hover:bg-red-500/10 cursor-pointer text-left font-medium"
                     >
                         <LogOut size={20} />
-                        <span className="font-medium">Log Out</span>
+                        <span>Log Out</span>
                     </button>
                 </div>
             </aside>
@@ -104,40 +101,54 @@ const ClientLayout = () => {
                         >
                             <Menu size={24} />
                         </button>
-                        <h2 className="text-xl font-semibold text-gray-900 dark:text-white hidden sm:block">Anexar Client Portal</h2>
+                        <div className="flex items-center gap-2">
+                            <h2 className="text-xl font-semibold text-gray-900 dark:text-white hidden sm:block">Anexar Employee Portal</h2>
+                            <span className="px-2.5 py-0.5 bg-brand-amber/15 text-brand-amber rounded-full text-3xs font-extrabold uppercase tracking-wider hidden sm:block">
+                                Staff Workspace
+                            </span>
+                        </div>
                     </div>
 
                     <div className="flex items-center gap-6">
-                        <button className="relative text-gray-500 dark:text-slate-400 hover:text-gray-900 dark:hover:text-cyan-400 transition-colors">
-                            <Bell size={20} />
-                            <span className="absolute top-0 right-0 w-2 h-2 bg-rose-500 rounded-full"></span>
-                        </button>
+                        {/* Notifications Toggle */}
+                        <div className="relative">
+                            <button
+                                onClick={() => setShowNotifications(!showNotifications)}
+                                className="relative text-gray-500 dark:text-slate-400 hover:text-gray-900 dark:hover:text-amber-400 transition-colors cursor-pointer"
+                            >
+                                <Bell size={20} />
+                                <span className="absolute top-0 right-0 w-2 h-2 bg-amber-500 rounded-full"></span>
+                            </button>
 
+                            {showNotifications && (
+                                <div className="absolute right-0 mt-3 w-80 bg-[#FDFBF7] dark:bg-[#1E293B] rounded-3xl border border-[#EAE8E4] dark:border-slate-800 shadow-2xl z-50 p-4 animate-in fade-in slide-in-from-top-3">
+                                    <h4 className="font-bold text-sm text-gray-900 dark:text-white mb-2">Notifications</h4>
+                                    <div className="space-y-2 max-h-48 overflow-y-auto">
+                                        <div className="p-2.5 bg-white dark:bg-[#111827] rounded-xl text-xs text-gray-600 dark:text-gray-300">
+                                            Acura Corporate PR schedule updated successfully.
+                                        </div>
+                                        <div className="p-2.5 bg-white dark:bg-[#111827] rounded-xl text-xs text-gray-600 dark:text-gray-300">
+                                            Weekly timesheet approvals are pending.
+                                        </div>
+                                    </div>
+                                </div>
+                            )}
+                        </div>
+
+                        {/* Profile Badge */}
                         <div className="flex items-center gap-3">
                             <div className="text-right hidden sm:block">
-                                <p className="text-sm font-medium text-gray-900 dark:text-white">{user.name}</p>
-                                <div className="flex items-center justify-end">
-                                    {user.plan === 'pro' ? (
-                                        <span className="text-xs font-semibold px-2 py-0.5 rounded-full bg-[#1A1A1A] dark:bg-cyan-500/10 text-amber-500 dark:text-cyan-400 border border-amber-500/30 dark:border-cyan-500/30">
-                                            Pro Plan
-                                        </span>
-                                    ) : user.plan === 'enterprise' ? (
-                                        <span className="text-xs font-semibold px-2 py-0.5 rounded-full bg-purple-500/20 text-purple-400 border border-purple-500/30">
-                                            Enterprise
-                                        </span>
-                                    ) : (
-                                        <span className="text-xs font-medium px-2 py-0.5 rounded-full bg-gray-100 dark:bg-slate-800 text-gray-700 dark:text-slate-300">
-                                            Basic Plan
-                                        </span>
-                                    )}
-                                </div>
+                                <p className="text-sm font-medium text-gray-900 dark:text-white">{user?.name || 'Staff Core'}</p>
+                                <span className="text-3xs text-brand-amber font-extrabold uppercase tracking-wider block">
+                                    Associate Strategist
+                                </span>
                             </div>
-                            <div className="w-10 h-10 rounded-full bg-gradient-to-tr from-[#1A1A1A] to-gray-700 dark:from-cyan-500 dark:to-blue-600 p-0.5 shadow-sm">
+                            <div className="w-10 h-10 rounded-full bg-gradient-to-tr from-[#1A1A1A] to-brand-amber p-0.5 shadow-sm">
                                 <div className="w-full h-full rounded-full bg-white dark:bg-slate-900 flex items-center justify-center text-sm font-bold border-2 border-[#FDFBF7] dark:border-slate-800 text-[#1A1A1A] dark:text-white overflow-hidden">
-                                    {user.avatar ? (
-                                        <img src={user.avatar} alt={user.name} className="w-full h-full object-cover" />
+                                    {user?.avatar ? (
+                                        <img src={user.avatar} alt="Avatar" className="w-full h-full object-cover" />
                                     ) : (
-                                        user.name.charAt(0)
+                                        (user?.name || 'A').charAt(0)
                                     )}
                                 </div>
                             </div>
@@ -168,10 +179,10 @@ const ClientLayout = () => {
                     <aside className="w-64 bg-[#FDFBF7] dark:bg-[#1E293B] border-r border-[#EAE8E4] dark:border-slate-800 shadow-2xl relative flex flex-col">
                         <div className="p-6 border-b border-[#EAE8E4] dark:border-slate-800 flex items-center justify-between">
                             <div className="flex items-center gap-2">
-                                <div className="bg-white/80 p-1.5 rounded-lg dark:bg-white/10 dark:backdrop-blur-sm">
-                                    <img src="/mav%20logo.png" alt="Logo" className="h-6 object-contain drop-shadow-sm" onError={(e) => e.target.style.display = 'none'} />
+                                <div className="bg-[#1A1A1A] dark:bg-white/10 p-1.5 rounded-lg flex items-center justify-center">
+                                    <span className="text-brand-amber font-bold text-md leading-none">A</span>
                                 </div>
-                                <h1 className="text-lg font-bold text-[#1A1A1A] dark:text-white">Anexar Client Portal</h1>
+                                <h1 className="text-lg font-bold text-[#1A1A1A] dark:text-white">Anexar Employee Portal</h1>
                             </div>
                             <button
                                 className="text-gray-500 dark:text-slate-400 hover:text-gray-900 dark:hover:text-white"
@@ -192,4 +203,4 @@ const ClientLayout = () => {
     );
 };
 
-export default ClientLayout;
+export default EmployeeLayout;

@@ -18,12 +18,12 @@ export default function Login() {
     const [searchParams] = useSearchParams();
     const urlRole = searchParams.get('role');
 
-    // 'Employee' corresponds to Mavericks internally
-    const [role, setRole] = useState(urlRole === 'mavericks' ? 'Employee' : 'Client');
+    // 'Employee' corresponds to Anexar internally
+    const [role, setRole] = useState(urlRole === 'anexar' ? 'Employee' : 'Client');
 
     // Sync tab with URL parameter changes
     useEffect(() => {
-        if (urlRole === 'mavericks') {
+        if (urlRole === 'anexar') {
             setRole('Employee');
         } else if (urlRole === 'client') {
             setRole('Client');
@@ -146,7 +146,7 @@ export default function Login() {
                             <Input
                                 label="Email"
                                 type="email"
-                                placeholder={role === 'Employee' ? "employee@themavericks.com" : "client@company.com"}
+                                placeholder={role === 'Employee' ? "strategist@mavericks.com" : "client@company.com"}
                                 value={email}
                                 onChange={(e) => setEmail(e.target.value)}
                                 required
@@ -204,7 +204,7 @@ export default function Login() {
                             <div className="mt-8 text-center text-xs text-brand-gray font-medium">
                                 Don't have an account?{' '}
                                 <Link
-                                    to={role === 'Employee' ? "/signup?role=mavericks" : "/signup?role=client"}
+                                    to={role === 'Employee' ? "/signup?role=anexar" : "/signup?role=client"}
                                     className="text-brand-amber font-bold hover:underline"
                                 >
                                     Sign Up as {role === 'Employee' ? 'Mavericks' : 'Client'}

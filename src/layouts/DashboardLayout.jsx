@@ -25,9 +25,9 @@ export default function DashboardLayout() {
 
                     <div className="p-6 border-b border-brand-border/20 flex flex-col items-center">
                         <div className="w-12 h-12 rounded-xl bg-brand-charcoal flex items-center justify-center text-brand-amber font-bold text-2xl mb-3 shadow-soft">
-                            M
+                            A
                         </div>
-                        <span className="font-bold text-brand-charcoal text-center tracking-tight">Mavericks Dashboard</span>
+                        <span className="font-bold text-brand-charcoal text-center tracking-tight">Anexar Dashboard</span>
                     </div>
 
                     <div className="flex-1 overflow-y-auto p-4 space-y-2">
@@ -68,7 +68,7 @@ export default function DashboardLayout() {
                     <div className="flex items-center gap-4">
                         {/* Mobile Menu Button - visible only on small screens */}
                         <div className="md:hidden w-8 h-8 rounded-lg bg-brand-charcoal flex items-center justify-center text-brand-amber font-bold text-xl">
-                            M
+                            A
                         </div>
                         <h2 className="text-xl font-bold text-brand-charcoal">
                             Welcome back, {user?.name.split(' ')[0]}
