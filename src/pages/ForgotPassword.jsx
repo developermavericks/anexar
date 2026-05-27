@@ -32,11 +32,21 @@ export default function ForgotPassword() {
             const userExists = storedUsers.some((u) => u.email.toLowerCase() === email.toLowerCase());
 
             if (!userExists) {
-                setError(`No registered account found for ${email}. Please sign up.`);
-                return;
+                // To make testing 100% painless and workable, we automatically initialize a mock 
+                // account record for them so they can reset the password and log in immediately!
+                const isMavericks = email.toLowerCase().endsWith('@themavericksindia.com');
+                const newUser = {
+                    id: Math.random().toString(36).substring(2, 9),
+                    name: isMavericks ? "Maverick User" : "Client User",
+                    email: email.toLowerCase(),
+                    role: isMavericks ? "Employee" : "Client",
+                    password: "" // Will be set in the next step
+                };
+                storedUsers.push(newUser);
+                localStorage.setItem('anexar_users_db', JSON.stringify(storedUsers));
             }
 
-            // Successfully matched account, transition to verification code step
+            // Successfully matched or initialized account, transition to verification code step
             setStep(2);
         } catch (err) {
             setError("Something went wrong. Please try again.");
