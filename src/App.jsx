@@ -30,6 +30,8 @@ import AnalysisBoard from './pages/employee/AnalysisBoard';
 import EventsAwardsEmployee from './pages/employee/EventsAwards';
 import JournalistSource from './pages/employee/JournalistSource';
 import SettingsEmployee from './pages/employee/Settings';
+import MorningTracker from './pages/employee/MorningTracker';
+import CrisisPredictor from './pages/employee/CrisisPredictor';
 
 // Helper component to redirect logged in users according to their roles
 function RoleRedirect() {
@@ -100,6 +102,8 @@ function App() {
               <Route path="analysis" element={<AnalysisBoard />} />
               <Route path="events" element={<EventsAwardsEmployee />} />
               <Route path="journalists" element={<JournalistSource />} />
+              <Route path="morning-tracker" element={<MorningTracker />} />
+              <Route path="crisis-predictor" element={<CrisisPredictor />} />
               <Route path="settings" element={<SettingsEmployee />} />
             </Route>
 

@@ -13,7 +13,9 @@ import {
     Menu,
     X,
     Sparkles,
-    FileText
+    FileText,
+    Sun,
+    ShieldAlert
 } from 'lucide-react';
 import { useUser } from '../../context/UserContext';
 import { useAuth } from '../../context/AuthContext';
@@ -50,11 +52,13 @@ const EmployeeLayout = () => {
     const menuItems = [
         { icon: LayoutDashboard, label: 'Dashboard', to: '/employee' },
         { icon: Users, label: 'Clients', to: '/employee/clients' },
-        { icon: Clock, label: 'Time Allocation', to: '/employee/time-allocation' },
         { icon: FileText, label: 'Upload Coverage', to: '/employee/upload' },
-        { icon: BrainCircuit, label: 'Analysis Board', to: '/employee/analysis' },
         { icon: Award, label: 'Events and Awards', to: '/employee/events' },
         { icon: Newspaper, label: 'Journalist Source', to: '/employee/journalists' },
+        { icon: Sun, label: 'Morning Tracker', to: '/employee/morning-tracker' },
+        { icon: ShieldAlert, label: 'Crisis Predictor', to: '/employee/crisis-predictor' },
+        { icon: Clock, label: 'Time Allocation', to: '/employee/time-allocation' },
+        { icon: BrainCircuit, label: 'Analysis Board', to: '/employee/analysis' },
     ];
 
     return (
