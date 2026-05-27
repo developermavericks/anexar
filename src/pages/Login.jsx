@@ -37,6 +37,19 @@ export default function Login() {
         e.preventDefault();
         setError('');
 
+        // Rule 1: Only @themavericksindia.com allowed for Employee
+        if (role === 'Employee' && !email.toLowerCase().endsWith('@themavericksindia.com')) {
+            setError("Access Restricted: Only @themavericksindia.com accounts are allowed to log in as Mavericks.");
+            return;
+        }
+
+        // Rule 2: If client tries with @themavericksindia.com, redirect to Mavericks
+        if (role === 'Client' && email.toLowerCase().endsWith('@themavericksindia.com')) {
+            setError("Strategic Redirect: @themavericksindia.com accounts must log in as Mavericks. Switched view to Maverick Sign-In.");
+            setRole('Employee');
+            return;
+        }
+
         try {
             const loggedInUser = login(email, password);
             
@@ -192,6 +205,23 @@ export default function Login() {
                                     onSuccess={(credentialResponse) => {
                                         const decoded = jwtDecode(credentialResponse.credential);
                                         console.log("User Info:", decoded);
+                                        const userEmail = decoded.email || '';
+
+                                        // Rule 1: Only @themavericksindia.com allowed for Employee
+                                        if (role === 'Employee' && !userEmail.toLowerCase().endsWith('@themavericksindia.com')) {
+                                            setError("Access Restricted: Only @themavericksindia.com accounts are allowed to log in as Mavericks.");
+                                            return;
+                                        }
+
+                                        // Rule 2: If client tries with @themavericksindia.com, redirect to Mavericks
+                                        if (role === 'Client' && userEmail.toLowerCase().endsWith('@themavericksindia.com')) {
+                                            setRole('Employee');
+                                            setError("Strategic Redirect: @themavericksindia.com accounts must log in as Mavericks. Switched view to Maverick Sign-In.");
+                                            const loggedInUser = loginWithGoogle({ ...decoded, role: 'Employee' });
+                                            navigate('/dashboard');
+                                            return;
+                                        }
+
                                         const loggedInUser = loginWithGoogle({ ...decoded, role });
                                         navigate('/dashboard');
                                     }}
