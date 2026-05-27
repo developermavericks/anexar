@@ -41,10 +41,14 @@ export function AuthProvider({ children }) {
 
     const login = (email, password) => {
         const users = getStoredUsers();
-        // Simulate finding the user matching email (and assuming password is correct)
+        // Simulate finding the user matching email
         const foundUser = users.find((u) => u.email === email);
 
         if (foundUser) {
+            // If the user has a password set, verify it. Otherwise, allow it for backward compatibility.
+            if (foundUser.password && foundUser.password !== password) {
+                throw new Error("Invalid password. Please try again.");
+            }
             setUser(foundUser);
             return foundUser;
         } else {
@@ -63,6 +67,7 @@ export function AuthProvider({ children }) {
             id: Math.random().toString(36).substring(2, 9),
             name,
             email,
+            password, // Save password!
             role
         };
 
@@ -73,6 +78,19 @@ export function AuthProvider({ children }) {
         // Auto login
         setUser(newUser);
         return newUser;
+    };
+
+    const resetPassword = (email, newPassword) => {
+        const users = getStoredUsers();
+        const userIndex = users.findIndex((u) => u.email === email);
+
+        if (userIndex !== -1) {
+            users[userIndex].password = newPassword;
+            localStorage.setItem(USERS_KEY, JSON.stringify(users));
+            return true;
+        } else {
+            throw new Error(`No account found for ${email}.`);
+        }
     };
 
     const oauthLogin = (provider) => {
@@ -125,7 +143,7 @@ export function AuthProvider({ children }) {
     };
 
     return (
-        <AuthContext.Provider value={{ user, isAuthenticated: !!user, login, register, oauthLogin, loginWithGoogle, logout, isLoading }}>
+        <AuthContext.Provider value={{ user, isAuthenticated: !!user, login, register, resetPassword, oauthLogin, loginWithGoogle, logout, isLoading }}>
             {children}
         </AuthContext.Provider>
     );
