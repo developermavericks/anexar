@@ -6,7 +6,8 @@
     "Spokesperson",
     "Division",
     "Headline",
-    "Category"
+    "Category",
+    "Link"
   ],
   "rows": [
     {
@@ -16,7 +17,8 @@
       "Spokesperson": "",
       "Division": "",
       "Headline": "",
-      "Category": ""
+      "Category": "",
+      "Link": ""
     },
     {
       "S. No.": 1,
@@ -25,7 +27,8 @@
       "Spokesperson": "Dheeraj Chaudhri, Head of Endoscopy Systems Division, FUJIFILM India",
       "Division": "Endoscopy",
       "Headline": "AI integration in endoscopy will improve detection of early-stage cancer markers: Expert",
-      "Category": "A"
+      "Category": "A",
+      "Link": "https://www.pharmabiz.com/NewsDetails.aspx?aid=185283&amp;sid=1"
     },
     {
       "S. No.": 2,
@@ -34,7 +37,8 @@
       "Spokesperson": "Mr. Priyatosh Kumar, Associate Director and Head of Graphic Communication & Device Technology, FUJIFILM India",
       "Division": "Graphic Communications and Device Technology Solutions",
       "Headline": "The Smart Print Revolution: How Intelligent Devices Are Redefining the Future of Workplace Productivity?",
-      "Category": "A"
+      "Category": "A",
+      "Link": "https://www.print3.in/the-smart-print-revolution-how-intelligent-devices-are-redefining-the-future-of-workplace-productivity/"
     },
     {
       "S. No.": 3,
@@ -43,7 +47,8 @@
       "Spokesperson": "Shunsuke Honda, Business Advisor, Media Systems Division, FUJIFILM India",
       "Division": "Medical Devices",
       "Headline": "The Comprehensive Approach to Women's Health Imaging",
-      "Category": "A"
+      "Category": "A",
+      "Link": "https://drive.google.com/drive/folders/1Adaqqxbq349yUORxxUcM-i8Be7EmhtCa"
     },
     {
       "S. No.": "Industry Stories",
@@ -52,7 +57,8 @@
       "Spokesperson": "",
       "Division": "",
       "Headline": "",
-      "Category": ""
+      "Category": "",
+      "Link": ""
     },
     {
       "S. No.": 4,
@@ -61,7 +67,8 @@
       "Spokesperson": "Arun Babu, Associate Director, Imaging Solutions Division, FUJIFILM India",
       "Division": "EID and Photo Imaging",
       "Headline": "Who Really Makes Money?",
-      "Category": "A"
+      "Category": "A",
+      "Link": "https://www.impactonnet.com/cover-story/who-really-makes-money-14184.html"
     },
     {
       "S. No.": "Product Reviews",
@@ -70,7 +77,8 @@
       "Spokesperson": "",
       "Division": "",
       "Headline": "",
-      "Category": ""
+      "Category": "",
+      "Link": ""
     },
     {
       "S. No.": 5,
@@ -79,7 +87,8 @@
       "Spokesperson": "",
       "Division": "Instax",
       "Headline": "Fujifilm Instax Mini 13 Review: Worth It or Just Nostalgia?",
-      "Category": "A"
+      "Category": "A",
+      "Link": "https://www.ndtv.com/video/fujifilm-instax-mini-13-review-worth-it-or-just-nostalgia-1083593"
     },
     {
       "S. No.": 6,
@@ -88,7 +97,8 @@
       "Spokesperson": "",
       "Division": "EID and Photo Imaging",
       "Headline": "Fujifilm GFX 100 RF- Photographer’s Delight",
-      "Category": "A"
+      "Category": "A",
+      "Link": "https://smartphotography.in/fujifilm-gfx-100-rf-photographers-delight/"
     },
     {
       "S. No.": 7,
@@ -97,7 +107,8 @@
       "Spokesperson": "",
       "Division": "EID and Photo Imaging",
       "Headline": "Fujifilm GFX 100 RF- Photographer’s Delight:",
-      "Category": "A"
+      "Category": "A",
+      "Link": ""
     },
     {
       "S. No.": 8,
@@ -106,7 +117,8 @@
       "Spokesperson": "",
       "Division": "Instax",
       "Headline": "Instax Mini 13 review: Playful pick that captures, prints real moments",
-      "Category": "A"
+      "Category": "A",
+      "Link": "https://www.business-standard.com/technology/tech-reviews/instax-mini-13-review-playful-pick-that-captures-prints-real-moments-126041700810_1.html"
     },
     {
       "S. No.": 9,
@@ -115,7 +127,8 @@
       "Spokesperson": "",
       "Division": "Instax",
       "Headline": "Instax Mini 13 Review: Imperfect Shots, Perfect Nostalgic Vibes",
-      "Category": "A"
+      "Category": "A",
+      "Link": "https://www.idiva.com/lifestyle/hot-takes/instax-mini-13-review-price-features-image-quality-india/18096377"
     },
     {
       "S. No.": 10,
@@ -124,7 +137,8 @@
       "Spokesperson": "",
       "Division": "Instax",
       "Headline": "Instax Mini 13 Review: Imperfect Shots, Perfect Vibes",
-      "Category": "A"
+      "Category": "A",
+      "Link": "https://www.mensxp.com/technology/smartphones/183291-instax-mini-13-review-imperfect-shots-perfect-vibes.html"
     },
     {
       "S. No.": 11,
@@ -133,7 +147,8 @@
       "Spokesperson": "",
       "Division": "Instax",
       "Headline": "Instax Mini 13 Review: Imperfect Shots, Perfect Nostalgic Vibes",
-      "Category": "A"
+      "Category": "A",
+      "Link": "https://m.dailyhunt.in/news/india/english/idiva%2Benglish-epaper-idivaen/instax%2Bmini%2B13%2Breview%2Bimperfect%2Bshots%2Bperfect%2Bnostalgic%2Bvibes-newsid-n709199773"
     },
     {
       "S. No.": 12,
@@ -142,7 +157,8 @@
       "Spokesperson": "",
       "Division": "Instax",
       "Headline": "Instax Mini 13 Review: A Fun Instant Camera That Keeps Things Simple | Times Now",
-      "Category": "A"
+      "Category": "A",
+      "Link": "https://www.timesnownews.com/technology-science/instax-mini-13-review-a-fun-polaroid-camera-that-keeps-things-simple-article-154138814"
     },
     {
       "S. No.": 13,
@@ -151,7 +167,8 @@
       "Spokesperson": "",
       "Division": "Instax",
       "Headline": "Technology/gizmos - Gadget Review: Instax mini 13",
-      "Category": "A"
+      "Category": "A",
+      "Link": "https://drive.google.com/file/d/1NSCsmnLnmoWNKYRmw8lfK3OrdFVHu_XU/view?usp=sharing"
     },
     {
       "S. No.": 14,
@@ -160,7 +177,8 @@
       "Spokesperson": "",
       "Division": "Instax",
       "Headline": "Gadget review: Instax Mini 13",
-      "Category": "A"
+      "Category": "A",
+      "Link": "https://drive.google.com/file/d/1fkXmO-aAjDPhNUAHyamF_HS6eIr4a3kE/view"
     },
     {
       "S. No.": 15,
@@ -169,7 +187,8 @@
       "Spokesperson": "",
       "Division": "Instax",
       "Headline": "Gadget review: Instax mini 13 keeps photography simple and playful",
-      "Category": "A"
+      "Category": "A",
+      "Link": "https://www.financialexpress.com/life/technology/gadget-review-instax-mini-13-keeps-photography-simple-and-playful/4218971/"
     },
     {
       "S. No.": 16,
@@ -178,7 +197,8 @@
       "Spokesperson": "",
       "Division": "Instax",
       "Headline": "Instant joy in your hands - INSTAX MINI 13 MAKES EVERY SHOT EASY",
-      "Category": "A"
+      "Category": "A",
+      "Link": "https://drive.google.com/file/d/1CPWalE7zn4Ab1ly4yA5xOhvR7vjCDITu/view?usp=sharing"
     },
     {
       "S. No.": 17,
@@ -187,7 +207,8 @@
       "Spokesperson": "",
       "Division": "Instax",
       "Headline": "Fujifilm Instax Mini 13 review: Why this instant camera feels more special than any smartphone",
-      "Category": "A"
+      "Category": "A",
+      "Link": "https://www.digit.in/reviews/general/fujifilm-instax-mini-13-review-why-this-instant-camera-feels-more-special-than-any-smartphone.html"
     },
     {
       "S. No.": 18,
@@ -196,7 +217,8 @@
       "Spokesperson": "",
       "Division": "Instax",
       "Headline": "Fujifilm Instax Mini 13 Review: The Joy of Instant Photography Lives On",
-      "Category": "A"
+      "Category": "A",
+      "Link": "https://www.gizbot.com/gadgets/reviews/fujifilm-instax-mini-13-review-the-joy-of-instant-photography-lives-on-125207.html"
     },
     {
       "S. No.": 19,
@@ -205,7 +227,8 @@
       "Spokesperson": "",
       "Division": "Instax",
       "Headline": "Fujifilm Instax Mini Evo Hands On | TechPulse",
-      "Category": "A"
+      "Category": "A",
+      "Link": "https://www.youtube.com/shorts/PF4NhzCYw34"
     },
     {
       "S. No.": 20,
@@ -214,7 +237,8 @@
       "Spokesperson": "",
       "Division": "Instax",
       "Headline": "I took a Fujifilm Instax Mini 13 instant camera to a party: Here’s my review",
-      "Category": "A"
+      "Category": "A",
+      "Link": "https://www.financialexpress.com/life/technology-i-took-a-fujifilm-instax-mini-13-instant-camera-to-a-party-heres-my-review-4221432/"
     },
     {
       "S. No.": "Listicles/Product Placements",
@@ -223,7 +247,8 @@
       "Spokesperson": "",
       "Division": "",
       "Headline": "",
-      "Category": ""
+      "Category": "",
+      "Link": ""
     },
     {
       "S. No.": 21,
@@ -232,7 +257,8 @@
       "Spokesperson": "",
       "Division": "EID and Photo Imaging",
       "Headline": "Why Mirrorless Cameras Are Becoming the First Choice for New Creators?",
-      "Category": "A"
+      "Category": "A",
+      "Link": "https://www.herzindagi.com/your-picks/gadget-zone/why-mirrorless-cameras-are-becoming-the-first-choice-for-new-creators-13532"
     },
     {
       "S. No.": 22,
@@ -241,7 +267,8 @@
       "Spokesperson": "",
       "Division": "EID and Photo Imaging",
       "Headline": "Fujifilm Weighs 30MP Sensor Direction as X-H Series Future Comes Into Focus",
-      "Category": "A"
+      "Category": "A",
+      "Link": "https://inews.zoombangla.com/fujifilm-weighs-30mp-sensor-direction-as-x-h/"
     },
     {
       "S. No.": 23,
@@ -250,7 +277,8 @@
       "Spokesperson": "",
       "Division": "Instax",
       "Headline": "Best Travel Gifts For Men",
-      "Category": "A"
+      "Category": "A",
+      "Link": "https://www.esquireindia.co.in/lifestyle/travel/best-travel-gifts-for-men"
     },
     {
       "S. No.": 24,
@@ -259,7 +287,8 @@
       "Spokesperson": "",
       "Division": "EID and Photo Imaging",
       "Headline": "Best Rangefinder Cameras to Buy in 2026",
-      "Category": "A"
+      "Category": "A",
+      "Link": "https://www.analyticsinsight.net/ampstories/gadgets/best-rangefinder-cameras-to-buy-in-2026"
     },
     {
       "S. No.": 25,
@@ -268,7 +297,8 @@
       "Spokesperson": "",
       "Division": "Instax",
       "Headline": "Packing Light, Living Loud: 6 Things Every Stylish Traveller Swears By",
-      "Category": "B"
+      "Category": "B",
+      "Link": "https://boldoutline.in/packing-light-living-loud-6-things-every-stylish-traveller-swears-by.html"
     },
     {
       "S. No.": 26,
@@ -277,7 +307,8 @@
       "Spokesperson": "",
       "Division": "EID and Photo Imaging",
       "Headline": "Is It Worth Switching to a Mirrorless Camera in 2026 for Long-Term Use?",
-      "Category": "A"
+      "Category": "A",
+      "Link": "https://www.herzindagi.com/your-picks/gadget-zone/is-it-worth-switching-to-a-mirrorless-camera-for-long-term-use-13719"
     },
     {
       "S. No.": 27,
@@ -286,7 +317,8 @@
       "Spokesperson": "",
       "Division": "Instax",
       "Headline": "Stop leaving memories on your phone these instant cameras from Polaroid Fujifilm and more bring them to life",
-      "Category": "A"
+      "Category": "A",
+      "Link": "https://www.hindustantimes.com/technology/stop-leaving-memories-on-your-phone-these-instant-cameras-from-polaroid-fujifilm-and-more-bring-them-to-life-101776316312754.html"
     },
     {
       "S. No.": 28,
@@ -295,7 +327,8 @@
       "Spokesperson": "",
       "Division": "EID and Photo Imaging",
       "Headline": "BEST MEDIUM FORMAT CAMERA",
-      "Category": "A"
+      "Category": "A",
+      "Link": "https://drive.google.com/file/d/1iENWd-cmx1cHxxQdqLI6LDdSX7p8JDKH/view?usp=sharing"
     },
     {
       "S. No.": 29,
@@ -304,7 +337,8 @@
       "Spokesperson": "",
       "Division": "Instax",
       "Headline": "Hautelist: Vintage Camera, Cotton Kurtis, And More Accessories You Need For A Pinterest Summer",
-      "Category": "B"
+      "Category": "B",
+      "Link": "https://hauterrfly.com/lifestyle/hautelist-vintage-camera-cotton-kurtis-and-more-accessories-you-need-for-a-pinterest-summer-puma-speedcat-cottons-jaipur/"
     },
     {
       "S. No.": 30,
@@ -313,7 +347,8 @@
       "Spokesperson": "",
       "Division": "EID and Photo Imaging",
       "Headline": "5 Fujifilm Cameras That Focus More on Experience Than Just Specs on Paper",
-      "Category": "A"
+      "Category": "A",
+      "Link": "https://www.herzindagi.com/your-picks/gadget-zone/fujifilm-cameras-that-focus-more-on-experience-than-just-specs-on-paper-13786"
     },
     {
       "S. No.": 31,
@@ -322,7 +357,8 @@
       "Spokesperson": "",
       "Division": "EID and Photo Imaging",
       "Headline": "5 Entry-Level DSLR Cameras That Offer Enough Features for Most Creators Without Upgrading Early",
-      "Category": "A"
+      "Category": "A",
+      "Link": "https://www.herzindagi.com/your-picks/gadget-zone/5-entry-level-dslr-cameras-that-offer-enough-features-for-most-creators-without-upgrading-early-13836"
     },
     {
       "S. No.": 32,
@@ -331,7 +367,8 @@
       "Spokesperson": "",
       "Division": "EID and Photo Imaging",
       "Headline": "Best Cameras with Film Simulation Modes: 2026 Guide",
-      "Category": "A"
+      "Category": "A",
+      "Link": "https://www.analyticsinsight.net/ampstories/gadgets/best-cameras-with-film-simulation-modes-2026-guide"
     },
     {
       "S. No.": 33,
@@ -340,7 +377,8 @@
       "Spokesperson": "",
       "Division": "Instax",
       "Headline": "It-girl tech to help you navigate the Indian summer:",
-      "Category": "A"
+      "Category": "A",
+      "Link": ""
     },
     {
       "S. No.": 34,
@@ -349,7 +387,8 @@
       "Spokesperson": "",
       "Division": "EID and Photo Imaging",
       "Headline": "These 5 Mirrorless Full Frame Cameras Are Quietly Replacing DSLRs for Everyday Shooting",
-      "Category": "A"
+      "Category": "A",
+      "Link": "https://www.herzindagi.com/your-picks/gadget-zone/these-mirrorless-full-frame-cameras-are-quietly-replacing-dslrs-for-everyday-shooting-13860"
     },
     {
       "S. No.": 35,
@@ -358,7 +397,8 @@
       "Spokesperson": "",
       "Division": "EID and Photo Imaging",
       "Headline": "Amazon Shutterbug Sale: This camera is equipped with top-class features, a wide range is available, photography will be easy.",
-      "Category": "B"
+      "Category": "B",
+      "Link": "https://apnabazaar.indiatimes.com/electronics/others/amazon-shutterbug-sale-is-live-get-best-camera-for-professional-photography-and-cinematography-article-130464020"
     },
     {
       "S. No.": 36,
@@ -367,7 +407,8 @@
       "Spokesperson": "",
       "Division": "EID and Photo Imaging",
       "Headline": "Did you know? Here's a list of the top 10 best selling cameras in Japan for the month of February 2026.",
-      "Category": "A"
+      "Category": "A",
+      "Link": "https://drive.google.com/file/d/12WfklgS-yoqZh1cfc3a--hJkR5ZrrWWZ/view?usp=sharing"
     },
     {
       "S. No.": 37,
@@ -376,7 +417,8 @@
       "Spokesperson": "",
       "Division": "Instax",
       "Headline": "Ex-Stream Equipments: FUJIFILM INSTAX MINI EVO",
-      "Category": "A"
+      "Category": "A",
+      "Link": "https://drive.google.com/file/d/17MCfTgg9Im5auKrGPYx8k3Ygi6HWOoqb/view?usp=sharing"
     },
     {
       "S. No.": 38,
@@ -385,7 +427,8 @@
       "Spokesperson": "",
       "Division": "EID and Photo Imaging",
       "Headline": "10 Mirrorless Cameras from Sony, Canon, Nikon and More That Handle Wildlife Photography Better",
-      "Category": "A"
+      "Category": "A",
+      "Link": "https://www.herzindagi.com/your-picks/gadget-zone/blink-and-its-gone-mirrorless-cameras-from-sony-canon-nikon-and-more-that-handle-wildlife-photography-better-14084"
     },
     {
       "S. No.": 39,
@@ -394,7 +437,8 @@
       "Spokesperson": "",
       "Division": "Instax",
       "Headline": "Gadgets of the week: Instax Mini 13",
-      "Category": "A"
+      "Category": "A",
+      "Link": "https://www.indulgexpress.com/amp/story/galleries/gadgets-galleries/2026/Apr/30/gadgets-of-the-week-instax-mini-13-orient-aero-o2-fan-and-philips-onechef"
     },
     {
       "S. No.": 40,
@@ -403,7 +447,8 @@
       "Spokesperson": "",
       "Division": "EID and Photo Imaging",
       "Headline": "Best Digital Camera for Aesthetic Photos in 2026",
-      "Category": "A"
+      "Category": "A",
+      "Link": "https://www.analyticsinsight.net/ampstories/gadgets/best-digital-camera-for-aesthetic-photos-in-2026"
     },
     {
       "S. No.": "Press Release",
@@ -412,7 +457,8 @@
       "Spokesperson": "",
       "Division": "",
       "Headline": "",
-      "Category": ""
+      "Category": "",
+      "Link": ""
     },
     {
       "S. No.": 41,
@@ -421,7 +467,8 @@
       "Spokesperson": "",
       "Division": "Graphic Communications and Device Technology Solutions",
       "Headline": "Fujifilm India installs Revoria SC285S at 3 Guys, Kolkata",
-      "Category": "A"
+      "Category": "A",
+      "Link": "https://indianprinterpublisher.com/blog/2026/04/3-guys-kolkata/"
     },
     {
       "S. No.": 42,
@@ -430,7 +477,8 @@
       "Spokesperson": "",
       "Division": "Graphic Communications and Device Technology Solutions",
       "Headline": "FUJIFILM India installs Revoria SC285S at 3 Guys, Kolkata        ",
-      "Category": "A"
+      "Category": "A",
+      "Link": "https://imagingsolution.in/fujifilm-india-installs-revoria-sc285s-at-3-guys-kolkata/"
     },
     {
       "S. No.": 43,
@@ -439,7 +487,8 @@
       "Spokesperson": "",
       "Division": "Graphic Communications and Device Technology Solutions",
       "Headline": "FUJIFILM India installs Revoria SC285S at 3 Guys, Kolkata",
-      "Category": "A"
+      "Category": "A",
+      "Link": "https://www.screenprintindia.com/fujifilm-india-installs-revoria-sc285s-at-3-guys-kolkata/"
     },
     {
       "S. No.": 44,
@@ -448,7 +497,8 @@
       "Spokesperson": "",
       "Division": "Graphic Communications and Device Technology Solutions",
       "Headline": "FUJIFILM installs advanced Next Gen Revoria EC2100s at Sushma Printers",
-      "Category": "A"
+      "Category": "A",
+      "Link": "https://pressideas.com/fujifilm-installs-advanced-next-gen-revoria-ec2100s-at-sushma-printers/"
     },
     {
       "S. No.": 45,
@@ -457,7 +507,8 @@
       "Spokesperson": "",
       "Division": "EID and Photo Imaging",
       "Headline": "Fujifilm X-T30 III launched in India with 6.2K video, film simulation dial at Rs 1,02,999",
-      "Category": "A"
+      "Category": "A",
+      "Link": "https://timesofindia.indiatimes.com/technology/tech-news/fujifilm-x-t30-iii-launched-in-india-with-6-2k-video-film-simulation-dial-at-rs-102999/articleshow/130114380.cms"
     },
     {
       "S. No.": 46,
@@ -466,7 +517,8 @@
       "Spokesperson": "",
       "Division": "EID and Photo Imaging",
       "Headline": "Fujifilm X-T30 ||| launched in India with 26.1MP sensor, 6.2K video support: Price starts at Rs 102,999",
-      "Category": "A"
+      "Category": "A",
+      "Link": "https://www.moneycontrol.com/technology/fujifilm-x-t30-iii-launched-in-india-with-26-1mp-sensor-6-2k-video-support-price-starts-at-rs-102-999-article-13883651.html/amp"
     },
     {
       "S. No.": 47,
@@ -475,7 +527,8 @@
       "Spokesperson": "",
       "Division": "EID and Photo Imaging",
       "Headline": "Fujifilm X-T30 III Compact Hybrid Camera Launched in India",
-      "Category": "A"
+      "Category": "A",
+      "Link": "https://www.republicworld.com/tech/fujifilm-x-t30-iii-compact-hybrid-camera-launched-in-india"
     },
     {
       "S. No.": 48,
@@ -484,7 +537,8 @@
       "Spokesperson": "",
       "Division": "EID and Photo Imaging",
       "Headline": "Fujifilm XT-30 III Mirrorless Digital Camera Launched in India With X-Trans CMOS 4 Sensor: Price, Features",
-      "Category": "A"
+      "Category": "A",
+      "Link": "https://www.gadgets360.com/cameras/news/fujifilm-xt-30-iii-price-in-india-launch-sale-features-specifications-11323008"
     },
     {
       "S. No.": 49,
@@ -493,7 +547,8 @@
       "Spokesperson": "",
       "Division": "EID and Photo Imaging",
       "Headline": "Fujifilm X-T30 III f'डिजटल कैमरा लॉÛच, 26.1MP स\"सर के साथ गजब फȧचस[, जान\" कȧमत",
-      "Category": "A"
+      "Category": "A",
+      "Link": "https://hindi.gadgets360.com/internet/fujifilm-x-t30-iii-digital-camera-launched-know-price-features-news-11326948"
     },
     {
       "S. No.": 50,
@@ -502,7 +557,8 @@
       "Spokesperson": "",
       "Division": "EID and Photo Imaging",
       "Headline": "Fujifilm X-T30 III launched in India: Check out features and pricing",
-      "Category": "A"
+      "Category": "A",
+      "Link": "https://www.digit.in/news/general/fujifilm-x-t30-iii-launched-in-india-check-out-features-and-pricing.html"
     },
     {
       "S. No.": 51,
@@ -511,7 +567,8 @@
       "Spokesperson": "",
       "Division": "EID and Photo Imaging",
       "Headline": " FUJIFILM Launched the X-T30 III Hybrid Camera for Creators",
-      "Category": "A"
+      "Category": "A",
+      "Link": "https://www.exhibit.tech/tech-launches/fujifilm-launched-the-x-t30-iii-hybrid-camera-for-creators/"
     },
     {
       "S. No.": 52,
@@ -520,7 +577,8 @@
       "Spokesperson": "",
       "Division": "EID and Photo Imaging",
       "Headline": "Is Fujifilm X-T30 III the Compact Hybrid Camera That India's Creators Have Been Waiting For?",
-      "Category": "A"
+      "Category": "A",
+      "Link": "https://www.businessworld.in/article/is-fujifilm-x-t30-iii-the-compact-hybrid-camera-that-india-s-creators-have-been-waiting-for-601196"
     },
     {
       "S. No.": 53,
@@ -529,7 +587,8 @@
       "Spokesperson": "",
       "Division": "EID and Photo Imaging",
       "Headline": "Gadgets Weekly: Lenovo's new Yoga, IdeaPad series PCs, Logitech G PRO X2 Superstrike mouse and more",
-      "Category": "A"
+      "Category": "A",
+      "Link": "https://www.deccanherald.com/technology/gadgets-weekly-lenovos-new-yoga-ideapad-series-pcs-logitech-g-pro-x2-superstrike-mouse-and-more-3963225#6"
     },
     {
       "S. No.": 54,
@@ -538,7 +597,8 @@
       "Spokesperson": "",
       "Division": "EID and Photo Imaging",
       "Headline": "FUJIFILM X-T30 III hybrid mirrorless camera launched in India",
-      "Category": "A"
+      "Category": "A",
+      "Link": "https://www.fonearena.com/blog/479346/fujifilm-x-t30-iii-price-india-features.html"
     },
     {
       "S. No.": 55,
@@ -547,7 +607,8 @@
       "Spokesperson": "",
       "Division": "EID and Photo Imaging",
       "Headline": "FUJIFILM X-T30 III Launched in India",
-      "Category": "B"
+      "Category": "B",
+      "Link": "https://www.smartprix.com/bytes/fujifilm-x-t30-iii-launched-in-india/"
     },
     {
       "S. No.": 56,
@@ -556,7 +617,8 @@
       "Spokesperson": "",
       "Division": "EID and Photo Imaging",
       "Headline": "Fujifilm X-T30 III launches as a compact hybrid camera built for creators, brings 6.2K video, AI autofocus",
-      "Category": "A"
+      "Category": "A",
+      "Link": "https://www.gizmochina.com/2026/04/07/fujifilm-x-t30-iii-launch-india-price-specs-features/"
     },
     {
       "S. No.": 57,
@@ -565,7 +627,8 @@
       "Spokesperson": "",
       "Division": "EID and Photo Imaging",
       "Headline": "Fujifilm X-T30 III hybrid camera launched in India",
-      "Category": "A"
+      "Category": "A",
+      "Link": "https://www.gadgetbridge.com/news/fujifilm-x-t30-iii-hybrid-camera-launched-in-india/"
     },
     {
       "S. No.": 58,
@@ -574,7 +637,8 @@
       "Spokesperson": "",
       "Division": "EID and Photo Imaging",
       "Headline": "Fujifilm Unveils X-T30 III with Advanced Hybrid Imaging, AI Autofocus, and New Film Simulation Dial",
-      "Category": "B"
+      "Category": "B",
+      "Link": "https://www.devicenext.com/fujifilm-unveils-x-t30-iii-with-advanced-hybrid-imaging-ai-autofocus-and-new-film-simulation-dial/"
     },
     {
       "S. No.": 59,
@@ -583,7 +647,8 @@
       "Spokesperson": "",
       "Division": "EID and Photo Imaging",
       "Headline": "Fujifilm India Unveils FUJIFILM X-T30 III with Advanced Hybrid Photo-Video Capabilities",
-      "Category": "A"
+      "Category": "A",
+      "Link": "https://digitalterminal.in/launchpad/fujifilm-india-unveils-fujifilm-x-t30-iii-with-advanced-hybrid-photo-video-capabilities"
     },
     {
       "S. No.": 60,
@@ -592,7 +657,8 @@
       "Spokesperson": "",
       "Division": "EID and Photo Imaging",
       "Headline": "Fujifilm Launches X-T30 III Mirrorless Camera in India at Rs 102999",
-      "Category": "B"
+      "Category": "B",
+      "Link": "https://pc-tablet.com/fujifilm-launches-x-t30-iii-mirrorless-camera-in-india-at-rs-102999/190462/"
     },
     {
       "S. No.": 61,
@@ -601,7 +667,8 @@
       "Spokesperson": "",
       "Division": "EID and Photo Imaging",
       "Headline": "FUJIFILM India Launches the X-T30 III – The Ultimate Compact Hybrid Camera for Photographers and Serious Creators",
-      "Category": "A"
+      "Category": "A",
+      "Link": "https://www.mobilityindia.com/fujifilm-india-launches-the-x-t30-iii-the-ultimate-compact-hybrid-camera-for-photographers-and-serious-creators/"
     },
     {
       "S. No.": 62,
@@ -610,7 +677,8 @@
       "Spokesperson": "",
       "Division": "EID and Photo Imaging",
       "Headline": "Fujifilm X-T30 III Launched In India: A Compact Hybrid Camera For Creators",
-      "Category": "A"
+      "Category": "A",
+      "Link": "https://www.gizbot.com/camera/news/fujixt30-iii-india-hybrid-camera-for-photo-and-video-011-124813.html"
     },
     {
       "S. No.": 63,
@@ -619,7 +687,8 @@
       "Spokesperson": "",
       "Division": "EID and Photo Imaging",
       "Headline": "FUJIFILM X-T30 III Launched in India at ₹1,02,999 — One Camera to Rule Stills, Video, and Everything In Between",
-      "Category": "A"
+      "Category": "A",
+      "Link": "https://technosports.co.in/fujifilm-x-t30-iii-launched-in-india/"
     },
     {
       "S. No.": 64,
@@ -628,7 +697,8 @@
       "Spokesperson": "",
       "Division": "EID and Photo Imaging",
       "Headline": "Fujifilm India Launches FUJIFILM X-T30 III with 6.2K Video to Power Hybrid Content Creation",
-      "Category": "C"
+      "Category": "C",
+      "Link": "https://www.telecomtoday.in/gadgets/fujifilm-india-launches-fujifilm-x-t30-iii-with-62k-video-to-power-hybrid-content-creation"
     },
     {
       "S. No.": 65,
@@ -637,7 +707,8 @@
       "Spokesperson": "",
       "Division": "EID and Photo Imaging",
       "Headline": "FUJIFILM X-T30 III hybrid mirrorless camera launched in India featuring 6.2K video, AI autofocus, and more",
-      "Category": "B"
+      "Category": "B",
+      "Link": "https://www.mobigyaan.com/fujifilm-x-t30-iii-hybrid-mirrorless-camera-india"
     },
     {
       "S. No.": 66,
@@ -646,7 +717,8 @@
       "Spokesperson": "",
       "Division": "EID and Photo Imaging",
       "Headline": "FUJIFILM India Launches the X-T30 III: The Ultimate Compact Hybrid Camera for Photographers and Serious Creators",
-      "Category": "C"
+      "Category": "C",
+      "Link": "https://159.89.164.196/regional/fujifilm-india-launches-the-x-t30-iii-the-ultimate-compact-hybrid-camera-for-photographers-and-serious-creators/4896791866955946306/4896791866955946306/"
     },
     {
       "S. No.": 67,
@@ -655,7 +727,8 @@
       "Spokesperson": "",
       "Division": "EID and Photo Imaging",
       "Headline": "Fujifilm introduces X-T30 III in India with a stronger focus on hybrid shooting",
-      "Category": "A"
+      "Category": "A",
+      "Link": "https://t2online.in/tech/tech-news/fujifilm-introduces-x-t30-iii-in-india-with-a-stronger-focus-on-hybrid-shooting/2004542"
     },
     {
       "S. No.": 68,
@@ -664,7 +737,8 @@
       "Spokesperson": "",
       "Division": "EID and Photo Imaging",
       "Headline": "Fujifilm XT-30 III f'मररलेस f'डिजटल कैमरा भारत म\" X-Trans CMOS 4\r\nस\"सर के साथ हुआ लॉÛच, जाǓनए कȧमत और फȧचस[",
-      "Category": "A"
+      "Category": "A",
+      "Link": "https://www.bhaskarhindi.com/gadgets/fujifilm-xt-30-iii-mirrorless-digital-camera-bharat-me-launch-price-features-1277398"
     },
     {
       "S. No.": 69,
@@ -673,7 +747,8 @@
       "Spokesperson": "",
       "Division": "EID and Photo Imaging",
       "Headline": "Fujifilm ने भारत म\" लॉÛच  कͩया नया हाइǒĦड कैमरा X-T30 III,  चͬf'ड़या हो या Ĝोन, पलक झपकते हȣ कर लेगा फोकस! कȧमत",
-      "Category": "A"
+      "Category": "A",
+      "Link": "https://zeenews.india.com/hindi/technology/fujifilm-x-t30-iii-launched-india-powerful-camera-with-video-ai-focus-check-price-and-features/3170826"
     },
     {
       "S. No.": 70,
@@ -682,7 +757,8 @@
       "Spokesperson": "",
       "Division": "EID and Photo Imaging",
       "Headline": "Fujifilm का नया कैमरा आया, फोटो-वीf'डयो दोनɉ म\" धमाका",
-      "Category": "B"
+      "Category": "B",
+      "Link": "https://lokraag.com/technology/fujifilms-new-camera-is-out-a-blast-in-both-photo-and-video/"
     },
     {
       "S. No.": 71,
@@ -691,7 +767,8 @@
       "Spokesperson": "",
       "Division": "EID and Photo Imaging",
       "Headline": "FUJIFILM India Launches the X-T30 III: The Ultimate Compact Hybrid Camera for Photographers and Serious Creators",
-      "Category": "A"
+      "Category": "A",
+      "Link": "https://www.itvoice.in/fujifilm-india-launches-the-x-t30-iii-the-ultimate-compact-hybrid-camera-for-photographers-and-serious-creators"
     },
     {
       "S. No.": 72,
@@ -700,7 +777,8 @@
       "Spokesperson": "",
       "Division": "EID and Photo Imaging",
       "Headline": "FUJIFILM India Unmasks the X-T30 III",
-      "Category": "A"
+      "Category": "A",
+      "Link": "https://smartphotography.in/fujifilm-india-unmasks-the-x-t30-iii/"
     },
     {
       "S. No.": 73,
@@ -709,7 +787,8 @@
       "Spokesperson": "",
       "Division": "EID and Photo Imaging",
       "Headline": "FUJIFILM India Unveils the X-T30 III",
-      "Category": "A"
+      "Category": "A",
+      "Link": "https://t3india.com/fujifilm-india-unveils-the-x-t30-iii/"
     },
     {
       "S. No.": 74,
@@ -718,7 +797,8 @@
       "Spokesperson": "",
       "Division": "EID and Photo Imaging",
       "Headline": "FUJIFILM X-T30 III Hybrid Camera Launched in India",
-      "Category": ""
+      "Category": "",
+      "Link": "https://techvorm.com/fujifilm-x-t30-iii-hybrid-camera-launched-in-india"
     },
     {
       "S. No.": 75,
@@ -727,7 +807,8 @@
       "Spokesperson": "",
       "Division": "EID and Photo Imaging",
       "Headline": "FUJIFILM Introduces X-T30 III Hybrid Camera",
-      "Category": "B"
+      "Category": "B",
+      "Link": "https://smestreet.in/technology/fujifilm-introduces-x-t30-iii-hybrid-camera-11700349"
     },
     {
       "S. No.": 76,
@@ -736,7 +817,8 @@
       "Spokesperson": "",
       "Division": "EID and Photo Imaging",
       "Headline": "Fujifilm X-T30 III: A Compact Hybrid Camera for Creators with Advanced Video Features",
-      "Category": "A"
+      "Category": "A",
+      "Link": "https://m.dailyhunt.in/news/india/english/daily%2Bkiran-epaper-dailykrn/fujifilm%2Bxt30%2Biii%2Ba%2Bcompact%2Bhybrid%2Bcamera%2Bfor%2Bcreators%2Bwith%2Badvanced%2Bvideo%2Bfeatures-newsid-n707593687?listname=newspaperLanding&amp;topic=tech&amp;index=1&amp;topicIndex=7&amp;mode=pwa&amp;action=click"
     },
     {
       "S. No.": 77,
@@ -745,7 +827,8 @@
       "Spokesperson": "",
       "Division": "EID and Photo Imaging",
       "Headline": "FUJIFILM India Announces X-T30 III: specifications, features, and pricing",
-      "Category": "C"
+      "Category": "C",
+      "Link": "https://techtickerblog.com/2026/04/09/fujifilm-india-announces-x-t30-iii-specifications-features-and-pricing/"
     },
     {
       "S. No.": 78,
@@ -754,7 +837,8 @@
       "Spokesperson": "",
       "Division": "EID and Photo Imaging",
       "Headline": "Fujifilm X-T30 III Launches in India With 6.2K Video and AI Autofocus",
-      "Category": "C"
+      "Category": "C",
+      "Link": "https://itmatterss.in/gadget-world/fujifilm-xt30-iii-india-launch/"
     },
     {
       "S. No.": 79,
@@ -763,7 +847,8 @@
       "Spokesperson": "",
       "Division": "EID and Photo Imaging",
       "Headline": "Fujifilm X-T30 III Launched in India: Price, Features, and Specifications",
-      "Category": "C"
+      "Category": "C",
+      "Link": "https://www.comparos.in/news/fujifilm-x-t30-iii-launched-in-india-price-features-and-specifications"
     },
     {
       "S. No.": 80,
@@ -772,7 +857,8 @@
       "Spokesperson": "",
       "Division": "EID and Photo Imaging",
       "Headline": "FUJIFILM India Launches the X-T30 III: The Ultimate Compact Hybrid Camera for Photographers and Serious Creators",
-      "Category": "C"
+      "Category": "C",
+      "Link": "https://www.webnewswire.com/2026/04/13/fujifilm-india-launches-the-x-t30-iii-the-ultimate-compact-hybrid-camera-for-photographers-and-serious-creators/"
     },
     {
       "S. No.": 81,
@@ -781,7 +867,8 @@
       "Spokesperson": "",
       "Division": "EID and Photo Imaging",
       "Headline": "FUJIFILM India Launches the X-T30 III: The Ultimate Compact Hybrid Camera for Photographers and Serious Creators",
-      "Category": "C"
+      "Category": "C",
+      "Link": "https://businessnewsthisweek.com/business/fujifilm-india-launches-the-x-t30-iii-the-ultimate-compact-hybrid-camera-for-photographers-and-serious-creators/"
     },
     {
       "S. No.": 82,
@@ -790,7 +877,8 @@
       "Spokesperson": "",
       "Division": "EID and Photo Imaging",
       "Headline": "FUJIFILM India Launches the X-T30 III: The Ultimate Compact Hybrid Camera for Photographers and Serious Creators",
-      "Category": "C"
+      "Category": "C",
+      "Link": "https://businessnewsforprofit.com/business/fujifilm-india-launches-the-x-t30-iii-the-ultimate-compact-hybrid-camera-for-photographers-and-serious-creators/"
     },
     {
       "S. No.": 83,
@@ -799,7 +887,8 @@
       "Spokesperson": "",
       "Division": "EID and Photo Imaging",
       "Headline": "FUJIFILM India Launches the X-T30 III: The Ultimate Compact Hybrid Camera for Photographers and Serious Creators",
-      "Category": "C"
+      "Category": "C",
+      "Link": "https://businessmicro.in/business/fujifilm-india-launches-the-x-t30-iii-the-ultimate-compact-hybrid-camera-for-photographers-and-serious-creators/"
     },
     {
       "S. No.": 84,
@@ -808,7 +897,8 @@
       "Spokesperson": "",
       "Division": "EID and Photo Imaging",
       "Headline": "FUJIFILM India Launches the X-T30 III: The Ultimate Compact Hybrid Camera for Photographers and Serious Creators",
-      "Category": "C"
+      "Category": "C",
+      "Link": "https://onlinenews9.in/business/fujifilm-india-launches-the-x-t30-iii-the-ultimate-compact-hybrid-camera-for-photographers-and-serious-creators/"
     },
     {
       "S. No.": 85,
@@ -817,7 +907,8 @@
       "Spokesperson": "",
       "Division": "EID and Photo Imaging",
       "Headline": "FUJIFILM India Launches the X-T30 III: The Ultimate Compact Hybrid Camera for Photographers and Serious Creators",
-      "Category": "C"
+      "Category": "C",
+      "Link": "https://bizrapidx.com/business/fujifilm-india-launches-the-x-t30-iii-the-ultimate-compact-hybrid-camera-for-photographers-and-serious-creators/"
     },
     {
       "S. No.": 86,
@@ -826,7 +917,8 @@
       "Spokesperson": "",
       "Division": "EID and Photo Imaging",
       "Headline": "FUJIFILM India Launches the X-T30 III The Ultimate Compact HybridCamera for Photographers and Serious Creators",
-      "Category": "C"
+      "Category": "C",
+      "Link": "https://www.pninews.com/fujifilm-india-launches-the-x-t30-iii-the-ultimate-compact-hybridcamera-for-photographers-and-serious-creators/"
     },
     {
       "S. No.": 87,
@@ -835,7 +927,8 @@
       "Spokesperson": "",
       "Division": "EID and Photo Imaging",
       "Headline": "FUJIFILM India Launches the X-T30 III: The Ultimate Compact Hybrid Camera for Photographers",
-      "Category": "B"
+      "Category": "B",
+      "Link": "https://www.mediainfoline.com/brand/fujifilm-india-launches-the-x-t30-iii-the-ultimate-compact-hybrid-camera-for-photographers"
     },
     {
       "S. No.": 88,
@@ -844,7 +937,8 @@
       "Spokesperson": "",
       "Division": "EID and Photo Imaging",
       "Headline": "FUJIFILM India Launches the X-T30 III",
-      "Category": "B"
+      "Category": "B",
+      "Link": "https://technuter.com/gizmo/camera/fujifilm-india-launches-the-x-t30-iii.html"
     },
     {
       "S. No.": 89,
@@ -853,7 +947,8 @@
       "Spokesperson": "",
       "Division": "EID and Photo Imaging",
       "Headline": "FUJIFILM India Launches the X-T30 III: The Ultimate Compact Hybrid",
-      "Category": "B"
+      "Category": "B",
+      "Link": "https://www.passionateinmarketing.com/fujifilm-india-launches-the-x-t30-iii-the-ultimate-compact-hybrid/"
     },
     {
       "S. No.": 90,
@@ -862,7 +957,8 @@
       "Spokesperson": "",
       "Division": "EID and Photo Imaging",
       "Headline": "FUJIFILM India Launches the X-T30 III The Ultimate Compact HybridCamera for Photographers and Serious Creators",
-      "Category": "C"
+      "Category": "C",
+      "Link": "https://www.fmlive.in/fujifilm-india-launches-the-x-t30-iii-the-ultimate-compact-hybridcamera-for-photographers-and-serious-creators/"
     },
     {
       "S. No.": 91,
@@ -871,7 +967,8 @@
       "Spokesperson": "",
       "Division": "EID and Photo Imaging",
       "Headline": "FUJIFILM India Launches the X-T30 III: The Ultimate Compact Hybrid Camera for Photographers and Serious Creators",
-      "Category": "C"
+      "Category": "C",
+      "Link": "https://chennaipatrika.com/post/fujifilm-india-launches-the-x-t30-iii-the-ultimate-compact-hybrid-camera-for-photographers-and-serious-creators"
     },
     {
       "S. No.": 92,
@@ -880,7 +977,8 @@
       "Spokesperson": "",
       "Division": "Graphic Communications and Device Technology Solutions",
       "Headline": "Fujifilm India showcases click-to-print technology",
-      "Category": "A"
+      "Category": "A",
+      "Link": "https://www.printweek.in/article/fujifilm-india-showcases-click-to-print-technology/47rp7h90jeh5e2jfaz66cyyvna"
     },
     {
       "S. No.": 93,
@@ -889,7 +987,8 @@
       "Spokesperson": "",
       "Division": "Graphic Communications and Device Technology Solutions",
       "Headline": "Insight Communications showcases Revoria with specialty colour",
-      "Category": "A"
+      "Category": "A",
+      "Link": "https://www.printweek.in/article/insight-communications-showcases-revoria-press-with-specialty-colour-capabilities/4mk82r3njb6h8z2ddr35gxg4wz"
     },
     {
       "S. No.": "Social Media Coverage",
@@ -898,7 +997,8 @@
       "Spokesperson": "",
       "Division": "",
       "Headline": "",
-      "Category": ""
+      "Category": "",
+      "Link": ""
     },
     {
       "S. No.": 94,
@@ -907,7 +1007,8 @@
       "Spokesperson": "",
       "Division": "Graphic Communications and Device Technology Solutions",
       "Headline": "Headlines of Imaging Solution’s Top 10 News of the Week",
-      "Category": "A"
+      "Category": "A",
+      "Link": "https://youtu.be/LSv5B-7mpjI?si=jJR_CCXU6NeNX4mC"
     },
     {
       "S. No.": 95,
@@ -916,7 +1017,8 @@
       "Spokesperson": "",
       "Division": "Graphic Communications and Device Technology Solutions",
       "Headline": "Fujifilm India has installed its advanced Next Gen Fujifilm Revoria SC285S 50color machine at 3 Guys, Kolkata.",
-      "Category": "A"
+      "Category": "A",
+      "Link": "https://x.com/IPPTalk/status/2039269667924214229?s=20"
     },
     {
       "S. No.": 96,
@@ -925,7 +1027,8 @@
       "Spokesperson": "",
       "Division": "Graphic Communications and Device Technology Solutions",
       "Headline": "Fujifilm India has installed its advanced Next Gen Fujifilm Revoria SC285S 50color machine at 3 Guys, Kolkata",
-      "Category": "A"
+      "Category": "A",
+      "Link": "https://www.linkedin.com/posts/ipptalk_fujifilm-india-installs-revoria-sc285s-at-activity-7445033906766184448-0Jpj?utm_source=share&amp;utm_medium=member_desktop&amp;rcm=ACoAADbZgXUBNA0_xFmEWE78YrQrbHsbfiHD37Y"
     },
     {
       "S. No.": 97,
@@ -934,7 +1037,8 @@
       "Spokesperson": "",
       "Division": "Graphic Communications and Device Technology Solutions",
       "Headline": "Fujifilm India has installed its advanced Next Gen Fujifilm Revoria SC285S 50color machine at 3 Guys, Kolkata.",
-      "Category": "A"
+      "Category": "A",
+      "Link": "https://www.facebook.com/IPPTalk/posts/pfbid02Sqzq3ggx8nGzQtzBf7h4nmvSHZ8FdjPD7ntHenQrdrFUYCZt5fMESCHv7S6cHLodl?rdid=UMDxTAk7qoyjlwou"
     },
     {
       "S. No.": 98,
@@ -943,7 +1047,8 @@
       "Spokesperson": "",
       "Division": "Graphic Communications and Device Technology Solutions",
       "Headline": "FUJIFILM India installs Revoria SC285S at 3 Guys, Kolkata",
-      "Category": "A"
+      "Category": "A",
+      "Link": "https://www.facebook.com/ImagingSolution/posts/fujifilm-india-installs-revoria-sc285s-at-3-guys-kolkata%F0%9D%90%8A%F0%9D%90%A7%F0%9D%90%A8%F0%9D%90%B0-%F0%9D%90%8C%F0%9D%90%A8%F0%9D%90%AB%F0%9D%90%9E-httpsimagingso/1475451047926846/"
     },
     {
       "S. No.": 99,
@@ -952,7 +1057,8 @@
       "Spokesperson": "",
       "Division": "Graphic Communications and Device Technology Solutions",
       "Headline": "#FUJIFILMIndia installs Revoria SC285S at #3Guys",
-      "Category": "A"
+      "Category": "A",
+      "Link": "https://www.instagram.com/p/DWlyLSOku9k/"
     },
     {
       "S. No.": 100,
@@ -961,7 +1067,8 @@
       "Spokesperson": "",
       "Division": "Graphic Communications and Device Technology Solutions",
       "Headline": "FUJIFILM India installs Revoria SC285S at 3 Guys, Kolkata",
-      "Category": "A"
+      "Category": "A",
+      "Link": "https://www.linkedin.com/posts/imaging-solution_fujifilm-india-installs-revoria-sc285s-at-activity-7445095928757219328-NwKE?utm_source=share&amp;utm_medium=member_desktop&amp;rcm=ACoAADwYS1ABj-rsiIGWMrmPE81EQCvhTLBWYSo"
     },
     {
       "S. No.": 101,
@@ -970,7 +1077,8 @@
       "Spokesperson": "",
       "Division": "EID and Photo Imaging",
       "Headline": "FUJIFILM India Launches the X-T30 III: The Ultimate Compact Hybrid Camera for Photographers and Serious Creators",
-      "Category": "A"
+      "Category": "A",
+      "Link": "https://www.linkedin.com/posts/it-voice-media_fujifilmindia-cameralaunch-hybridcamera-activity-7447259730722443265-Z1Fx"
     },
     {
       "S. No.": 102,
@@ -979,7 +1087,8 @@
       "Spokesperson": "",
       "Division": "EID and Photo Imaging",
       "Headline": "FUJIFILM India Launches the X-T30 III – The Ultimate Compact Hybrid Camera for Photographers and Serious Creators",
-      "Category": "B"
+      "Category": "B",
+      "Link": "https://x.com/mobilitymag/status/2041497820801486859"
     },
     {
       "S. No.": 103,
@@ -988,7 +1097,8 @@
       "Spokesperson": "",
       "Division": "EID and Photo Imaging",
       "Headline": "FUJIFILM India Launches the X-T30 III – The Ultimate Compact Hybrid Camera for Photographers and Serious Creators",
-      "Category": "B"
+      "Category": "B",
+      "Link": "https://www.linkedin.com/posts/mobilityindia_fujifilmindia-powerhouse-visualcreators-activity-7447262877129895937-TtHc"
     },
     {
       "S. No.": 104,
@@ -997,7 +1107,8 @@
       "Spokesperson": "",
       "Division": "EID and Photo Imaging",
       "Headline": "FUJIFILM X-T30 III is a compact camera with strong performance and classic design",
-      "Category": "A"
+      "Category": "A",
+      "Link": "https://www.instagram.com/p/DW1LsulEuvU/"
     },
     {
       "S. No.": 105,
@@ -1006,7 +1117,8 @@
       "Spokesperson": "",
       "Division": "EID and Photo Imaging",
       "Headline": "FUJIFILM India Launches the X-T30 III – The Ultimate Compact Hybrid Camera for Photographers and Serious Creators",
-      "Category": "A"
+      "Category": "A",
+      "Link": "https://www.facebook.com/share/p/1CS5u5Rth1/"
     },
     {
       "S. No.": 106,
@@ -1015,7 +1127,8 @@
       "Spokesperson": "",
       "Division": "EID and Photo Imaging",
       "Headline": "Fujifilm X-T30 III has been launched in India. Here's all you need to know about it:",
-      "Category": "A"
+      "Category": "A",
+      "Link": "https://x.com/Gadgets360/status/2041499026257043886"
     },
     {
       "S. No.": 107,
@@ -1024,7 +1137,8 @@
       "Spokesperson": "",
       "Division": "EID and Photo Imaging",
       "Headline": "FUJIFILM X-T30 III hybrid mirrorless camera launched in India",
-      "Category": "A"
+      "Category": "A",
+      "Link": "https://www.facebook.com/fonearena/posts/fujifilm-x-t30-iii-hybrid-mirrorless-camera-launched-in-india-httpsfa2inei2wt/1532686211778941/"
     },
     {
       "S. No.": 108,
@@ -1033,7 +1147,8 @@
       "Spokesperson": "",
       "Division": "EID and Photo Imaging",
       "Headline": "FUJIFILM X-T30 III hybrid mirrorless camera launched in India",
-      "Category": "A"
+      "Category": "A",
+      "Link": "https://x.com/FoneArena/status/2041472163426046348"
     },
     {
       "S. No.": 109,
@@ -1042,7 +1157,8 @@
       "Spokesperson": "",
       "Division": "EID and Photo Imaging",
       "Headline": "Fujifilm X-T30 III launches in India at Rs. 1,02,999. It brings 6.2K recording, AI subject detection, and a Film Simulation dial into a compact mirrorless body.",
-      "Category": "C"
+      "Category": "C",
+      "Link": "https://x.com/ITmatters_in/status/2041574557073731685"
     },
     {
       "S. No.": 110,
@@ -1051,7 +1167,8 @@
       "Spokesperson": "",
       "Division": "EID and Photo Imaging",
       "Headline": "Fujifilm India Unveils FUJIFILM X-T30 III with Advanced Hybrid Photo-Video Capabilities",
-      "Category": "A"
+      "Category": "A",
+      "Link": "https://www.linkedin.com/posts/digitalterminal_fujifilmindia-mirrorlesscamera-photographygear-activity-7447606953494683650-Pa47"
     },
     {
       "S. No.": 111,
@@ -1060,7 +1177,8 @@
       "Spokesperson": "",
       "Division": "EID and Photo Imaging",
       "Headline": "Fujifilm India Unveils FUJIFILM X-T30 III with Advanced Hybrid Photo-Video Capabilities",
-      "Category": "A"
+      "Category": "A",
+      "Link": "https://x.com/dterminalIN/status/2041841506991141242"
     },
     {
       "S. No.": 112,
@@ -1069,7 +1187,8 @@
       "Spokesperson": "",
       "Division": "EID and Photo Imaging",
       "Headline": "Fujifilm India Unveils FUJIFILM X-T30 III with Advanced Hybrid Photo-Video Capabilities",
-      "Category": "A"
+      "Category": "A",
+      "Link": "https://www.facebook.com/share/p/1GiRehHa7i/"
     },
     {
       "S. No.": 113,
@@ -1078,7 +1197,8 @@
       "Spokesperson": "",
       "Division": "EID and Photo Imaging",
       "Headline": "Fujifilm X-T30 III hybrid camera launched in India",
-      "Category": "A"
+      "Category": "A",
+      "Link": "https://x.com/gadgetbridge/status/2041874085370851402"
     },
     {
       "S. No.": 114,
@@ -1087,7 +1207,8 @@
       "Spokesperson": "",
       "Division": "EID and Photo Imaging",
       "Headline": "Fujifilm X-T30 III hybrid camera launched in India",
-      "Category": "A"
+      "Category": "A",
+      "Link": "https://www.facebook.com/share/p/1DtTX3uZFL/"
     },
     {
       "S. No.": 115,
@@ -1096,7 +1217,8 @@
       "Spokesperson": "",
       "Division": "EID and Photo Imaging",
       "Headline": "#Fujifilm ने भारत म\" लॉÛच  कͩया नया हाइǒĦड कैमरा X-T30 III,\r\n चͬf'ड़या हो या Ĝोन, पलक झपकते हȣ कर लेगा फोकस!",
-      "Category": "B"
+      "Category": "B",
+      "Link": "https://www.facebook.com/share/p/18dX87qpoW/"
     },
     {
       "S. No.": 116,
@@ -1105,7 +1227,8 @@
       "Spokesperson": "",
       "Division": "EID and Photo Imaging",
       "Headline": "FUJIFILM X-T30 III hybrid mirrorless camera launched in India",
-      "Category": "A"
+      "Category": "A",
+      "Link": "https://www.facebook.com/share/p/18ccAiSgmj/"
     },
     {
       "S. No.": 117,
@@ -1114,7 +1237,8 @@
       "Spokesperson": "",
       "Division": "Instax",
       "Headline": "The Fujifilm Instax Mini 13 is fun, lightweight, and incredibly easy to use. The catch? Film costs add up quickly",
-      "Category": "A"
+      "Category": "A",
+      "Link": "https://x.com/ndtv/status/2041544642089669067?s=46"
     },
     {
       "S. No.": 118,
@@ -1123,7 +1247,8 @@
       "Spokesperson": "",
       "Division": "Instax",
       "Headline": "Fujifilm Instax Mini 13 Review: Worth It or Just Nostalgia?",
-      "Category": "A"
+      "Category": "A",
+      "Link": "https://www.youtube.com/watch?v=jDBoo-xc4gI"
     },
     {
       "S. No.": 119,
@@ -1132,7 +1257,8 @@
       "Spokesperson": "",
       "Division": "Instax",
       "Headline": "The Fujifilm Instax Mini 13 is fun, lightweight, and incredibly easy to use. The catch? Film costs add up quickly.",
-      "Category": "A"
+      "Category": "A",
+      "Link": "https://www.facebook.com/share/v/18YWFEHhgN/"
     },
     {
       "S. No.": 120,
@@ -1141,7 +1267,8 @@
       "Spokesperson": "",
       "Division": "Instax",
       "Headline": "Fujifilm just launched the super cute Instax Mini 13",
-      "Category": "A"
+      "Category": "A",
+      "Link": "https://www.instagram.com/reel/DW3PRfPAGrT/?utm_source=ig_web_copy_link&amp;igsh=MzRlODBiNWFlZA%3D%3D"
     },
     {
       "S. No.": 121,
@@ -1150,7 +1277,8 @@
       "Spokesperson": "",
       "Division": "Instax",
       "Headline": "Instax Mini 13: Design and Features",
-      "Category": "A"
+      "Category": "A",
+      "Link": "https://youtube.com/shorts/BCOOg9eKQxE?si=s8MZKrLErJyrwMxk"
     },
     {
       "S. No.": 122,
@@ -1159,7 +1287,8 @@
       "Spokesperson": "",
       "Division": "Instax",
       "Headline": "Unboxing the Instax Mini 13 feels like opening a box of memories waiting to happen.",
-      "Category": "A"
+      "Category": "A",
+      "Link": ""
     },
     {
       "S. No.": 123,
@@ -1168,7 +1297,8 @@
       "Spokesperson": "",
       "Division": "Instax",
       "Headline": "Fujifilm Instax Mini 13 Unboxing & First Look: Tiny Camera, Instant Prints!",
-      "Category": "A"
+      "Category": "A",
+      "Link": "https://youtube.com/shorts/5g1gSn-kITs?si=ykDn46l3fBZAYeqb"
     },
     {
       "S. No.": 124,
@@ -1177,7 +1307,8 @@
       "Spokesperson": "",
       "Division": "Instax",
       "Headline": "₹70 per photo—still worth it? Here’s why the Instax Mini 13 is fun, flawed, and surprisingly addictive.",
-      "Category": "A"
+      "Category": "A",
+      "Link": "https://www.facebook.com/share/p/1C1vTzNeZ6/"
     },
     {
       "S. No.": 125,
@@ -1186,7 +1317,8 @@
       "Spokesperson": "",
       "Division": "Instax",
       "Headline": "Gadget review: Instax mini 13 keeps photography simple and playful",
-      "Category": "A"
+      "Category": "A",
+      "Link": "https://x.com/FinancialXpress/status/2048459845615964313?s=20"
     },
     {
       "S. No.": 126,
@@ -1195,7 +1327,8 @@
       "Spokesperson": "",
       "Division": "Instax",
       "Headline": "The Fujifilm Instax Mini 13 offers a fun, beginner-friendly way to capture and print instant photos, blending simplicity with nostalgic charm.",
-      "Category": "A"
+      "Category": "A",
+      "Link": "https://www.facebook.com/share/p/1HaESxEYxo/"
     },
     {
       "S. No.": 127,
@@ -1204,7 +1337,8 @@
       "Spokesperson": "",
       "Division": "Instax",
       "Headline": " #Fujifilm #InstaxMiniEvo Hands On | TechPulse",
-      "Category": "A"
+      "Category": "A",
+      "Link": "https://www.instagram.com/reel/DXriio6kuTH/?igsh=bnp1b3gzem1vaHo5&amp;wa_logging_event=video_play_open"
     }
   ]
 }

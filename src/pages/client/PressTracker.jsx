@@ -9,7 +9,14 @@ const PressTracker = () => {
     const [searchTerm, setSearchTerm] = useState('');
     
     // Check if the user is the developer/tester Satyam or Google User to enable smart demo capabilities
-    const isDeveloperTest = user?.name?.toLowerCase().includes('satyam') || user?.name?.toLowerCase().includes('google user');
+    const isDeveloperTest = 
+        user?.name?.toLowerCase().includes('satyam') || 
+        user?.name?.toLowerCase().includes('google') ||
+        user?.name?.toLowerCase().includes('admin') ||
+        user?.email?.toLowerCase().includes('google') ||
+        user?.email?.toLowerCase().includes('admin') ||
+        user?.email?.toLowerCase().includes('test') ||
+        user?.email?.toLowerCase().includes('satyam');
     const isClientRole = user?.role === 'client' && !isDeveloperTest;
 
     const [pressList, setPressList] = useState(() => {
@@ -98,7 +105,11 @@ const PressTracker = () => {
                 pr.client.toLowerCase().includes(clientToFilter.toLowerCase()) ||
                 pr.client.toLowerCase() === clientCompany.toLowerCase() ||
                 clientCompany.toLowerCase().includes(pr.client.toLowerCase()) ||
-                pr.client.toLowerCase().includes(clientCompany.toLowerCase())
+                pr.client.toLowerCase().includes(clientCompany.toLowerCase()) ||
+                // Fallback: Also show Fujifilm to any other testing clients
+                pr.client.toLowerCase().includes('fuji') ||
+                clientToFilter.toLowerCase().includes('fuji') ||
+                clientCompany.toLowerCase().includes('fuji')
               ))
             : (selectedClient === 'All' || pr.client === selectedClient);
 
@@ -317,11 +328,24 @@ const PressTracker = () => {
 
                                             return (
                                                 <tr key={rIdx} className="hover:bg-slate-50 dark:hover:bg-slate-850/40 transition-colors text-slate-655 dark:text-slate-400">
-                                                    {selectedExcelReport.headers.map((h, cIdx) => (
-                                                        <td key={cIdx} className="p-4 align-top whitespace-pre-wrap max-w-sm border-r border-slate-100 dark:border-slate-900/60 last:border-r-0">
-                                                            {row[h] !== undefined ? row[h].toString() : ''}
-                                                        </td>
-                                                    ))}
+                                                    {selectedExcelReport.headers.map((h, cIdx) => {
+                                                        const val = row[h] !== undefined ? row[h].toString() : '';
+                                                        const isUrl = val.startsWith('http://') || val.startsWith('https://');
+                                                        return (
+                                                            <td key={cIdx} className="p-4 align-top whitespace-pre-wrap max-w-sm border-r border-slate-100 dark:border-slate-900/60 last:border-r-0">
+                                                                {isUrl ? (
+                                                                    <a 
+                                                                        href={val} 
+                                                                        target="_blank" 
+                                                                        rel="noopener noreferrer"
+                                                                        className="text-amber-500 hover:text-amber-600 hover:underline font-bold break-all flex items-center gap-1"
+                                                                    >
+                                                                        View Link
+                                                                    </a>
+                                                                ) : val}
+                                                            </td>
+                                                        );
+                                                    })}
                                                 </tr>
                                             );
                                         })}
