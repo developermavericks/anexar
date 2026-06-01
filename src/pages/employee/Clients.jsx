@@ -56,14 +56,25 @@ export default function Clients() {
     const [notification, setNotification] = useState(null);
     const [recentUpdates, setRecentUpdates] = useState([]);
 
-    // Load recent updates from localStorage
+    // Load recent updates from localStorage with schema validation
     useEffect(() => {
         const stored = localStorage.getItem('anexar_client_updates');
         if (stored) {
             try {
-                setRecentUpdates(JSON.parse(stored));
+                const parsed = JSON.parse(stored);
+                if (Array.isArray(parsed)) {
+                    // Map and normalize each entry to guarantee existence of sectionsSubmitted array
+                    const validated = parsed.map(item => ({
+                        id: item.id || 'upd_' + Math.random().toString(36).substring(2, 9),
+                        client: item.client || 'Unknown Client',
+                        timestamp: item.timestamp || new Date().toLocaleString(),
+                        sectionsSubmitted: Array.isArray(item.sectionsSubmitted) ? item.sectionsSubmitted : [],
+                        data: item.data || {}
+                    }));
+                    setRecentUpdates(validated);
+                }
             } catch (e) {
-                console.error(e);
+                console.error("Failed to parse local storage updates:", e);
             }
         }
     }, []);
@@ -602,7 +613,7 @@ export default function Clients() {
                                         <td className="py-3.5 px-4 font-medium text-slate-500 dark:text-slate-400">{update.timestamp}</td>
                                         <td className="py-3.5 px-4">
                                             <div className="flex flex-wrap gap-1.5">
-                                                {update.sectionsSubmitted.map((sec) => (
+                                                {(update.sectionsSubmitted || []).map((sec) => (
                                                     <span key={sec} className="px-2 py-0.5 bg-slate-100 dark:bg-slate-900 text-slate-650 dark:text-slate-405 rounded text-[10px] font-semibold border border-slate-200/30 dark:border-slate-805">
                                                         {sec === 'pressReleases' ? 'PR'
                                                          : sec === 'tracker' ? 'Tracker'
