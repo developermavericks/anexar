@@ -14,8 +14,7 @@ import {
     Settings,
     Menu,
     X,
-    LogOut,
-    RefreshCw
+    LogOut
 } from 'lucide-react';
 import { useUser } from '../../context/UserContext';
 import { useAuth } from '../../context/AuthContext';
@@ -58,7 +57,6 @@ const ClientLayout = () => {
         { icon: Target, label: 'Goals & Commitment', to: '/client/goals' },
         { icon: BarChart, label: 'Reports', to: '/client/reports' },
         { icon: Users, label: 'Meet Your Team', to: '/client/team' },
-        { icon: RefreshCw, label: 'MAV Update', to: '/client/mav-update' },
         { icon: CreditCard, label: 'Subscription', to: '/client/subscription' },
     ];
 
