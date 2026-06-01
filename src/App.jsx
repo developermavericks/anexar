@@ -20,7 +20,6 @@ import Reports from './pages/client/Reports';
 import MeetTeam from './pages/client/MeetTeam';
 import Subscription from './pages/client/Subscription';
 import Settings from './pages/client/Settings';
-import MavUpdate from './pages/client/MavUpdate';
 
 // Team Dashboard imports
 import TeamLayout from './pages/employee/EmployeeLayout';
@@ -87,7 +86,6 @@ function App() {
               <Route path="team" element={<MeetTeam />} />
               <Route path="subscription" element={<Subscription />} />
               <Route path="settings" element={<Settings />} />
-              <Route path="mav-update" element={<MavUpdate />} />
             </Route>
 
             {/* Team Portal Routes */}
