@@ -20,6 +20,7 @@ import {
 } from 'lucide-react';
 import { pressReleases as defaultPress } from '../../mock/clientData';
 import * as XLSX from 'xlsx';
+import fujifilmData from '../../mock/fujifilm_data.json';
 
 export default function UploadCoverage() {
     const MONTHS = [
@@ -58,13 +59,8 @@ export default function UploadCoverage() {
             year: '2026',
             type: 'excel',
             fileName: 'FUJIFILM India Coverage Tracker 2026-27 - April.xlsx',
-            headers: ['S. No.', 'Date', 'Publication', 'Headline', 'Spokesperson', 'Division', 'Link / Page No.'],
-            rows: [
-                { 'S. No.': '1', 'Date': '02nd April, 2026', 'Publication': 'Pharmabiz', 'Headline': 'Fujifilm India Endoscopy division integrates AI diagnostic software', 'Spokesperson': 'Dheeraj Chaudhri', 'Division': 'Endoscopy', 'Link / Page No.': 'https://www.pharmabiz.com/fujifilm-ai' },
-                { 'S. No.': '2', 'Date': '05nd April, 2026', 'Publication': 'The Economic Times', 'Headline': 'Fujifilm expands healthcare footprint in Tier-2 Indian cities', 'Spokesperson': 'Mr. Koji Wada', 'Division': 'Healthcare', 'Link / Page No.': 'https://economictimes.indiatimes.com/fujifilm' },
-                { 'S. No.': '3', 'Date': '12th April, 2026', 'Publication': 'Medical Buyer', 'Headline': 'High-resolution imaging: Revolutionizing colorectal screenings', 'Spokesperson': 'Dr. Alok Sen', 'Division': 'Endoscopy', 'Link / Page No.': 'https://medicalbuyer.co.in/colorectal' },
-                { 'S. No.': '4', 'Date': '19th April, 2026', 'Publication': 'PrintWeek', 'Headline': 'Fujifilm India showcases green printing technologies at Expo', 'Spokesperson': 'Mr. Priyatosh Kumar', 'Division': 'Graphic Communication', 'Link / Page No.': 'https://printweek.in/fujifilm-expo' }
-            ]
+            headers: fujifilmData.headers,
+            rows: fujifilmData.rows
         };
 
         return [fujifilmDefaultExcel, ...defaultItems];
