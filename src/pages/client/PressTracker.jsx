@@ -45,6 +45,7 @@ const PressTracker = () => {
 
     // Filter to selected client or logged-in client
     const clientToFilter = isClientRole ? user.name : selectedClient;
+    const clientCompany = user?.organization?.companyName || '';
 
     // Dynamic unique list of client names for filter dropdown
     const clientOptions = ['All', ...new Set(pressList.map(pr => pr.client || 'Spotify'))];
@@ -56,7 +57,14 @@ const PressTracker = () => {
             : ((pr.client && pr.client.toLowerCase().includes(term)) || (pr.coverage && pr.coverage.toLowerCase().includes(term)));
         
         const matchesClient = isClientRole
-            ? (pr.client && pr.client.toLowerCase() === clientToFilter.toLowerCase())
+            ? (pr.client && (
+                pr.client.toLowerCase() === clientToFilter.toLowerCase() ||
+                clientToFilter.toLowerCase().includes(pr.client.toLowerCase()) ||
+                pr.client.toLowerCase().includes(clientToFilter.toLowerCase()) ||
+                pr.client.toLowerCase() === clientCompany.toLowerCase() ||
+                clientCompany.toLowerCase().includes(pr.client.toLowerCase()) ||
+                pr.client.toLowerCase().includes(clientCompany.toLowerCase())
+              ))
             : (selectedClient === 'All' || pr.client === selectedClient);
 
         return matchesSearch && matchesClient;
