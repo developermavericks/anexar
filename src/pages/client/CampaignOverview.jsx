@@ -1,6 +1,6 @@
 import React from 'react';
 import { campaigns } from '../../mock/clientData';
-import { Activity, Calendar, DollarSign, Target } from 'lucide-react';
+import { Activity, Target } from 'lucide-react';
 
 const CampaignOverview = () => {
     return (
@@ -43,21 +43,6 @@ const CampaignOverview = () => {
                                         className="bg-gradient-to-r from-cyan-500 to-blue-500 h-2 rounded-full transition-all duration-1000"
                                         style={{ width: `${campaign.progress}%` }}
                                     ></div>
-                                </div>
-                            </div>
-
-                            <div className="grid grid-cols-2 gap-4 mt-6">
-                                <div className="bg-[#FDFBF7] dark:bg-[#0B0F19] p-4 rounded-lg border border-[#EAE8E4] dark:border-white/10">
-                                    <div className="flex items-center gap-2 text-gray-500 dark:text-gray-400 dark:text-gray-500 text-sm mb-1">
-                                        <DollarSign size={16} /> Budget Used
-                                    </div>
-                                    <p className="text-lg font-bold text-gray-900 dark:text-white">${campaign.budgetUsed.toLocaleString()}</p>
-                                </div>
-                                <div className="bg-[#FDFBF7] dark:bg-[#0B0F19] p-4 rounded-lg border border-[#EAE8E4] dark:border-white/10">
-                                    <div className="flex items-center gap-2 text-gray-500 dark:text-gray-400 dark:text-gray-500 text-sm mb-1">
-                                        <Calendar size={16} /> Total Budget
-                                    </div>
-                                    <p className="text-lg font-bold text-gray-900 dark:text-white">${campaign.totalBudget.toLocaleString()}</p>
                                 </div>
                             </div>
                         </div>

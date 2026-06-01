@@ -23,7 +23,7 @@ import { useAuth } from '../../context/AuthContext';
 const SidebarItem = ({ icon: Icon, label, to }) => (
     <NavLink
         to={to}
-        end={to === "/employee"}
+        end={to === "/team"}
         className={({ isActive }) =>
             `flex items-center gap-3 px-4 py-3 rounded-xl transition-all cursor-pointer ${
                 isActive
@@ -37,7 +37,7 @@ const SidebarItem = ({ icon: Icon, label, to }) => (
     </NavLink>
 );
 
-const EmployeeLayout = () => {
+const TeamLayout = () => {
     const { user } = useUser();
     const { logout } = useAuth();
     const navigate = useNavigate();
@@ -50,15 +50,15 @@ const EmployeeLayout = () => {
     };
 
     const menuItems = [
-        { icon: LayoutDashboard, label: 'Dashboard', to: '/employee' },
-        { icon: Users, label: 'Clients', to: '/employee/clients' },
-        { icon: FileText, label: 'Upload Coverage', to: '/employee/upload' },
-        { icon: Award, label: 'Events and Awards', to: '/employee/events' },
-        { icon: Newspaper, label: 'Journalist Source', to: '/employee/journalists' },
-        { icon: Sun, label: 'Morning Tracker', to: '/employee/morning-tracker' },
-        { icon: ShieldAlert, label: 'Crisis Predictor', to: '/employee/crisis-predictor' },
-        { icon: Clock, label: 'Time Allocation', to: '/employee/time-allocation' },
-        { icon: BrainCircuit, label: 'Analysis Board', to: '/employee/analysis' },
+        { icon: LayoutDashboard, label: 'Dashboard', to: '/team' },
+        { icon: Users, label: 'Clients', to: '/team/clients' },
+        { icon: FileText, label: 'Upload Coverage', to: '/team/upload' },
+        { icon: Award, label: 'Events and Awards', to: '/team/events' },
+        { icon: Newspaper, label: 'Journalist Source', to: '/team/journalists' },
+        { icon: Sun, label: 'Morning Tracker', to: '/team/morning-tracker' },
+        { icon: ShieldAlert, label: 'Crisis Tracker', to: '/team/crisis-tracker' },
+        { icon: Clock, label: 'Time Allocation', to: '/team/time-allocation' },
+        { icon: BrainCircuit, label: 'Analysis Board', to: '/team/analysis' },
     ];
 
     return (
@@ -71,7 +71,7 @@ const EmployeeLayout = () => {
                             <span className="text-brand-amber font-bold text-lg leading-none">A</span>
                         </div>
                         <h1 className="text-lg font-bold bg-gradient-to-r from-[#1A1A1A] to-gray-700 dark:from-white dark:to-slate-300 bg-clip-text text-transparent leading-tight">
-                            Anexar<br />Employee Portal
+                            Anexar<br />Team Portal
                         </h1>
                     </div>
                 </div>
@@ -83,7 +83,7 @@ const EmployeeLayout = () => {
                 </nav>
 
                 <div className="p-4 border-t border-[#EAE8E4] dark:border-slate-800 space-y-1">
-                    <SidebarItem icon={Settings} label="Settings" to="/employee/settings" />
+                    <SidebarItem icon={Settings} label="Settings" to="/team/settings" />
                     <button
                         onClick={handleLogout}
                         className="w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all text-red-500 hover:bg-red-50 dark:hover:bg-red-500/10 cursor-pointer text-left font-medium"
@@ -106,7 +106,7 @@ const EmployeeLayout = () => {
                             <Menu size={24} />
                         </button>
                         <div className="flex items-center gap-2">
-                            <h2 className="text-xl font-semibold text-gray-900 dark:text-white hidden sm:block">Anexar Employee Portal</h2>
+                            <h2 className="text-xl font-semibold text-gray-900 dark:text-white hidden sm:block">Anexar Team Portal</h2>
                             <span className="px-2.5 py-0.5 bg-brand-amber/15 text-brand-amber rounded-full text-3xs font-extrabold uppercase tracking-wider hidden sm:block">
                                 Staff Workspace
                             </span>
@@ -186,7 +186,7 @@ const EmployeeLayout = () => {
                                 <div className="bg-[#1A1A1A] dark:bg-white/10 p-1.5 rounded-lg flex items-center justify-center">
                                     <span className="text-brand-amber font-bold text-md leading-none">A</span>
                                 </div>
-                                <h1 className="text-lg font-bold text-[#1A1A1A] dark:text-white">Anexar Employee Portal</h1>
+                                <h1 className="text-lg font-bold text-[#1A1A1A] dark:text-white">Anexar Team Portal</h1>
                             </div>
                             <button
                                 className="text-gray-500 dark:text-slate-400 hover:text-gray-900 dark:hover:text-white"
@@ -207,4 +207,4 @@ const EmployeeLayout = () => {
     );
 };
 
-export default EmployeeLayout;
+export default TeamLayout;

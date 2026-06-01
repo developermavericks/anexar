@@ -96,7 +96,7 @@ export default function TimeAllocation() {
                                         Provides interactive views of monthly operational metrics:
                                         <br /><span className="text-slate-400">•</span> <strong className="text-slate-700 dark:text-slate-300">Hours View:</strong> Absolute time logged per client account.
                                         <br /><span className="text-slate-400">•</span> <strong className="text-slate-700 dark:text-slate-300">Percentage View:</strong> Proportional effort breakdown to identify overall allocation balances.
-                                        <br /><span className="text-slate-400">•</span> <strong className="text-slate-700 dark:text-slate-300">Salary cost mapping:</strong> Automatically pro-rates employee base salaries based on exit/joining dates and distributes the costs directly to the client accounts based on efforts.
+                                        <br /><span className="text-slate-400">•</span> <strong className="text-slate-700 dark:text-slate-300">Salary cost mapping:</strong> Automatically pro-rates team base salaries based on exit/joining dates and distributes the costs directly to the client accounts based on efforts.
                                     </p>
                                 </div>
                             </div>

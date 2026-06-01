@@ -41,7 +41,7 @@ import {
     MessageSquare
 } from 'lucide-react';
 
-export default function EmployeeDashboard() {
+export default function TeamDashboard() {
     const { user, logout } = useAuth();
     const navigate = useNavigate();
 
@@ -51,7 +51,7 @@ export default function EmployeeDashboard() {
     
     // Tasks State
     const [tasks, setTasks] = useState(() => {
-        const saved = localStorage.getItem('anexar_employee_tasks');
+        const saved = localStorage.getItem('anexar_team_tasks');
         if (saved) {
             try { return JSON.parse(saved); } catch (e) { console.error(e); }
         }
@@ -59,13 +59,13 @@ export default function EmployeeDashboard() {
             { id: 1, title: 'Verify Google OAuth Redirection', status: 'Completed', priority: 'High', due: 'Today' },
             { id: 2, title: 'Build Client Portal Sync Engine', status: 'Completed', priority: 'Medium', due: 'Yesterday' },
             { id: 3, title: 'Setup Vercel Deployment Scripts', status: 'Pending', priority: 'High', due: 'Tomorrow' },
-            { id: 4, title: 'Design Employee Workspace Shell', status: 'In Progress', priority: 'Low', due: 'In 3 days' }
+            { id: 4, title: 'Design Team Workspace Shell', status: 'In Progress', priority: 'Low', due: 'In 3 days' }
         ];
     });
 
     // Time Logs State
     const [logs, setLogs] = useState(() => {
-        const saved = localStorage.getItem('anexar_employee_logs');
+        const saved = localStorage.getItem('anexar_team_logs');
         if (saved) {
             try { return JSON.parse(saved); } catch (e) { console.error(e); }
         }
@@ -110,11 +110,11 @@ export default function EmployeeDashboard() {
     // PERSISTENCE EFFECTS
     // ----------------------------------------------------
     useEffect(() => {
-        localStorage.setItem('anexar_employee_tasks', JSON.stringify(tasks));
+        localStorage.setItem('anexar_team_tasks', JSON.stringify(tasks));
     }, [tasks]);
 
     useEffect(() => {
-        localStorage.setItem('anexar_employee_logs', JSON.stringify(logs));
+        localStorage.setItem('anexar_team_logs', JSON.stringify(logs));
     }, [logs]);
 
     useEffect(() => {
@@ -598,7 +598,7 @@ export default function EmployeeDashboard() {
                                 <div className="flex items-center justify-between mb-4 pb-3 border-b border-brand-border/20">
                                     <div className="flex items-center gap-2">
                                         <ShieldAlert className={`${simulatedCrisis ? 'text-rose-600 animate-bounce' : 'text-emerald-500'}`} size={20} />
-                                        <h3 className="font-extrabold text-md text-brand-charcoal dark:text-white">Crisis Predictor</h3>
+                                        <h3 className="font-extrabold text-md text-brand-charcoal dark:text-white">Crisis Tracker</h3>
                                     </div>
                                     <span className={`text-4xs font-extrabold px-2 py-0.5 rounded-full uppercase tracking-wider ${
                                         simulatedCrisis ? 'bg-rose-50 text-rose-600 border border-rose-100 animate-pulse' : 'bg-emerald-50 text-emerald-600 border border-emerald-100'
