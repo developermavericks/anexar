@@ -1,0 +1,1210 @@
+{
+  "headers": [
+    "S. No.",
+    "Date",
+    "Publication",
+    "Spokesperson",
+    "Division",
+    "Headline",
+    "Category"
+  ],
+  "rows": [
+    {
+      "S. No.": "Authored Articles",
+      "Date": "",
+      "Publication": "",
+      "Spokesperson": "",
+      "Division": "",
+      "Headline": "",
+      "Category": ""
+    },
+    {
+      "S. No.": 1,
+      "Date": "10th April, 2026",
+      "Publication": "Pharmabiz",
+      "Spokesperson": "Dheeraj Chaudhri, Head of Endoscopy Systems Division, FUJIFILM India",
+      "Division": "Endoscopy",
+      "Headline": "AI integration in endoscopy will improve detection of early-stage cancer markers: Expert",
+      "Category": "A"
+    },
+    {
+      "S. No.": 2,
+      "Date": "20th April, 2026",
+      "Publication": "Print3",
+      "Spokesperson": "Mr. Priyatosh Kumar, Associate Director and Head of Graphic Communication & Device Technology, FUJIFILM India",
+      "Division": "Graphic Communications and Device Technology Solutions",
+      "Headline": "The Smart Print Revolution: How Intelligent Devices Are Redefining the Future of Workplace Productivity?",
+      "Category": "A"
+    },
+    {
+      "S. No.": 3,
+      "Date": "April 2026",
+      "Publication": "Elets eHealth Magazine",
+      "Spokesperson": "Shunsuke Honda, Business Advisor, Media Systems Division, FUJIFILM India",
+      "Division": "Medical Devices",
+      "Headline": "The Comprehensive Approach to Women's Health Imaging",
+      "Category": "A"
+    },
+    {
+      "S. No.": "Industry Stories",
+      "Date": "",
+      "Publication": "",
+      "Spokesperson": "",
+      "Division": "",
+      "Headline": "",
+      "Category": ""
+    },
+    {
+      "S. No.": 4,
+      "Date": "27th April, 2026",
+      "Publication": "Impact",
+      "Spokesperson": "Arun Babu, Associate Director, Imaging Solutions Division, FUJIFILM India",
+      "Division": "EID and Photo Imaging",
+      "Headline": "Who Really Makes Money?",
+      "Category": "A"
+    },
+    {
+      "S. No.": "Product Reviews",
+      "Date": "",
+      "Publication": "",
+      "Spokesperson": "",
+      "Division": "",
+      "Headline": "",
+      "Category": ""
+    },
+    {
+      "S. No.": 5,
+      "Date": "11th April, 2026",
+      "Publication": "NDTV",
+      "Spokesperson": "",
+      "Division": "Instax",
+      "Headline": "Fujifilm Instax Mini 13 Review: Worth It or Just Nostalgia?",
+      "Category": "A"
+    },
+    {
+      "S. No.": 6,
+      "Date": "15th April, 2026",
+      "Publication": "Smart Photography",
+      "Spokesperson": "",
+      "Division": "EID and Photo Imaging",
+      "Headline": "Fujifilm GFX 100 RF- Photographer’s Delight",
+      "Category": "A"
+    },
+    {
+      "S. No.": 7,
+      "Date": "April, 2026",
+      "Publication": "Smart Photography (Magazine)",
+      "Spokesperson": "",
+      "Division": "EID and Photo Imaging",
+      "Headline": "Fujifilm GFX 100 RF- Photographer’s Delight:",
+      "Category": "A"
+    },
+    {
+      "S. No.": 8,
+      "Date": "17th April, 2026",
+      "Publication": "Business Standard",
+      "Spokesperson": "",
+      "Division": "Instax",
+      "Headline": "Instax Mini 13 review: Playful pick that captures, prints real moments",
+      "Category": "A"
+    },
+    {
+      "S. No.": 9,
+      "Date": "20th April, 2026",
+      "Publication": "iDiva",
+      "Spokesperson": "",
+      "Division": "Instax",
+      "Headline": "Instax Mini 13 Review: Imperfect Shots, Perfect Nostalgic Vibes",
+      "Category": "A"
+    },
+    {
+      "S. No.": 10,
+      "Date": "20th April, 2026",
+      "Publication": "MensXP",
+      "Spokesperson": "",
+      "Division": "Instax",
+      "Headline": "Instax Mini 13 Review: Imperfect Shots, Perfect Vibes",
+      "Category": "A"
+    },
+    {
+      "S. No.": 11,
+      "Date": "20th April, 2026",
+      "Publication": "Daily Hunt",
+      "Spokesperson": "",
+      "Division": "Instax",
+      "Headline": "Instax Mini 13 Review: Imperfect Shots, Perfect Nostalgic Vibes",
+      "Category": "A"
+    },
+    {
+      "S. No.": 12,
+      "Date": "23rd April, 2026",
+      "Publication": "Times Now",
+      "Spokesperson": "",
+      "Division": "Instax",
+      "Headline": "Instax Mini 13 Review: A Fun Instant Camera That Keeps Things Simple | Times Now",
+      "Category": "A"
+    },
+    {
+      "S. No.": 13,
+      "Date": "24th April, 2026",
+      "Publication": "Indulge Express (Print)",
+      "Spokesperson": "",
+      "Division": "Instax",
+      "Headline": "Technology/gizmos - Gadget Review: Instax mini 13",
+      "Category": "A"
+    },
+    {
+      "S. No.": 14,
+      "Date": "25th April, 2026",
+      "Publication": "The Morning Standard",
+      "Spokesperson": "",
+      "Division": "Instax",
+      "Headline": "Gadget review: Instax Mini 13",
+      "Category": "A"
+    },
+    {
+      "S. No.": 15,
+      "Date": "26th April, 2026",
+      "Publication": "Financial Express (Online)",
+      "Spokesperson": "",
+      "Division": "Instax",
+      "Headline": "Gadget review: Instax mini 13 keeps photography simple and playful",
+      "Category": "A"
+    },
+    {
+      "S. No.": 16,
+      "Date": "27th April, 2026",
+      "Publication": "Financial Express (Print)",
+      "Spokesperson": "",
+      "Division": "Instax",
+      "Headline": "Instant joy in your hands - INSTAX MINI 13 MAKES EVERY SHOT EASY",
+      "Category": "A"
+    },
+    {
+      "S. No.": 17,
+      "Date": "27th April, 2026",
+      "Publication": "Digit",
+      "Spokesperson": "",
+      "Division": "Instax",
+      "Headline": "Fujifilm Instax Mini 13 review: Why this instant camera feels more special than any smartphone",
+      "Category": "A"
+    },
+    {
+      "S. No.": 18,
+      "Date": "27th April, 2026",
+      "Publication": "Gizbot",
+      "Spokesperson": "",
+      "Division": "Instax",
+      "Headline": "Fujifilm Instax Mini 13 Review: The Joy of Instant Photography Lives On",
+      "Category": "A"
+    },
+    {
+      "S. No.": 19,
+      "Date": "28th April 2026",
+      "Publication": "The Economic Times Digital",
+      "Spokesperson": "",
+      "Division": "Instax",
+      "Headline": "Fujifilm Instax Mini Evo Hands On | TechPulse",
+      "Category": "A"
+    },
+    {
+      "S. No.": 20,
+      "Date": "29th April, 2026",
+      "Publication": "Financial Express (Online)",
+      "Spokesperson": "",
+      "Division": "Instax",
+      "Headline": "I took a Fujifilm Instax Mini 13 instant camera to a party: Here’s my review",
+      "Category": "A"
+    },
+    {
+      "S. No.": "Listicles/Product Placements",
+      "Date": "",
+      "Publication": "",
+      "Spokesperson": "",
+      "Division": "",
+      "Headline": "",
+      "Category": ""
+    },
+    {
+      "S. No.": 21,
+      "Date": "7th April, 2026",
+      "Publication": "Her Zindagi",
+      "Spokesperson": "",
+      "Division": "EID and Photo Imaging",
+      "Headline": "Why Mirrorless Cameras Are Becoming the First Choice for New Creators?",
+      "Category": "A"
+    },
+    {
+      "S. No.": 22,
+      "Date": "7th April, 2026",
+      "Publication": "Zoom Bangla News",
+      "Spokesperson": "",
+      "Division": "EID and Photo Imaging",
+      "Headline": "Fujifilm Weighs 30MP Sensor Direction as X-H Series Future Comes Into Focus",
+      "Category": "A"
+    },
+    {
+      "S. No.": 23,
+      "Date": "7th April, 2026",
+      "Publication": "Esquire India",
+      "Spokesperson": "",
+      "Division": "Instax",
+      "Headline": "Best Travel Gifts For Men",
+      "Category": "A"
+    },
+    {
+      "S. No.": 24,
+      "Date": "8th April, 2026",
+      "Publication": "Analytics Insight",
+      "Spokesperson": "",
+      "Division": "EID and Photo Imaging",
+      "Headline": "Best Rangefinder Cameras to Buy in 2026",
+      "Category": "A"
+    },
+    {
+      "S. No.": 25,
+      "Date": "8th April, 2026",
+      "Publication": "Bold Outline",
+      "Spokesperson": "",
+      "Division": "Instax",
+      "Headline": "Packing Light, Living Loud: 6 Things Every Stylish Traveller Swears By",
+      "Category": "B"
+    },
+    {
+      "S. No.": 26,
+      "Date": "15th April, 2026",
+      "Publication": "Her Zindagi",
+      "Spokesperson": "",
+      "Division": "EID and Photo Imaging",
+      "Headline": "Is It Worth Switching to a Mirrorless Camera in 2026 for Long-Term Use?",
+      "Category": "A"
+    },
+    {
+      "S. No.": 27,
+      "Date": "16th April, 2026",
+      "Publication": "Hindustan Times",
+      "Spokesperson": "",
+      "Division": "Instax",
+      "Headline": "Stop leaving memories on your phone these instant cameras from Polaroid Fujifilm and more bring them to life",
+      "Category": "A"
+    },
+    {
+      "S. No.": 28,
+      "Date": "April, 2026",
+      "Publication": "Smart Photography (Magazine)",
+      "Spokesperson": "",
+      "Division": "EID and Photo Imaging",
+      "Headline": "BEST MEDIUM FORMAT CAMERA",
+      "Category": "A"
+    },
+    {
+      "S. No.": 29,
+      "Date": "15th April, 2026",
+      "Publication": "Hauterrfly",
+      "Spokesperson": "",
+      "Division": "Instax",
+      "Headline": "Hautelist: Vintage Camera, Cotton Kurtis, And More Accessories You Need For A Pinterest Summer",
+      "Category": "B"
+    },
+    {
+      "S. No.": 30,
+      "Date": "17th April, 2026",
+      "Publication": "Her Zindagi",
+      "Spokesperson": "",
+      "Division": "EID and Photo Imaging",
+      "Headline": "5 Fujifilm Cameras That Focus More on Experience Than Just Specs on Paper",
+      "Category": "A"
+    },
+    {
+      "S. No.": 31,
+      "Date": "20th April, 2026",
+      "Publication": "Her Zindagi",
+      "Spokesperson": "",
+      "Division": "EID and Photo Imaging",
+      "Headline": "5 Entry-Level DSLR Cameras That Offer Enough Features for Most Creators Without Upgrading Early",
+      "Category": "A"
+    },
+    {
+      "S. No.": 32,
+      "Date": "20th April, 2026",
+      "Publication": "Analytics Insight",
+      "Spokesperson": "",
+      "Division": "EID and Photo Imaging",
+      "Headline": "Best Cameras with Film Simulation Modes: 2026 Guide",
+      "Category": "A"
+    },
+    {
+      "S. No.": 33,
+      "Date": "21st April, 2026",
+      "Publication": "Harper's Bazaar",
+      "Spokesperson": "",
+      "Division": "Instax",
+      "Headline": "It-girl tech to help you navigate the Indian summer:",
+      "Category": "A"
+    },
+    {
+      "S. No.": 34,
+      "Date": "21st April, 2026",
+      "Publication": "Her Zindagi",
+      "Spokesperson": "",
+      "Division": "EID and Photo Imaging",
+      "Headline": "These 5 Mirrorless Full Frame Cameras Are Quietly Replacing DSLRs for Everyday Shooting",
+      "Category": "A"
+    },
+    {
+      "S. No.": 35,
+      "Date": "23rd April, 2026",
+      "Publication": "Apna Bazaar",
+      "Spokesperson": "",
+      "Division": "EID and Photo Imaging",
+      "Headline": "Amazon Shutterbug Sale: This camera is equipped with top-class features, a wide range is available, photography will be easy.",
+      "Category": "B"
+    },
+    {
+      "S. No.": 36,
+      "Date": "April, 2026",
+      "Publication": "Smart Photography (Magazine)",
+      "Spokesperson": "",
+      "Division": "EID and Photo Imaging",
+      "Headline": "Did you know? Here's a list of the top 10 best selling cameras in Japan for the month of February 2026.",
+      "Category": "A"
+    },
+    {
+      "S. No.": 37,
+      "Date": "April, 2026",
+      "Publication": "T3 (Magazine)",
+      "Spokesperson": "",
+      "Division": "Instax",
+      "Headline": "Ex-Stream Equipments: FUJIFILM INSTAX MINI EVO",
+      "Category": "A"
+    },
+    {
+      "S. No.": 38,
+      "Date": "29th April 2026",
+      "Publication": "Her Zindagi",
+      "Spokesperson": "",
+      "Division": "EID and Photo Imaging",
+      "Headline": "10 Mirrorless Cameras from Sony, Canon, Nikon and More That Handle Wildlife Photography Better",
+      "Category": "A"
+    },
+    {
+      "S. No.": 39,
+      "Date": "30th April 2026",
+      "Publication": "Indulge Express",
+      "Spokesperson": "",
+      "Division": "Instax",
+      "Headline": "Gadgets of the week: Instax Mini 13",
+      "Category": "A"
+    },
+    {
+      "S. No.": 40,
+      "Date": "30th April 2026",
+      "Publication": "Analytics Insight",
+      "Spokesperson": "",
+      "Division": "EID and Photo Imaging",
+      "Headline": "Best Digital Camera for Aesthetic Photos in 2026",
+      "Category": "A"
+    },
+    {
+      "S. No.": "Press Release",
+      "Date": "",
+      "Publication": "",
+      "Spokesperson": "",
+      "Division": "",
+      "Headline": "",
+      "Category": ""
+    },
+    {
+      "S. No.": 41,
+      "Date": "1st April 2026",
+      "Publication": "Indian Printer & Publisher",
+      "Spokesperson": "",
+      "Division": "Graphic Communications and Device Technology Solutions",
+      "Headline": "Fujifilm India installs Revoria SC285S at 3 Guys, Kolkata",
+      "Category": "A"
+    },
+    {
+      "S. No.": 42,
+      "Date": "1st April 2026",
+      "Publication": "Imaging Solution",
+      "Spokesperson": "",
+      "Division": "Graphic Communications and Device Technology Solutions",
+      "Headline": "FUJIFILM India installs Revoria SC285S at 3 Guys, Kolkata        ",
+      "Category": "A"
+    },
+    {
+      "S. No.": 43,
+      "Date": "2nd April 2026",
+      "Publication": "Screen Print India",
+      "Spokesperson": "",
+      "Division": "Graphic Communications and Device Technology Solutions",
+      "Headline": "FUJIFILM India installs Revoria SC285S at 3 Guys, Kolkata",
+      "Category": "A"
+    },
+    {
+      "S. No.": 44,
+      "Date": "8th April 2026",
+      "Publication": "PRESSIdeas",
+      "Spokesperson": "",
+      "Division": "Graphic Communications and Device Technology Solutions",
+      "Headline": "FUJIFILM installs advanced Next Gen Revoria EC2100s at Sushma Printers",
+      "Category": "A"
+    },
+    {
+      "S. No.": 45,
+      "Date": "8th April, 2026",
+      "Publication": "The Times of India",
+      "Spokesperson": "",
+      "Division": "EID and Photo Imaging",
+      "Headline": "Fujifilm X-T30 III launched in India with 6.2K video, film simulation dial at Rs 1,02,999",
+      "Category": "A"
+    },
+    {
+      "S. No.": 46,
+      "Date": "8th April, 2026",
+      "Publication": "Moneycontrol",
+      "Spokesperson": "",
+      "Division": "EID and Photo Imaging",
+      "Headline": "Fujifilm X-T30 ||| launched in India with 26.1MP sensor, 6.2K video support: Price starts at Rs 102,999",
+      "Category": "A"
+    },
+    {
+      "S. No.": 47,
+      "Date": "7th April, 2026",
+      "Publication": "Republic World",
+      "Spokesperson": "",
+      "Division": "EID and Photo Imaging",
+      "Headline": "Fujifilm X-T30 III Compact Hybrid Camera Launched in India",
+      "Category": "A"
+    },
+    {
+      "S. No.": 48,
+      "Date": "7th April, 2026",
+      "Publication": "Gadgets 360",
+      "Spokesperson": "",
+      "Division": "EID and Photo Imaging",
+      "Headline": "Fujifilm XT-30 III Mirrorless Digital Camera Launched in India With X-Trans CMOS 4 Sensor: Price, Features",
+      "Category": "A"
+    },
+    {
+      "S. No.": 49,
+      "Date": "8th April, 2026",
+      "Publication": "Gadgets 360 Hindi",
+      "Spokesperson": "",
+      "Division": "EID and Photo Imaging",
+      "Headline": "Fujifilm X-T30 III f'डिजटल कैमरा लॉÛच, 26.1MP स\"सर के साथ गजब फȧचस[, जान\" कȧमत",
+      "Category": "A"
+    },
+    {
+      "S. No.": 50,
+      "Date": "7th April, 2026",
+      "Publication": "Digit",
+      "Spokesperson": "",
+      "Division": "EID and Photo Imaging",
+      "Headline": "Fujifilm X-T30 III launched in India: Check out features and pricing",
+      "Category": "A"
+    },
+    {
+      "S. No.": 51,
+      "Date": "8th April, 2026",
+      "Publication": "Exhibit",
+      "Spokesperson": "",
+      "Division": "EID and Photo Imaging",
+      "Headline": " FUJIFILM Launched the X-T30 III Hybrid Camera for Creators",
+      "Category": "A"
+    },
+    {
+      "S. No.": 52,
+      "Date": "7th April, 2026",
+      "Publication": "BW BusinessWorld",
+      "Spokesperson": "",
+      "Division": "EID and Photo Imaging",
+      "Headline": "Is Fujifilm X-T30 III the Compact Hybrid Camera That India's Creators Have Been Waiting For?",
+      "Category": "A"
+    },
+    {
+      "S. No.": 53,
+      "Date": "12th April, 2026",
+      "Publication": "Deccan Herald",
+      "Spokesperson": "",
+      "Division": "EID and Photo Imaging",
+      "Headline": "Gadgets Weekly: Lenovo's new Yoga, IdeaPad series PCs, Logitech G PRO X2 Superstrike mouse and more",
+      "Category": "A"
+    },
+    {
+      "S. No.": 54,
+      "Date": "7th April, 2026",
+      "Publication": "FoneArena",
+      "Spokesperson": "",
+      "Division": "EID and Photo Imaging",
+      "Headline": "FUJIFILM X-T30 III hybrid mirrorless camera launched in India",
+      "Category": "A"
+    },
+    {
+      "S. No.": 55,
+      "Date": "8th April, 2026",
+      "Publication": "Smartprix",
+      "Spokesperson": "",
+      "Division": "EID and Photo Imaging",
+      "Headline": "FUJIFILM X-T30 III Launched in India",
+      "Category": "B"
+    },
+    {
+      "S. No.": 56,
+      "Date": "7th April, 2026",
+      "Publication": "Gizmochina",
+      "Spokesperson": "",
+      "Division": "EID and Photo Imaging",
+      "Headline": "Fujifilm X-T30 III launches as a compact hybrid camera built for creators, brings 6.2K video, AI autofocus",
+      "Category": "A"
+    },
+    {
+      "S. No.": 57,
+      "Date": "8th April, 2026",
+      "Publication": "Gadget Bridge",
+      "Spokesperson": "",
+      "Division": "EID and Photo Imaging",
+      "Headline": "Fujifilm X-T30 III hybrid camera launched in India",
+      "Category": "A"
+    },
+    {
+      "S. No.": 58,
+      "Date": "7th April, 2026",
+      "Publication": "DeviceNext",
+      "Spokesperson": "",
+      "Division": "EID and Photo Imaging",
+      "Headline": "Fujifilm Unveils X-T30 III with Advanced Hybrid Imaging, AI Autofocus, and New Film Simulation Dial",
+      "Category": "B"
+    },
+    {
+      "S. No.": 59,
+      "Date": "7th April, 2026",
+      "Publication": "Digital Terminal",
+      "Spokesperson": "",
+      "Division": "EID and Photo Imaging",
+      "Headline": "Fujifilm India Unveils FUJIFILM X-T30 III with Advanced Hybrid Photo-Video Capabilities",
+      "Category": "A"
+    },
+    {
+      "S. No.": 60,
+      "Date": "7th April, 2026",
+      "Publication": "PC Tablet",
+      "Spokesperson": "",
+      "Division": "EID and Photo Imaging",
+      "Headline": "Fujifilm Launches X-T30 III Mirrorless Camera in India at Rs 102999",
+      "Category": "B"
+    },
+    {
+      "S. No.": 61,
+      "Date": "7th April, 2026",
+      "Publication": "Mobility India",
+      "Spokesperson": "",
+      "Division": "EID and Photo Imaging",
+      "Headline": "FUJIFILM India Launches the X-T30 III – The Ultimate Compact Hybrid Camera for Photographers and Serious Creators",
+      "Category": "A"
+    },
+    {
+      "S. No.": 62,
+      "Date": "7th April, 2026",
+      "Publication": "Gizbot",
+      "Spokesperson": "",
+      "Division": "EID and Photo Imaging",
+      "Headline": "Fujifilm X-T30 III Launched In India: A Compact Hybrid Camera For Creators",
+      "Category": "A"
+    },
+    {
+      "S. No.": 63,
+      "Date": "7th April, 2026",
+      "Publication": "TechnoSports",
+      "Spokesperson": "",
+      "Division": "EID and Photo Imaging",
+      "Headline": "FUJIFILM X-T30 III Launched in India at ₹1,02,999 — One Camera to Rule Stills, Video, and Everything In Between",
+      "Category": "A"
+    },
+    {
+      "S. No.": 64,
+      "Date": "8th April, 2026",
+      "Publication": "Telecom Today",
+      "Spokesperson": "",
+      "Division": "EID and Photo Imaging",
+      "Headline": "Fujifilm India Launches FUJIFILM X-T30 III with 6.2K Video to Power Hybrid Content Creation",
+      "Category": "C"
+    },
+    {
+      "S. No.": 65,
+      "Date": "8th April, 2026",
+      "Publication": "Mobigyaan",
+      "Spokesperson": "",
+      "Division": "EID and Photo Imaging",
+      "Headline": "FUJIFILM X-T30 III hybrid mirrorless camera launched in India featuring 6.2K video, AI autofocus, and more",
+      "Category": "B"
+    },
+    {
+      "S. No.": 66,
+      "Date": "7th April, 2026",
+      "Publication": "The Techstreet",
+      "Spokesperson": "",
+      "Division": "EID and Photo Imaging",
+      "Headline": "FUJIFILM India Launches the X-T30 III: The Ultimate Compact Hybrid Camera for Photographers and Serious Creators",
+      "Category": "C"
+    },
+    {
+      "S. No.": 67,
+      "Date": "7th April, 2026",
+      "Publication": "t2 Online",
+      "Spokesperson": "",
+      "Division": "EID and Photo Imaging",
+      "Headline": "Fujifilm introduces X-T30 III in India with a stronger focus on hybrid shooting",
+      "Category": "A"
+    },
+    {
+      "S. No.": 68,
+      "Date": "8th April, 2026",
+      "Publication": "Dainik Bhaskar Hindi",
+      "Spokesperson": "",
+      "Division": "EID and Photo Imaging",
+      "Headline": "Fujifilm XT-30 III f'मररलेस f'डिजटल कैमरा भारत म\" X-Trans CMOS 4\r\nस\"सर के साथ हुआ लॉÛच, जाǓनए कȧमत और फȧचस[",
+      "Category": "A"
+    },
+    {
+      "S. No.": 69,
+      "Date": "8th April, 2026",
+      "Publication": "Zee News Hindi",
+      "Spokesperson": "",
+      "Division": "EID and Photo Imaging",
+      "Headline": "Fujifilm ने भारत म\" लॉÛच  कͩया नया हाइǒĦड कैमरा X-T30 III,  चͬf'ड़या हो या Ĝोन, पलक झपकते हȣ कर लेगा फोकस! कȧमत",
+      "Category": "A"
+    },
+    {
+      "S. No.": 70,
+      "Date": "8th April, 2026",
+      "Publication": "Lokraag",
+      "Spokesperson": "",
+      "Division": "EID and Photo Imaging",
+      "Headline": "Fujifilm का नया कैमरा आया, फोटो-वीf'डयो दोनɉ म\" धमाका",
+      "Category": "B"
+    },
+    {
+      "S. No.": 71,
+      "Date": "7th April, 2026",
+      "Publication": "IT Voice",
+      "Spokesperson": "",
+      "Division": "EID and Photo Imaging",
+      "Headline": "FUJIFILM India Launches the X-T30 III: The Ultimate Compact Hybrid Camera for Photographers and Serious Creators",
+      "Category": "A"
+    },
+    {
+      "S. No.": 72,
+      "Date": "7th April, 2026",
+      "Publication": "Smart Photography",
+      "Spokesperson": "",
+      "Division": "EID and Photo Imaging",
+      "Headline": "FUJIFILM India Unmasks the X-T30 III",
+      "Category": "A"
+    },
+    {
+      "S. No.": 73,
+      "Date": "7th April, 2026",
+      "Publication": "T3",
+      "Spokesperson": "",
+      "Division": "EID and Photo Imaging",
+      "Headline": "FUJIFILM India Unveils the X-T30 III",
+      "Category": "A"
+    },
+    {
+      "S. No.": 74,
+      "Date": "7th April, 2026",
+      "Publication": "Tech Vorm",
+      "Spokesperson": "",
+      "Division": "EID and Photo Imaging",
+      "Headline": "FUJIFILM X-T30 III Hybrid Camera Launched in India",
+      "Category": ""
+    },
+    {
+      "S. No.": 75,
+      "Date": "8th April, 2026",
+      "Publication": "SME Street",
+      "Spokesperson": "",
+      "Division": "EID and Photo Imaging",
+      "Headline": "FUJIFILM Introduces X-T30 III Hybrid Camera",
+      "Category": "B"
+    },
+    {
+      "S. No.": 76,
+      "Date": "7th April, 2026",
+      "Publication": "Daily Hunt",
+      "Spokesperson": "",
+      "Division": "EID and Photo Imaging",
+      "Headline": "Fujifilm X-T30 III: A Compact Hybrid Camera for Creators with Advanced Video Features",
+      "Category": "A"
+    },
+    {
+      "S. No.": 77,
+      "Date": "8th April, 2026",
+      "Publication": "Tech Ticker",
+      "Spokesperson": "",
+      "Division": "EID and Photo Imaging",
+      "Headline": "FUJIFILM India Announces X-T30 III: specifications, features, and pricing",
+      "Category": "C"
+    },
+    {
+      "S. No.": 78,
+      "Date": "7th April, 2026",
+      "Publication": "IT Matters",
+      "Spokesperson": "",
+      "Division": "EID and Photo Imaging",
+      "Headline": "Fujifilm X-T30 III Launches in India With 6.2K Video and AI Autofocus",
+      "Category": "C"
+    },
+    {
+      "S. No.": 79,
+      "Date": "7th April, 2026",
+      "Publication": "Comparos",
+      "Spokesperson": "",
+      "Division": "EID and Photo Imaging",
+      "Headline": "Fujifilm X-T30 III Launched in India: Price, Features, and Specifications",
+      "Category": "C"
+    },
+    {
+      "S. No.": 80,
+      "Date": "13th April, 2026",
+      "Publication": "Web News Wire",
+      "Spokesperson": "",
+      "Division": "EID and Photo Imaging",
+      "Headline": "FUJIFILM India Launches the X-T30 III: The Ultimate Compact Hybrid Camera for Photographers and Serious Creators",
+      "Category": "C"
+    },
+    {
+      "S. No.": 81,
+      "Date": "13th April, 2026",
+      "Publication": "Business News This Week",
+      "Spokesperson": "",
+      "Division": "EID and Photo Imaging",
+      "Headline": "FUJIFILM India Launches the X-T30 III: The Ultimate Compact Hybrid Camera for Photographers and Serious Creators",
+      "Category": "C"
+    },
+    {
+      "S. No.": 82,
+      "Date": "13th April, 2026",
+      "Publication": "Business News for Profit",
+      "Spokesperson": "",
+      "Division": "EID and Photo Imaging",
+      "Headline": "FUJIFILM India Launches the X-T30 III: The Ultimate Compact Hybrid Camera for Photographers and Serious Creators",
+      "Category": "C"
+    },
+    {
+      "S. No.": 83,
+      "Date": "13th April, 2026",
+      "Publication": "Business Micro",
+      "Spokesperson": "",
+      "Division": "EID and Photo Imaging",
+      "Headline": "FUJIFILM India Launches the X-T30 III: The Ultimate Compact Hybrid Camera for Photographers and Serious Creators",
+      "Category": "C"
+    },
+    {
+      "S. No.": 84,
+      "Date": "13th April, 2026",
+      "Publication": "Online News9",
+      "Spokesperson": "",
+      "Division": "EID and Photo Imaging",
+      "Headline": "FUJIFILM India Launches the X-T30 III: The Ultimate Compact Hybrid Camera for Photographers and Serious Creators",
+      "Category": "C"
+    },
+    {
+      "S. No.": 85,
+      "Date": "13th April, 2026",
+      "Publication": "Biz RapidX",
+      "Spokesperson": "",
+      "Division": "EID and Photo Imaging",
+      "Headline": "FUJIFILM India Launches the X-T30 III: The Ultimate Compact Hybrid Camera for Photographers and Serious Creators",
+      "Category": "C"
+    },
+    {
+      "S. No.": 86,
+      "Date": "13th April, 2026",
+      "Publication": "PNI News",
+      "Spokesperson": "",
+      "Division": "EID and Photo Imaging",
+      "Headline": "FUJIFILM India Launches the X-T30 III The Ultimate Compact HybridCamera for Photographers and Serious Creators",
+      "Category": "C"
+    },
+    {
+      "S. No.": 87,
+      "Date": "13th April, 2026",
+      "Publication": "Media Infoline",
+      "Spokesperson": "",
+      "Division": "EID and Photo Imaging",
+      "Headline": "FUJIFILM India Launches the X-T30 III: The Ultimate Compact Hybrid Camera for Photographers",
+      "Category": "B"
+    },
+    {
+      "S. No.": 88,
+      "Date": "13th April, 2026",
+      "Publication": "Technuter",
+      "Spokesperson": "",
+      "Division": "EID and Photo Imaging",
+      "Headline": "FUJIFILM India Launches the X-T30 III",
+      "Category": "B"
+    },
+    {
+      "S. No.": 89,
+      "Date": "13th April, 2026",
+      "Publication": "Passionate in Marketing",
+      "Spokesperson": "",
+      "Division": "EID and Photo Imaging",
+      "Headline": "FUJIFILM India Launches the X-T30 III: The Ultimate Compact Hybrid",
+      "Category": "B"
+    },
+    {
+      "S. No.": 90,
+      "Date": "13th April, 2026",
+      "Publication": "FM Live",
+      "Spokesperson": "",
+      "Division": "EID and Photo Imaging",
+      "Headline": "FUJIFILM India Launches the X-T30 III The Ultimate Compact HybridCamera for Photographers and Serious Creators",
+      "Category": "C"
+    },
+    {
+      "S. No.": 91,
+      "Date": "14th April, 2026",
+      "Publication": "Chennai Patrika",
+      "Spokesperson": "",
+      "Division": "EID and Photo Imaging",
+      "Headline": "FUJIFILM India Launches the X-T30 III: The Ultimate Compact Hybrid Camera for Photographers and Serious Creators",
+      "Category": "C"
+    },
+    {
+      "S. No.": 92,
+      "Date": "27th April, 2026",
+      "Publication": "PrintWeek",
+      "Spokesperson": "",
+      "Division": "Graphic Communications and Device Technology Solutions",
+      "Headline": "Fujifilm India showcases click-to-print technology",
+      "Category": "A"
+    },
+    {
+      "S. No.": 93,
+      "Date": "27th April, 2026",
+      "Publication": "PrintWeek",
+      "Spokesperson": "",
+      "Division": "Graphic Communications and Device Technology Solutions",
+      "Headline": "Insight Communications showcases Revoria with specialty colour",
+      "Category": "A"
+    },
+    {
+      "S. No.": "Social Media Coverage",
+      "Date": "",
+      "Publication": "",
+      "Spokesperson": "",
+      "Division": "",
+      "Headline": "",
+      "Category": ""
+    },
+    {
+      "S. No.": 94,
+      "Date": "3rd April 2026",
+      "Publication": "Imaging Solution (Youtube)",
+      "Spokesperson": "",
+      "Division": "Graphic Communications and Device Technology Solutions",
+      "Headline": "Headlines of Imaging Solution’s Top 10 News of the Week",
+      "Category": "A"
+    },
+    {
+      "S. No.": 95,
+      "Date": "1st April 2026",
+      "Publication": "Indian Printer & Publisher (X)",
+      "Spokesperson": "",
+      "Division": "Graphic Communications and Device Technology Solutions",
+      "Headline": "Fujifilm India has installed its advanced Next Gen Fujifilm Revoria SC285S 50color machine at 3 Guys, Kolkata.",
+      "Category": "A"
+    },
+    {
+      "S. No.": 96,
+      "Date": "1st April 2026",
+      "Publication": "Indian Printer & Publisher (LinkedIn)",
+      "Spokesperson": "",
+      "Division": "Graphic Communications and Device Technology Solutions",
+      "Headline": "Fujifilm India has installed its advanced Next Gen Fujifilm Revoria SC285S 50color machine at 3 Guys, Kolkata",
+      "Category": "A"
+    },
+    {
+      "S. No.": 97,
+      "Date": "1st April 2026",
+      "Publication": "Indian Printer & Publisher (Facebook)",
+      "Spokesperson": "",
+      "Division": "Graphic Communications and Device Technology Solutions",
+      "Headline": "Fujifilm India has installed its advanced Next Gen Fujifilm Revoria SC285S 50color machine at 3 Guys, Kolkata.",
+      "Category": "A"
+    },
+    {
+      "S. No.": 98,
+      "Date": "1st April 2026",
+      "Publication": "Imaging Solution (Facebook)",
+      "Spokesperson": "",
+      "Division": "Graphic Communications and Device Technology Solutions",
+      "Headline": "FUJIFILM India installs Revoria SC285S at 3 Guys, Kolkata",
+      "Category": "A"
+    },
+    {
+      "S. No.": 99,
+      "Date": "1st April 2026",
+      "Publication": "Imaging Solution (Instagram)",
+      "Spokesperson": "",
+      "Division": "Graphic Communications and Device Technology Solutions",
+      "Headline": "#FUJIFILMIndia installs Revoria SC285S at #3Guys",
+      "Category": "A"
+    },
+    {
+      "S. No.": 100,
+      "Date": "1st April 2026",
+      "Publication": "Imaging Solution (LinkedIn)",
+      "Spokesperson": "",
+      "Division": "Graphic Communications and Device Technology Solutions",
+      "Headline": "FUJIFILM India installs Revoria SC285S at 3 Guys, Kolkata",
+      "Category": "A"
+    },
+    {
+      "S. No.": 101,
+      "Date": "7th April, 2026",
+      "Publication": "IT Voice (LinkedIn)",
+      "Spokesperson": "",
+      "Division": "EID and Photo Imaging",
+      "Headline": "FUJIFILM India Launches the X-T30 III: The Ultimate Compact Hybrid Camera for Photographers and Serious Creators",
+      "Category": "A"
+    },
+    {
+      "S. No.": 102,
+      "Date": "7th April, 2026",
+      "Publication": "Mobility India (X)",
+      "Spokesperson": "",
+      "Division": "EID and Photo Imaging",
+      "Headline": "FUJIFILM India Launches the X-T30 III – The Ultimate Compact Hybrid Camera for Photographers and Serious Creators",
+      "Category": "B"
+    },
+    {
+      "S. No.": 103,
+      "Date": "7th April, 2026",
+      "Publication": "Mobility India (LinkedIn)",
+      "Spokesperson": "",
+      "Division": "EID and Photo Imaging",
+      "Headline": "FUJIFILM India Launches the X-T30 III – The Ultimate Compact Hybrid Camera for Photographers and Serious Creators",
+      "Category": "B"
+    },
+    {
+      "S. No.": 104,
+      "Date": "7th April, 2026",
+      "Publication": "Mobility India (Instagram)",
+      "Spokesperson": "",
+      "Division": "EID and Photo Imaging",
+      "Headline": "FUJIFILM X-T30 III is a compact camera with strong performance and classic design",
+      "Category": "A"
+    },
+    {
+      "S. No.": 105,
+      "Date": "7th April, 2026",
+      "Publication": "Mobility India (Facebook)",
+      "Spokesperson": "",
+      "Division": "EID and Photo Imaging",
+      "Headline": "FUJIFILM India Launches the X-T30 III – The Ultimate Compact Hybrid Camera for Photographers and Serious Creators",
+      "Category": "A"
+    },
+    {
+      "S. No.": 106,
+      "Date": "7th April, 2026",
+      "Publication": "Gadgets 360 (X)",
+      "Spokesperson": "",
+      "Division": "EID and Photo Imaging",
+      "Headline": "Fujifilm X-T30 III has been launched in India. Here's all you need to know about it:",
+      "Category": "A"
+    },
+    {
+      "S. No.": 107,
+      "Date": "7th April, 2026",
+      "Publication": "FoneArena (Facebook)",
+      "Spokesperson": "",
+      "Division": "EID and Photo Imaging",
+      "Headline": "FUJIFILM X-T30 III hybrid mirrorless camera launched in India",
+      "Category": "A"
+    },
+    {
+      "S. No.": 108,
+      "Date": "7th April, 2026",
+      "Publication": "FoneArena (X)",
+      "Spokesperson": "",
+      "Division": "EID and Photo Imaging",
+      "Headline": "FUJIFILM X-T30 III hybrid mirrorless camera launched in India",
+      "Category": "A"
+    },
+    {
+      "S. No.": 109,
+      "Date": "7th April, 2026",
+      "Publication": "IT Matters (X)",
+      "Spokesperson": "",
+      "Division": "EID and Photo Imaging",
+      "Headline": "Fujifilm X-T30 III launches in India at Rs. 1,02,999. It brings 6.2K recording, AI subject detection, and a Film Simulation dial into a compact mirrorless body.",
+      "Category": "C"
+    },
+    {
+      "S. No.": 110,
+      "Date": "8th April, 2026",
+      "Publication": "Digital Terminal (LinkedIn)",
+      "Spokesperson": "",
+      "Division": "EID and Photo Imaging",
+      "Headline": "Fujifilm India Unveils FUJIFILM X-T30 III with Advanced Hybrid Photo-Video Capabilities",
+      "Category": "A"
+    },
+    {
+      "S. No.": 111,
+      "Date": "8th April, 2026",
+      "Publication": "Digital Terminal (X)",
+      "Spokesperson": "",
+      "Division": "EID and Photo Imaging",
+      "Headline": "Fujifilm India Unveils FUJIFILM X-T30 III with Advanced Hybrid Photo-Video Capabilities",
+      "Category": "A"
+    },
+    {
+      "S. No.": 112,
+      "Date": "8th April, 2026",
+      "Publication": "Digital Terminal (Facebook)",
+      "Spokesperson": "",
+      "Division": "EID and Photo Imaging",
+      "Headline": "Fujifilm India Unveils FUJIFILM X-T30 III with Advanced Hybrid Photo-Video Capabilities",
+      "Category": "A"
+    },
+    {
+      "S. No.": 113,
+      "Date": "8th April, 2026",
+      "Publication": "Gadget Bridge (X)",
+      "Spokesperson": "",
+      "Division": "EID and Photo Imaging",
+      "Headline": "Fujifilm X-T30 III hybrid camera launched in India",
+      "Category": "A"
+    },
+    {
+      "S. No.": 114,
+      "Date": "8th April, 2026",
+      "Publication": "Gadget Bridge (Facebook)",
+      "Spokesperson": "",
+      "Division": "EID and Photo Imaging",
+      "Headline": "Fujifilm X-T30 III hybrid camera launched in India",
+      "Category": "A"
+    },
+    {
+      "S. No.": 115,
+      "Date": "9th April, 2026",
+      "Publication": "Nicholas Sampson (Facebook)",
+      "Spokesperson": "",
+      "Division": "EID and Photo Imaging",
+      "Headline": "#Fujifilm ने भारत म\" लॉÛच  कͩया नया हाइǒĦड कैमरा X-T30 III,\r\n चͬf'ड़या हो या Ĝोन, पलक झपकते हȣ कर लेगा फोकस!",
+      "Category": "B"
+    },
+    {
+      "S. No.": 116,
+      "Date": "7th April, 2026",
+      "Publication": "Tech Updates (Facebook)",
+      "Spokesperson": "",
+      "Division": "EID and Photo Imaging",
+      "Headline": "FUJIFILM X-T30 III hybrid mirrorless camera launched in India",
+      "Category": "A"
+    },
+    {
+      "S. No.": 117,
+      "Date": "7th April, 2026",
+      "Publication": "NDTV (X)",
+      "Spokesperson": "",
+      "Division": "Instax",
+      "Headline": "The Fujifilm Instax Mini 13 is fun, lightweight, and incredibly easy to use. The catch? Film costs add up quickly",
+      "Category": "A"
+    },
+    {
+      "S. No.": 118,
+      "Date": "11th April, 2026",
+      "Publication": "NDTV (Youtube)",
+      "Spokesperson": "",
+      "Division": "Instax",
+      "Headline": "Fujifilm Instax Mini 13 Review: Worth It or Just Nostalgia?",
+      "Category": "A"
+    },
+    {
+      "S. No.": 119,
+      "Date": "7th April, 2026",
+      "Publication": "NDTV (Facebook)",
+      "Spokesperson": "",
+      "Division": "Instax",
+      "Headline": "The Fujifilm Instax Mini 13 is fun, lightweight, and incredibly easy to use. The catch? Film costs add up quickly.",
+      "Category": "A"
+    },
+    {
+      "S. No.": 120,
+      "Date": "8th April, 2026",
+      "Publication": "HT Tech (Instagram)",
+      "Spokesperson": "",
+      "Division": "Instax",
+      "Headline": "Fujifilm just launched the super cute Instax Mini 13",
+      "Category": "A"
+    },
+    {
+      "S. No.": 121,
+      "Date": "20th April, 2026",
+      "Publication": "India Today Broadcast (YouTube)",
+      "Spokesperson": "",
+      "Division": "Instax",
+      "Headline": "Instax Mini 13: Design and Features",
+      "Category": "A"
+    },
+    {
+      "S. No.": 122,
+      "Date": "20th April, 2026",
+      "Publication": "MySmartPrice (Instagram)",
+      "Spokesperson": "",
+      "Division": "Instax",
+      "Headline": "Unboxing the Instax Mini 13 feels like opening a box of memories waiting to happen.",
+      "Category": "A"
+    },
+    {
+      "S. No.": 123,
+      "Date": "20th April, 2026",
+      "Publication": "MySmartPrice (YouTube)",
+      "Spokesperson": "",
+      "Division": "Instax",
+      "Headline": "Fujifilm Instax Mini 13 Unboxing & First Look: Tiny Camera, Instant Prints!",
+      "Category": "A"
+    },
+    {
+      "S. No.": 124,
+      "Date": "21st April, 2026",
+      "Publication": "MensXP (Facebook)",
+      "Spokesperson": "",
+      "Division": "Instax",
+      "Headline": "₹70 per photo—still worth it? Here’s why the Instax Mini 13 is fun, flawed, and surprisingly addictive.",
+      "Category": "A"
+    },
+    {
+      "S. No.": 125,
+      "Date": "26th April, 2026",
+      "Publication": "Financial Express (X)",
+      "Spokesperson": "",
+      "Division": "Instax",
+      "Headline": "Gadget review: Instax mini 13 keeps photography simple and playful",
+      "Category": "A"
+    },
+    {
+      "S. No.": 126,
+      "Date": "26th April, 2026",
+      "Publication": "Financial Express (Facebook)",
+      "Spokesperson": "",
+      "Division": "Instax",
+      "Headline": "The Fujifilm Instax Mini 13 offers a fun, beginner-friendly way to capture and print instant photos, blending simplicity with nostalgic charm.",
+      "Category": "A"
+    },
+    {
+      "S. No.": 127,
+      "Date": "28th April, 2026",
+      "Publication": "The Economic Times (Instagram)",
+      "Spokesperson": "",
+      "Division": "Instax",
+      "Headline": " #Fujifilm #InstaxMiniEvo Hands On | TechPulse",
+      "Category": "A"
+    }
+  ]
+}
