@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { pressReleases as defaultPress } from '../../mock/clientData';
 import { Search, Newspaper, Calendar, User, Sparkles, Filter, AlertCircle, FileSpreadsheet, X, Eye, ArrowUpDown } from 'lucide-react';
 import { useUser } from '../../context/UserContext';
@@ -37,6 +37,27 @@ const PressTracker = () => {
         if (customClient) return customClient.client;
         return 'All';
     });
+
+    useEffect(() => {
+        const loadPressList = () => {
+            const saved = localStorage.getItem('anexar_press_releases');
+            if (saved) {
+                try { 
+                    setPressList(JSON.parse(saved)); 
+                } catch (e) { 
+                    console.error(e); 
+                }
+            }
+        };
+
+        window.addEventListener('storage', loadPressList);
+        const interval = setInterval(loadPressList, 1500);
+
+        return () => {
+            window.removeEventListener('storage', loadPressList);
+            clearInterval(interval);
+        };
+    }, []);
 
     // Modal sheet viewer state
     const [selectedExcelReport, setSelectedExcelReport] = useState(null);
