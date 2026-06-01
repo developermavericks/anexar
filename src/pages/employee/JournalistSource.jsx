@@ -22,52 +22,7 @@ import {
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 
-const INITIAL_JOURNALISTS = [
-    {
-        id: '1',
-        name: 'Sarah Jenkins',
-        role: 'Senior Technology Editor',
-        publication: 'TechCrunch',
-        category: 'Technology & Startups',
-        email: 's.jenkins@techcrunch.com',
-        phone: '+1 (555) 234-5678',
-        address: 'Silicon Valley Bureau, San Francisco, CA',
-        bio: 'Covers early-stage SaaS, AI innovations, and venture capital funding rounds across North America.'
-    },
-    {
-        id: '2',
-        name: 'David Chen',
-        role: 'Financial Correspondent',
-        publication: 'Bloomberg News',
-        category: 'Finance & Markets',
-        email: 'david.chen@bloomberg.net',
-        phone: '+1 (555) 876-5432',
-        address: 'Bloomberg Tower, New York, NY',
-        bio: 'Specializes in macroeconomic policy, central banking, currency markets, and corporate mergers.'
-    },
-    {
-        id: '3',
-        name: 'Elena Rostova',
-        role: 'Senior Business Reporter',
-        publication: 'Forbes',
-        category: 'Business & Leadership',
-        email: 'e.rostova@forbes.com',
-        phone: '+44 20 7946 0958',
-        address: 'London Office, United Kingdom',
-        bio: 'Focuses on global enterprise leaders, next-generation founders, and corporate social responsibility.'
-    },
-    {
-        id: '4',
-        name: 'Marcus Vance',
-        role: 'Features Editor',
-        publication: 'Wired',
-        category: 'AI & Tech Ethics',
-        email: 'marcus.vance@wired.com',
-        phone: '+1 (555) 432-1098',
-        address: 'SOMA District, San Francisco, CA',
-        bio: 'Writes long-form investigative reports on cybersecurity, artificial intelligence, and digital privacy policies.'
-    }
-];
+import INITIAL_JOURNALISTS from '../../data/journalists_extracted.json';
 
 export default function JournalistSource() {
     const [journalists, setJournalists] = useState([]);
