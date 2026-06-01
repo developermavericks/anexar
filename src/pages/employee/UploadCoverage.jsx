@@ -158,18 +158,40 @@ export default function UploadCoverage() {
                     return;
                 }
 
+                const range = XLSX.utils.decode_range(worksheet['!ref']);
+                const startRow = range.s.r + 1;
+                const rowsWithLinks = jsonData.map((row, i) => {
+                    const r = i + startRow;
+                    let linkVal = "";
+                    for (let C = range.s.c; C <= range.e.c; ++C) {
+                        const cellAddress = XLSX.utils.encode_cell({ r, c: C });
+                        const cell = worksheet[cellAddress];
+                        if (cell && cell.l && cell.l.Target) {
+                            linkVal = cell.l.Target;
+                            break;
+                        }
+                    }
+                    return {
+                        ...row,
+                        'Link': linkVal
+                    };
+                });
+
                 // Dynamically extract all unique headers from all rows
                 const allKeys = new Set();
-                jsonData.forEach(row => {
+                rowsWithLinks.forEach(row => {
                     Object.keys(row).forEach(key => {
                         if (key && !key.startsWith('__EMPTY')) {
                             allKeys.add(key);
                         }
                     });
                 });
+                
+                // Add 'Link' column to headers
+                allKeys.add('Link');
                 const headers = Array.from(allKeys);
 
-                setExcelRows(jsonData);
+                setExcelRows(rowsWithLinks);
                 setExcelHeaders(headers);
             } catch (error) {
                 console.error('Error parsing excel:', error);
@@ -640,11 +662,24 @@ export default function UploadCoverage() {
 
                                             return (
                                                 <tr key={rIdx} className="hover:bg-slate-50 dark:hover:bg-slate-850/40 transition-colors text-slate-600 dark:text-slate-400">
-                                                    {selectedExcelReport.headers.map((h, cIdx) => (
-                                                        <td key={cIdx} className="p-4 align-top whitespace-pre-wrap max-w-sm border-r border-slate-100 dark:border-slate-900/60 last:border-r-0">
-                                                            {row[h] !== undefined ? row[h].toString() : ''}
-                                                        </td>
-                                                    ))}
+                                                    {selectedExcelReport.headers.map((h, cIdx) => {
+                                                        const val = row[h] !== undefined ? row[h].toString() : '';
+                                                        const isUrl = val.startsWith('http://') || val.startsWith('https://');
+                                                        return (
+                                                            <td key={cIdx} className="p-4 align-top whitespace-pre-wrap max-w-sm border-r border-slate-100 dark:border-slate-900/60 last:border-r-0">
+                                                                {isUrl ? (
+                                                                    <a 
+                                                                        href={val} 
+                                                                        target="_blank" 
+                                                                        rel="noopener noreferrer"
+                                                                        className="text-amber-500 hover:text-amber-600 hover:underline font-bold break-all"
+                                                                    >
+                                                                        View Link
+                                                                    </a>
+                                                                ) : val}
+                                                            </td>
+                                                        );
+                                                    })}
                                                 </tr>
                                             );
                                         })}
