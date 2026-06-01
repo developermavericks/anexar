@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import * as XLSX from 'xlsx';
 import { 
     Search, 
     Mail, 
@@ -202,14 +203,73 @@ export default function JournalistSource() {
         } 
         // If it's Excel, perform a high-fidelity simulation
         else if (fileExt === 'xlsx' || fileExt === 'xls') {
-            setTimeout(() => {
-                const simulated = simulateExcelImport(fileName);
-                const updated = [...simulated, ...journalists];
-                saveDatabase(updated);
-                setSelectedId(simulated[0].id);
-                triggerNotification(`Successfully imported ${simulated.length} contacts from Excel spreadsheet!`, 'success');
+            const reader = new FileReader();
+            reader.onload = (event) => {
+                try {
+                    const data = new Uint8Array(event.target.result);
+                    const workbook = XLSX.read(data, { type: 'array' });
+                    
+                    const firstSheetName = workbook.SheetNames[0];
+                    const worksheet = workbook.Sheets[firstSheetName];
+                    const jsonData = XLSX.utils.sheet_to_json(worksheet, { header: 1 });
+                    
+                    if (jsonData.length <= 1) {
+                        triggerNotification('The Excel file is empty or does not contain data.', 'error');
+                        setIsImporting(false);
+                        return;
+                    }
+                    
+                    const headers = jsonData[0].map(h => String(h).trim().toLowerCase());
+                    const parsedRecords = [];
+                    
+                    for (let i = 1; i < jsonData.length; i++) {
+                        const row = jsonData[i];
+                        if (!row || row.length === 0) continue;
+                        
+                        const getVal = (name, index, defaultVal) => {
+                            const headerIdx = headers.indexOf(name);
+                            if (headerIdx !== -1 && row[headerIdx] !== undefined) {
+                                return String(row[headerIdx]).trim();
+                            }
+                            if (row[index] !== undefined) {
+                                return String(row[index]).trim();
+                            }
+                            return defaultVal;
+                        };
+                        
+                        const name = getVal('name', 0, '');
+                        if (!name) continue;
+                        
+                        parsedRecords.push({
+                            id: 'xls_' + Date.now() + '_' + i,
+                            name: name,
+                            role: getVal('role', 1, 'Reporter'),
+                            publication: getVal('publication', 2, 'Independent'),
+                            category: getVal('category', 3, 'Technology & Startups'),
+                            email: getVal('email', 4, 'contact@media.com'),
+                            phone: getVal('phone', 5, '+1 (555) 000-0000'),
+                            address: getVal('address', 6, 'Remote Office'),
+                            bio: getVal('bio', 7, 'Imported from spreadsheet.')
+                        });
+                    }
+                    
+                    if (parsedRecords.length === 0) {
+                        triggerNotification('Could not extract any valid journalist records from Excel.', 'error');
+                        setIsImporting(false);
+                        return;
+                    }
+                    
+                    const updated = [...parsedRecords, ...journalists];
+                    saveDatabase(updated);
+                    setSelectedId(parsedRecords[0].id);
+                    triggerNotification(`Successfully imported ${parsedRecords.length} contacts from Excel!`, 'success');
+                } catch (err) {
+                    console.error(err);
+                    triggerNotification('Failed to parse Excel file.', 'error');
+                }
                 setIsImporting(false);
-            }, 1500);
+            };
+            reader.readAsArrayBuffer(file);
         } else {
             triggerNotification('Unsupported file type. Please upload a .csv, .xls or .xlsx spreadsheet.', 'error');
             setIsImporting(false);
