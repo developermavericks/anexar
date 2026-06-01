@@ -191,11 +191,11 @@ const OrganizationTab = () => {
                             onChange={(e) => setFormData({ ...formData, companySize: e.target.value })}
                             className="w-full bg-white dark:bg-[#111827] border border-[#EAE8E4] dark:border-white/10 text-gray-900 dark:text-white rounded-xl px-4 py-2.5 focus:outline-none focus:border-amber-500 focus:ring-1 focus:ring-amber-500 transition-all font-medium cursor-pointer"
                         >
-                            <option value="1-10">1-10 employees</option>
-                            <option value="11-50">11-50 employees</option>
-                            <option value="51-200">51-200 employees</option>
-                            <option value="201-500">201-500 employees</option>
-                            <option value="500+">500+ employees</option>
+                            <option value="1-10">1-10 team members</option>
+                            <option value="11-50">11-50 team members</option>
+                            <option value="51-200">51-200 team members</option>
+                            <option value="201-500">201-500 team members</option>
+                            <option value="500+">500+ team members</option>
                         </select>
                     </div>
                     <div className="md:col-span-2">

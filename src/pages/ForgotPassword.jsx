@@ -39,7 +39,7 @@ export default function ForgotPassword() {
                     id: Math.random().toString(36).substring(2, 9),
                     name: isMavericks ? "Maverick User" : "Client User",
                     email: email.toLowerCase(),
-                    role: isMavericks ? "Employee" : "Client",
+                    role: isMavericks ? "Team" : "Client",
                     password: "" // Will be set in the next step
                 };
                 storedUsers.push(newUser);

@@ -20,17 +20,18 @@ import Reports from './pages/client/Reports';
 import MeetTeam from './pages/client/MeetTeam';
 import Subscription from './pages/client/Subscription';
 import Settings from './pages/client/Settings';
+import MavUpdate from './pages/client/MavUpdate';
 
-// Employee Dashboard imports
-import EmployeeLayout from './pages/employee/EmployeeLayout';
-import EmployeeDashboard from './pages/employee/Dashboard';
+// Team Dashboard imports
+import TeamLayout from './pages/employee/EmployeeLayout';
+import TeamDashboard from './pages/employee/Dashboard';
 import Clients from './pages/employee/Clients';
 import TimeAllocation from './pages/employee/TimeAllocation';
 import UploadCoverage from './pages/employee/UploadCoverage';
 import AnalysisBoard from './pages/employee/AnalysisBoard';
-import EventsAwardsEmployee from './pages/employee/EventsAwards';
+import EventsAwardsTeam from './pages/employee/EventsAwards';
 import JournalistSource from './pages/employee/JournalistSource';
-import SettingsEmployee from './pages/employee/Settings';
+import SettingsTeam from './pages/employee/Settings';
 import MorningTracker from './pages/employee/MorningTracker';
 import CrisisPredictor from './pages/employee/CrisisPredictor';
 
@@ -38,8 +39,8 @@ import CrisisPredictor from './pages/employee/CrisisPredictor';
 function RoleRedirect() {
   const { user } = useAuth();
   if (!user) return <Navigate to="/login" replace />;
-  if (user.role === 'Employee') {
-    return <Navigate to="/employee" replace />;
+  if (user.role === 'Employee' || user.role === 'Team') {
+    return <Navigate to="/team" replace />;
   }
   // Default to Client
   return <Navigate to="/client" replace />;
@@ -86,27 +87,28 @@ function App() {
               <Route path="team" element={<MeetTeam />} />
               <Route path="subscription" element={<Subscription />} />
               <Route path="settings" element={<Settings />} />
+              <Route path="mav-update" element={<MavUpdate />} />
             </Route>
 
-            {/* Employee Portal Routes */}
+            {/* Team Portal Routes */}
             <Route
-              path="/employee"
+              path="/team"
               element={
                 <ProtectedRoute>
-                  <EmployeeLayout />
+                  <TeamLayout />
                 </ProtectedRoute>
               }
             >
-              <Route index element={<EmployeeDashboard />} />
+              <Route index element={<TeamDashboard />} />
               <Route path="clients" element={<Clients />} />
               <Route path="time-allocation" element={<TimeAllocation />} />
               <Route path="upload" element={<UploadCoverage />} />
               <Route path="analysis" element={<AnalysisBoard />} />
-              <Route path="events" element={<EventsAwardsEmployee />} />
+              <Route path="events" element={<EventsAwardsTeam />} />
               <Route path="journalists" element={<JournalistSource />} />
               <Route path="morning-tracker" element={<MorningTracker />} />
-              <Route path="crisis-predictor" element={<CrisisPredictor />} />
-              <Route path="settings" element={<SettingsEmployee />} />
+              <Route path="crisis-tracker" element={<CrisisPredictor />} />
+              <Route path="settings" element={<SettingsTeam />} />
             </Route>
 
             {/* Fallback Catch-All */}

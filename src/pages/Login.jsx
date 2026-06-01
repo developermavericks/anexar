@@ -18,13 +18,13 @@ export default function Login() {
     const [searchParams] = useSearchParams();
     const urlRole = searchParams.get('role');
 
-    // 'Employee' corresponds to Anexar internally
-    const [role, setRole] = useState(urlRole === 'anexar' ? 'Employee' : 'Client');
+    // 'Team' corresponds to Anexar internally
+    const [role, setRole] = useState(urlRole === 'anexar' ? 'Team' : 'Client');
 
     // Sync tab with URL parameter changes
     useEffect(() => {
         if (urlRole === 'anexar') {
-            setRole('Employee');
+            setRole('Team');
         } else if (urlRole === 'client') {
             setRole('Client');
         }
@@ -37,8 +37,8 @@ export default function Login() {
         e.preventDefault();
         setError('');
 
-        // Rule 1: Only @themavericksindia.com allowed for Employee
-        if (role === 'Employee' && !email.toLowerCase().endsWith('@themavericksindia.com')) {
+        // Rule 1: Only @themavericksindia.com allowed for Team
+        if (role === 'Team' && !email.toLowerCase().endsWith('@themavericksindia.com')) {
             setError("Access Restricted: Only @themavericksindia.com accounts are allowed to log in as Mavericks.");
             return;
         }
@@ -46,7 +46,7 @@ export default function Login() {
         // Rule 2: If client tries with @themavericksindia.com, redirect to Mavericks
         if (role === 'Client' && email.toLowerCase().endsWith('@themavericksindia.com')) {
             setError("Strategic Redirect: @themavericksindia.com accounts must log in as Mavericks. Switched view to Maverick Sign-In.");
-            setRole('Employee');
+            setRole('Team');
             return;
         }
 
@@ -54,12 +54,12 @@ export default function Login() {
             const loggedInUser = login(email, password);
             
             // Check for role mismatch
-            if (role === 'Client' && loggedInUser.role === 'Employee') {
+            if (role === 'Client' && (loggedInUser.role === 'Employee' || loggedInUser.role === 'Team')) {
                 setError("This email is registered under Mavericks. Please click 'Sign In as Mavericks' and try again.");
                 logout();
                 return;
             }
-            if (role === 'Employee' && loggedInUser.role === 'Client') {
+            if (role === 'Team' && loggedInUser.role === 'Client') {
                 setError("This email is registered under Client. Please click 'Sign In as Client' and try again.");
                 logout();
                 return;
@@ -115,7 +115,7 @@ export default function Login() {
                         </h1>
                     </Link>
                     <p className="text-brand-gray mt-2">
-                        Sign In as {role === 'Employee' ? 'Mavericks' : 'Client'} to continue
+                        Sign In as {role === 'Team' ? 'Mavericks' : 'Client'} to continue
                     </p>
                 </div>
 
@@ -137,9 +137,9 @@ export default function Login() {
                                 </button>
                                 <button
                                     type="button"
-                                    onClick={() => setRole('Employee')}
+                                    onClick={() => setRole('Team')}
                                     className={`flex-1 py-2.5 text-xs font-bold rounded-xl transition-all duration-350 cursor-pointer ${
-                                        role === 'Employee'
+                                        role === 'Team'
                                             ? 'bg-brand-charcoal text-white shadow-md'
                                             : 'text-brand-gray hover:text-brand-charcoal'
                                     }`}
@@ -159,7 +159,7 @@ export default function Login() {
                             <Input
                                 label="Email"
                                 type="email"
-                                placeholder={role === 'Employee' ? "strategist@mavericks.com" : "client@company.com"}
+                                placeholder={role === 'Team' ? "strategist@mavericks.com" : "client@company.com"}
                                 value={email}
                                 onChange={(e) => setEmail(e.target.value)}
                                 required
@@ -185,7 +185,7 @@ export default function Login() {
 
                             <div className="pt-2">
                                 <Button type="submit" className="w-full cursor-pointer" size="lg">
-                                    Sign In as {role === 'Employee' ? 'Mavericks' : 'Client'}
+                                    Sign In as {role === 'Team' ? 'Mavericks' : 'Client'}
                                 </Button>
                             </div>
                         </form>
@@ -207,17 +207,17 @@ export default function Login() {
                                         console.log("User Info:", decoded);
                                         const userEmail = decoded.email || '';
 
-                                        // Rule 1: Only @themavericksindia.com allowed for Employee
-                                        if (role === 'Employee' && !userEmail.toLowerCase().endsWith('@themavericksindia.com')) {
+                                        // Rule 1: Only @themavericksindia.com allowed for Team
+                                        if (role === 'Team' && !userEmail.toLowerCase().endsWith('@themavericksindia.com')) {
                                             setError("Access Restricted: Only @themavericksindia.com accounts are allowed to log in as Mavericks.");
                                             return;
                                         }
 
                                         // Rule 2: If client tries with @themavericksindia.com, redirect to Mavericks
                                         if (role === 'Client' && userEmail.toLowerCase().endsWith('@themavericksindia.com')) {
-                                            setRole('Employee');
+                                            setRole('Team');
                                             setError("Strategic Redirect: @themavericksindia.com accounts must log in as Mavericks. Switched view to Maverick Sign-In.");
-                                            const loggedInUser = loginWithGoogle({ ...decoded, role: 'Employee' });
+                                            const loggedInUser = loginWithGoogle({ ...decoded, role: 'Team' });
                                             navigate('/dashboard');
                                             return;
                                         }
@@ -234,10 +234,10 @@ export default function Login() {
                             <div className="mt-8 text-center text-xs text-brand-gray font-medium">
                                 Don't have an account?{' '}
                                 <Link
-                                    to={role === 'Employee' ? "/signup?role=anexar" : "/signup?role=client"}
+                                    to={role === 'Team' ? "/signup?role=anexar" : "/signup?role=client"}
                                     className="text-brand-amber font-bold hover:underline"
                                 >
-                                    Sign Up as {role === 'Employee' ? 'Mavericks' : 'Client'}
+                                    Sign Up as {role === 'Team' ? 'Mavericks' : 'Client'}
                                 </Link>
                             </div>
                         </div>

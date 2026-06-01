@@ -32,6 +32,30 @@ const Dashboard = () => {
 
     const handleUpgrade = () => setUser({ ...user, plan: 'pro' });
 
+    // Sync KPIs from localStorage (published by Team Portal)
+    const [kpis, setKpis] = React.useState({
+        activeCampaigns: '3',
+        pressCoverage: '1.2M',
+        budgetUsed: '65%',
+        goalCompletion: '82%'
+    });
+
+    React.useEffect(() => {
+        const loadKpis = () => {
+            const saved = localStorage.getItem('anexar_client_kpis');
+            if (saved) {
+                try {
+                    setKpis(JSON.parse(saved));
+                } catch (e) {
+                    console.error(e);
+                }
+            }
+        };
+        loadKpis();
+        const interval = setInterval(loadKpis, 1500);
+        return () => clearInterval(interval);
+    }, []);
+
     return (
         <div className="space-y-6">
             <div className="mb-8">
@@ -41,10 +65,10 @@ const Dashboard = () => {
 
             {/* KPI Cards */}
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-                <KPI title="Active Campaigns" value="3" trend="+12%" icon={TrendingUp} color="bg-[#1A1A1A] dark:bg-amber-500 dark:text-[#0B0F19] text-amber-500 dark:text-amber-400" />
-                <KPI title="Press Coverage" value="1.2M" trend="+5%" icon={Newspaper} color="bg-purple-500/20 text-purple-400" />
-                <KPI title="Budget Used" value="65%" trend="-2%" icon={PieChart} color="bg-rose-500/20 text-rose-400" />
-                <KPI title="Goal Completion" value="82%" trend="+8%" icon={Target} color="bg-emerald-500 dark:bg-emerald-500/90 text-emerald-400" />
+                <KPI title="Active Campaigns" value={kpis.activeCampaigns} trend="+12%" icon={TrendingUp} color="bg-[#1A1A1A] dark:bg-amber-500 dark:text-[#0B0F19] text-amber-500 dark:text-amber-400" />
+                <KPI title="Press Coverage" value={kpis.pressCoverage} trend="+5%" icon={Newspaper} color="bg-purple-500/20 text-purple-400" />
+                <KPI title="Budget Used" value={kpis.budgetUsed} trend="-2%" icon={PieChart} color="bg-rose-500/20 text-rose-450" />
+                <KPI title="Goal Completion" value={kpis.goalCompletion} trend="+8%" icon={Target} color="bg-emerald-500 dark:bg-emerald-500/90 text-emerald-400" />
             </div>
 
             {/* Middle Section */}

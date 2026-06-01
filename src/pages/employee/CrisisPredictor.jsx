@@ -46,7 +46,7 @@ export default function CrisisPredictor() {
                                         THREAT PROTECTION
                                     </span>
                                     <h2 className="text-2xl md:text-3xl font-black tracking-tight text-white mt-1">
-                                        Risk Escape | Crisis Predictor
+                                        Risk Escape | Crisis Tracker
                                     </h2>
                                 </div>
                             </div>

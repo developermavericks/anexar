@@ -15,18 +15,18 @@ export const UserProvider = ({ children }) => {
     const [user, setUserState] = useState(() => ({
         name: authUser?.name || "Visionary Media",
         email: authUser?.email || "client@email.com",
-        role: authUser?.role?.toLowerCase() || "client",
+        role: (authUser?.role?.toLowerCase() === 'employee' ? 'team' : authUser?.role?.toLowerCase()) || "client",
         plan: "basic",
         avatar: authUser?.picture || null,
         theme: getInitialTheme(),
         profile: {
             phone: '+1 (555) 000-0000',
-            designation: authUser?.role === 'Employee' ? 'Manager' : 'CEO',
+            designation: (authUser?.role === 'Employee' || authUser?.role === 'Team') ? 'Manager' : 'CEO',
             timezone: 'UTC',
             language: 'en'
         },
         organization: {
-            companyName: authUser?.role === 'Employee' ? 'Anexar Corp' : "Visionary Media Pvt Ltd",
+            companyName: (authUser?.role === 'Employee' || authUser?.role === 'Team') ? 'Anexar Corp' : "Visionary Media Pvt Ltd",
             industry: "Fintech",
             website: "https://visionary.media",
             companySize: "51-200",
@@ -59,16 +59,16 @@ export const UserProvider = ({ children }) => {
                 ...prev,
                 name: authUser.name,
                 email: authUser.email,
-                role: authUser.role?.toLowerCase(),
+                role: authUser.role?.toLowerCase() === 'employee' ? 'team' : authUser.role?.toLowerCase(),
                 avatar: authUser.picture || null,
                 profile: {
                     ...prev.profile,
-                    designation: authUser.role === 'Employee' ? 'Manager' : 'CEO',
+                    designation: (authUser.role === 'Employee' || authUser.role === 'Team') ? 'Manager' : 'CEO',
                 },
                 organization: {
                     ...prev.organization,
                     primaryContact: authUser.name,
-                    companyName: authUser.role === 'Employee' ? 'Anexar Corp' : "Visionary Media Pvt Ltd",
+                    companyName: (authUser.role === 'Employee' || authUser.role === 'Team') ? 'Anexar Corp' : "Visionary Media Pvt Ltd",
                 }
             }));
         }
