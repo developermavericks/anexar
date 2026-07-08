@@ -207,7 +207,7 @@ export default function AnalysisBoard() {
                         </div>
                         
                         <a 
-                            href="http://localhost:5173" 
+                            href="https://cerebro-358839170188.asia-south1.run.app/#testimonials" 
                             target="_blank"
                             rel="noopener noreferrer"
                             className="bg-emerald-500 hover:bg-emerald-600 text-white font-bold text-xs tracking-wider uppercase px-6 py-3.5 rounded-xl shadow-lg shadow-emerald-500/25 hover:shadow-emerald-500/35 hover:scale-[1.03] transition-all flex items-center gap-2 cursor-pointer shrink-0"

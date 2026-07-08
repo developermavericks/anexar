@@ -1,0 +1,14 @@
+{
+	"folders": [
+		{
+			"path": "."
+		},
+		{
+			"path": "../../client_dashboard"
+		},
+		{
+			"path": "../../EventsAndAwards/E&A"
+		}
+	],
+	"settings": {}
+}
