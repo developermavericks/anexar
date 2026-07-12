@@ -1,22 +1,57 @@
-import React from 'react';
-import { campaigns } from '../../mock/clientData';
+import React, { useState, useEffect } from 'react';
 import { Activity, Target } from 'lucide-react';
+import { useUser } from '../../context/UserContext';
+import { db } from '../../lib/firebaseClient';
+import { collection, query, orderBy, onSnapshot, addDoc } from 'firebase/firestore';
 
 const CampaignOverview = () => {
+    const { user } = useUser();
+    const [campaignsList, setCampaignsList] = useState([]);
+
+    useEffect(() => {
+        const q = query(collection(db, "campaigns"), orderBy("createdAt", "desc"));
+        const unsubscribe = onSnapshot(q, (snapshot) => {
+            const list = [];
+            snapshot.forEach(docSnap => {
+                list.push({ docId: docSnap.id, ...docSnap.data() });
+            });
+
+            setCampaignsList(list);
+        }, (err) => {
+            console.error("Error listening to campaigns:", err);
+        });
+
+        return () => unsubscribe();
+    }, []);
+
+    // Check if developer/tester bypass is enabled to see all campaigns
+    const clientName = user?.clientBrand || '';
+    const filteredCampaigns = campaignsList.filter(c => {
+        if (!clientName) return false;
+        return (
+            c.client?.toLowerCase() === clientName.toLowerCase() ||
+            clientName.toLowerCase().includes(c.client?.toLowerCase()) ||
+            c.client?.toLowerCase().includes(clientName.toLowerCase())
+        );
+    });
+
     return (
         <div className="space-y-6">
             <div className="mb-8">
                 <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Campaign Overview</h1>
-                <p className="text-gray-500 dark:text-gray-400 dark:text-gray-500">Track the progress and ROI of your active marketing initiatives.</p>
+                <p className="text-gray-500 dark:text-gray-400">Track the progress and ROI of your active marketing initiatives.</p>
             </div>
 
             <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
-                {campaigns.map((campaign) => (
+                {filteredCampaigns.map((campaign) => (
                     <div key={campaign.id} className="bg-white dark:bg-[#111827] p-6 rounded-3xl border border-[#EAE8E4] dark:border-white/10 shadow-[0_10px_30px_rgba(0,0,0,0.05)]">
                         <div className="flex justify-between items-start mb-6">
                             <div>
                                 <h2 className="text-xl font-bold text-gray-900 dark:text-white">{campaign.name}</h2>
                                 <div className="flex items-center gap-2 mt-2">
+                                    <span className="px-2.5 py-0.5 bg-purple-500/10 text-purple-600 dark:text-purple-400 text-[10px] font-extrabold uppercase tracking-widest rounded-full">
+                                        Client: {campaign.client}
+                                    </span>
                                     <span className={`px-2.5 py-1 text-xs font-semibold rounded-full border ${campaign.status === 'Active'
                                             ? 'bg-[#1A1A1A] dark:bg-amber-500 dark:text-[#0B0F19] text-amber-500 dark:text-amber-400 border-amber-500/20'
                                             : campaign.status === 'Completed'
@@ -35,7 +70,7 @@ const CampaignOverview = () => {
                         <div className="space-y-4">
                             <div>
                                 <div className="flex justify-between text-sm mb-2">
-                                    <span className="text-gray-500 dark:text-gray-400 dark:text-gray-500 flex items-center gap-2"><Target size={16} /> Progress</span>
+                                    <span className="text-gray-500 dark:text-gray-400 flex items-center gap-2"><Target size={16} /> Progress</span>
                                     <span className="text-gray-900 dark:text-white font-bold">{campaign.progress}%</span>
                                 </div>
                                 <div className="w-full bg-gray-100 dark:bg-[#374151] rounded-full h-2 overflow-hidden">

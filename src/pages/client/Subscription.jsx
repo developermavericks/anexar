@@ -2,11 +2,69 @@ import React from 'react';
 import { useUser } from '../../context/UserContext';
 import { Check, Star, Zap, Shield } from 'lucide-react';
 
+const loadRazorpayScript = () => {
+    return new Promise((resolve) => {
+        const script = document.createElement('script');
+        script.src = 'https://checkout.razorpay.com/v1/checkout.js';
+        script.onload = () => resolve(true);
+        script.onerror = () => resolve(false);
+        document.body.appendChild(script);
+    });
+};
+
 const Subscription = () => {
     const { user, setUser } = useUser();
 
-    const handleUpgrade = (planValue) => {
-        setUser({ ...user, plan: planValue });
+    const handleUpgrade = async (planValue) => {
+        let amount = 99900; // in cents/paisa
+        let planName = 'Basic Plan';
+        if (planValue === 'pro') {
+            amount = 249900;
+            planName = 'Pro Plan';
+        } else if (planValue === 'enterprise') {
+            amount = 500000;
+            planName = 'Enterprise Plan';
+        }
+
+        const isLoaded = await loadRazorpayScript();
+        if (!isLoaded) {
+            alert('Failed to load Razorpay payment portal SDK. Please check your internet connection.');
+            return;
+        }
+
+        const options = {
+            key: import.meta.env.VITE_RAZORPAY_KEY_ID,
+            amount: amount,
+            currency: 'USD',
+            name: 'Anexar PR Portal',
+            description: `Upgrade subscription to ${planName}`,
+            image: 'https://cdn-icons-png.flaticon.com/512/3405/3405244.png',
+            handler: function (response) {
+                alert(`Upgrade Payment Successful!\nPayment ID: ${response.razorpay_payment_id}\nYour account has been upgraded to ${planName}.`);
+                setUser({ ...user, plan: planValue });
+            },
+            prefill: {
+                name: user.name || '',
+                email: user.email || '',
+            },
+            notes: {
+                subscription: planValue
+            },
+            theme: {
+                color: '#F59E0B' // Amber color matching corporate theme
+            }
+        };
+
+        try {
+            const rzp = new window.Razorpay(options);
+            rzp.on('payment.failed', function (response) {
+                alert(`Payment Transaction Failed: ${response.error.description}`);
+            });
+            rzp.open();
+        } catch (err) {
+            console.error("Error launching Razorpay checkout modal:", err);
+            alert("Error initiating payment transaction.");
+        }
     };
 
     const plans = [

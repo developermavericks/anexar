@@ -1,26 +1,79 @@
-import React, { useState } from 'react';
-import { goals as initialGoals } from '../../mock/clientData';
+import React, { useState, useEffect } from 'react';
 import { Target, TrendingUp, CheckCircle, AlertTriangle, Plus, X, Calendar } from 'lucide-react';
+import { useUser } from '../../context/UserContext';
+import { db } from '../../lib/firebaseClient';
+import { collection, addDoc, onSnapshot, query, where, orderBy } from 'firebase/firestore';
 
 const GoalsCommitment = () => {
-    const [goalsList, setGoalsList] = useState(initialGoals.map(g => ({ ...g, period: 'Annual' })));
+    const { user } = useUser();
+    const [goalsList, setGoalsList] = useState([]);
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [newGoal, setNewGoal] = useState({ deliverable: '', target: '', period: 'Monthly' });
 
-    const handleAddGoal = (e) => {
+    const clientName = user?.clientBrand || '';
+
+    useEffect(() => {
+        if (!clientName) return;
+
+        const q = query(
+            collection(db, "goals"),
+            where("client", "==", clientName)
+        );
+
+        const unsubscribe = onSnapshot(q, (snapshot) => {
+            const list = [];
+            snapshot.forEach(docSnap => {
+                list.push({ docId: docSnap.id, ...docSnap.data() });
+            });
+
+            // Sort by createdAt descending in memory
+            list.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+
+            if (list.length > 0) {
+                setGoalsList(list);
+            } else {
+                // Seed initial mock goals for this client so it is not blank
+                console.log("Seeding default goals to Firestore for client:", clientName);
+                const defaults = [
+                    { deliverable: "Increase Share of Voice by 15%", target: 15, achieved: 12, progress: 80, status: "On Track", period: "Annual", client: clientName, createdAt: new Date(Date.now() - 3000).toISOString() },
+                    { deliverable: "Secure 5 Tier-1 Media Placements", target: 5, achieved: 3, progress: 60, status: "On Track", period: "Monthly", client: clientName, createdAt: new Date(Date.now() - 2000).toISOString() },
+                    { deliverable: "Launch 2 Thought Leadership Papers", target: 2, achieved: 2, progress: 100, status: "Completed", period: "Quarterly", client: clientName, createdAt: new Date(Date.now() - 1000).toISOString() },
+                    { deliverable: "Boost Positive Sentiment to 80%", target: 80, achieved: 72, progress: 90, status: "At Risk", period: "Annual", client: clientName, createdAt: new Date().toISOString() }
+                ];
+                defaults.forEach(async (g) => {
+                    await addDoc(collection(db, "goals"), g);
+                });
+            }
+        }, (err) => {
+            console.error("Error listening to goals:", err);
+        });
+
+        return () => unsubscribe();
+    }, [clientName]);
+
+    const handleAddGoal = async (e) => {
         e.preventDefault();
+        if (!clientName) return;
+
+        const targetQty = parseFloat(newGoal.target) || 0;
         const goal = {
-            id: Date.now(),
-            deliverable: newGoal.deliverable,
-            target: newGoal.target,
+            deliverable: newGoal.deliverable.trim(),
+            target: targetQty,
             achieved: 0,
             progress: 0,
             status: 'Pending',
-            period: newGoal.period
+            period: newGoal.period,
+            client: clientName,
+            createdAt: new Date().toISOString()
         };
-        setGoalsList([goal, ...goalsList]);
-        setIsModalOpen(false);
-        setNewGoal({ deliverable: '', target: '', period: 'Monthly' });
+
+        try {
+            await addDoc(collection(db, "goals"), goal);
+            setIsModalOpen(false);
+            setNewGoal({ deliverable: '', target: '', period: 'Monthly' });
+        } catch (err) {
+            console.error("Error adding goal to Firestore:", err);
+        }
     };
 
     const getStatusIcon = (status) => {

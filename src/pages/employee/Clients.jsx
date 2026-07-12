@@ -1,4 +1,8 @@
 import React, { useState, useEffect } from 'react';
+import { useAuth } from '../../context/AuthContext';
+import { supabase } from '../../lib/supabaseClient';
+import { doc, getDoc, setDoc, updateDoc, deleteDoc, addDoc, collection, query, where, orderBy, onSnapshot } from 'firebase/firestore';
+import { db } from '../../lib/firebaseClient';
 import { Card, CardContent } from '../../components/ui/Card';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
@@ -15,229 +19,201 @@ import {
     Clock,
     Layers,
     FileSpreadsheet,
-    FileCheck
+    FileCheck,
+    Plus,
+    X
 } from 'lucide-react';
 
-const CLIENTS = ["Acura Corporate", "RedBull Racing", "Spotify", "Vercel", "Nike"];
-
 export default function Clients() {
+    const { user } = useAuth();
+    const [assignedClients, setAssignedClients] = useState(() => {
+        const saved = localStorage.getItem('anexar_assigned_clients');
+        return saved ? JSON.parse(saved) : ['FUJIFILM', 'Google', 'Spotify', 'Plum', 'Nike', 'Udaiti', 'Scapia', 'Musashi-D'];
+    });
     const [selectedClient, setSelectedClient] = useState('');
-    const [selectedSections, setSelectedSections] = useState({
-        pressReleases: false,
-        tracker: false,
-        annualReport: false,
-        outreach: false,
-        overallWork: false
-    });
 
-    // Files state
-    const [files, setFiles] = useState({
-        pressReleases: null,
-        tracker: null,
-        annualReport: null,
-        outreach: null
-    });
-
-    // Submissions details state
-    const [sectionData, setSectionData] = useState({
-        pressReleases: null,
-        tracker: null,
-        annualReport: null,
-        outreach: null,
-        overallWork: null
-    });
-
-    const [overallText, setOverallText] = useState('');
-    
-    // UI feedback states
-    const [uploadingState, setUploadingState] = useState({});
-    const [submittingNotes, setSubmittingNotes] = useState(false);
-    const [masterSubmitting, setMasterSubmitting] = useState(false);
-    const [notification, setNotification] = useState(null);
-    const [recentUpdates, setRecentUpdates] = useState([]);
-
-    // Load recent updates from localStorage with schema validation
     useEffect(() => {
-        const stored = localStorage.getItem('anexar_client_updates');
-        if (stored) {
+        const fetchClients = async () => {
+            if (!user || !user.email) return;
+
+            const emailLower = user.email.toLowerCase();
+            const isDeveloperSatyam = emailLower.includes('satyam') || emailLower.includes('ss1084169') || emailLower.includes('test') || user.name?.toLowerCase().includes('satyam');
+            const isChetan = emailLower === 'chetan@themavericksindia.com' || user.name?.toLowerCase().includes('chetan');
+            const hasWholeAccess = isChetan || isDeveloperSatyam;
+
             try {
-                const parsed = JSON.parse(stored);
-                if (Array.isArray(parsed)) {
-                    // Map and normalize each entry to guarantee existence of sectionsSubmitted array
-                    const validated = parsed.map(item => ({
-                        id: item.id || 'upd_' + Math.random().toString(36).substring(2, 9),
-                        client: item.client || 'Unknown Client',
-                        timestamp: item.timestamp || new Date().toLocaleString(),
-                        sectionsSubmitted: Array.isArray(item.sectionsSubmitted) ? item.sectionsSubmitted : [],
-                        data: item.data || {}
-                    }));
-                    setRecentUpdates(validated);
+                // 1. Core, Manager, or Satyam (Developer) bypass - fetch all active clients
+                if (hasWholeAccess) {
+                    const { data, error } = await supabase
+                        .from('clients')
+                        .select('name')
+                        .eq('is_active', true)
+                        .order('name', { ascending: true });
+
+                    if (error) throw error;
+                    if (data && data.length > 0) {
+                        setAssignedClients(data.map(c => c.name));
+                        return;
+                    }
                 }
-            } catch (e) {
-                console.error("Failed to parse local storage updates:", e);
+
+                // 2. Otherwise try loading user clients from Firestore
+                const docRef = doc(db, "user_clients", emailLower);
+                const docSnap = await getDoc(docRef);
+                
+                if (docSnap.exists() && docSnap.data().clients) {
+                    const clientNames = docSnap.data().clients;
+                    if (clientNames.length > 0) {
+                        setAssignedClients(clientNames);
+                        return; // Successfully loaded from Firestore!
+                    }
+                }
+
+                // 3. Fallback to Supabase allocations
+                if (user.id) {
+                    const [weeklyRes, monthlyRes] = await Promise.all([
+                        supabase
+                            .from('allocations_weekly')
+                            .select('clients(name)')
+                            .eq('user_id', user.id),
+                        supabase
+                            .from('allocations_monthly')
+                            .select('clients(name)')
+                            .eq('user_id', user.id)
+                    ]);
+
+                    const clientNamesSet = new Set();
+                    
+                    if (weeklyRes.data) {
+                        weeklyRes.data.forEach(item => {
+                            if (item.clients?.name) clientNamesSet.add(item.clients.name);
+                        });
+                    }
+                    if (monthlyRes.data) {
+                        monthlyRes.data.forEach(item => {
+                            if (item.clients?.name) clientNamesSet.add(item.clients.name);
+                        });
+                    }
+
+                    const clientNames = Array.from(clientNamesSet);
+                    if (clientNames.length > 0) {
+                        setAssignedClients(clientNames);
+                        return;
+                    }
+                }
+
+                setAssignedClients([]); // Empty list if no allocations mapped
+            } catch (err) {
+                console.error("Error fetching user clients in Clients tab:", err);
+                setAssignedClients([]);
             }
+        };
+
+        fetchClients();
+    }, [user, user?.id]);
+
+    useEffect(() => {
+        if (assignedClients.length > 0 && (!selectedClient || !assignedClients.includes(selectedClient))) {
+            setSelectedClient(assignedClients[0]);
         }
-    }, []);
+    }, [assignedClients, selectedClient]);
+
+    const [clientGoals, setClientGoals] = useState([]);
+    const [newGoalDeliverable, setNewGoalDeliverable] = useState('');
+    const [newGoalTarget, setNewGoalTarget] = useState('');
+    const [newGoalPeriod, setNewGoalPeriod] = useState('Monthly');
+    const [isAddGoalModalOpen, setIsAddGoalModalOpen] = useState(false);
+
+    useEffect(() => {
+        if (!selectedClient) return;
+
+        const q = query(
+            collection(db, "goals"),
+            where("client", "==", selectedClient)
+        );
+
+        const unsubscribe = onSnapshot(q, (snapshot) => {
+            const list = [];
+            snapshot.forEach(docSnap => {
+                list.push({ docId: docSnap.id, ...docSnap.data() });
+            });
+            // Sort by createdAt descending in memory
+            list.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+            setClientGoals(list);
+        }, (err) => {
+            console.error("Error listening to client goals:", err);
+        });
+
+        return () => unsubscribe();
+    }, [selectedClient]);
+
+    const handleAddClientGoal = async (e) => {
+        e.preventDefault();
+        if (!selectedClient || !newGoalDeliverable.trim() || !newGoalTarget) return;
+
+        const targetQty = parseFloat(newGoalTarget) || 0;
+        const newGoal = {
+            deliverable: newGoalDeliverable.trim(),
+            target: targetQty,
+            achieved: 0,
+            progress: 0,
+            status: 'Pending',
+            period: newGoalPeriod,
+            client: selectedClient,
+            createdAt: new Date().toISOString()
+        };
+
+        try {
+            await addDoc(collection(db, "goals"), newGoal);
+            setNewGoalDeliverable('');
+            setNewGoalTarget('');
+            setNewGoalPeriod('Monthly');
+            setIsAddGoalModalOpen(false);
+            triggerNotification('New goal created successfully!', 'success');
+        } catch (err) {
+            console.error("Error creating new goal from team portal:", err);
+            triggerNotification('Failed to create goal.', 'error');
+        }
+    };
+
+    const handleUpdateGoalField = async (docId, goal, field, value) => {
+        try {
+            const docRef = doc(db, "goals", docId);
+            const updatedFields = { [field]: value };
+            
+            if (field === 'achieved' || field === 'target') {
+                const targetVal = field === 'target' ? parseFloat(value) : (parseFloat(goal.target) || 0);
+                const achievedVal = field === 'achieved' ? parseFloat(value) : (parseFloat(goal.achieved) || 0);
+                
+                if (targetVal > 0) {
+                    const newProgress = Math.min(100, Math.max(0, Math.round((achievedVal / targetVal) * 100)));
+                    updatedFields.progress = newProgress;
+                    updatedFields.status = newProgress >= 100 ? 'Completed' : (newProgress >= 50 ? 'On Track' : 'Pending');
+                }
+            }
+            
+            await updateDoc(docRef, updatedFields);
+        } catch (err) {
+            console.error("Error updating goal:", err);
+            triggerNotification('Failed to update goal.', 'error');
+        }
+    };
+
+    const handleDeleteGoal = async (docId) => {
+        try {
+            await deleteDoc(doc(db, "goals", docId));
+            triggerNotification('Goal deleted.', 'info');
+        } catch (err) {
+            console.error("Error deleting goal:", err);
+            triggerNotification('Failed to delete goal.', 'error');
+        }
+    };
+    const [notification, setNotification] = useState(null);
 
     // Helper to trigger temporary notifications
     const triggerNotification = (message, type = 'success') => {
         setNotification({ message, type });
         setTimeout(() => setNotification(null), 4000);
-    };
-
-    const handleCheckboxChange = (section) => {
-        setSelectedSections(prev => ({
-            ...prev,
-            [section]: !prev[section]
-        }));
-    };
-
-    const handleFileChange = (section, e) => {
-        const file = e.target.files[0];
-        if (file) {
-            setFiles(prev => ({
-                ...prev,
-                [section]: file
-            }));
-        }
-    };
-
-    // Simulate individual file upload submission
-    const handleIndividualSubmit = (section) => {
-        const file = files[section];
-        if (!file) {
-            triggerNotification(`Please choose a file for ${section.replace(/([A-Z])/g, ' $1')} before submitting.`, 'error');
-            return;
-        }
-
-        setUploadingState(prev => ({ ...prev, [section]: true }));
-
-        // Simulate upload progress
-        setTimeout(() => {
-            setUploadingState(prev => ({ ...prev, [section]: false }));
-            setSectionData(prev => ({
-                ...prev,
-                [section]: {
-                    fileName: file.name,
-                    fileSize: (file.size / 1024).toFixed(1) + ' KB',
-                    timestamp: new Date().toLocaleTimeString()
-                }
-            }));
-            triggerNotification(`${section.replace(/([A-Z])/g, ' $1')} uploaded successfully!`, 'success');
-        }, 1500);
-    };
-
-    // Submit Overall Work notes
-    const handleNotesSubmit = () => {
-        if (!overallText.trim()) {
-            triggerNotification('Please enter some updates or notes before submitting.', 'error');
-            return;
-        }
-
-        setSubmittingNotes(true);
-
-        setTimeout(() => {
-            setSubmittingNotes(false);
-            setSectionData(prev => ({
-                ...prev,
-                overallWork: {
-                    text: overallText,
-                    timestamp: new Date().toLocaleTimeString()
-                }
-            }));
-            triggerNotification('Overall Work updates submitted successfully!', 'success');
-        }, 1000);
-    };
-
-    // Delete a submitted section from pending master update
-    const handleDeleteSectionData = (section) => {
-        setSectionData(prev => ({
-            ...prev,
-            [section]: null
-        }));
-        if (section !== 'overallWork') {
-            setFiles(prev => ({
-                ...prev,
-                [section]: null
-            }));
-        } else {
-            setOverallText('');
-        }
-        triggerNotification(`Cleared data for ${section.replace(/([A-Z])/g, ' $1')}`, 'info');
-    };
-
-    // Verify if all checked sections are submitted
-    const isReadyForMasterSubmit = () => {
-        const activeSections = Object.keys(selectedSections).filter(key => selectedSections[key]);
-        if (activeSections.length === 0) return false;
-        
-        // Ensure every checked section has data submitted
-        return activeSections.every(section => sectionData[section] !== null);
-    };
-
-    // Master Submit action
-    const handleMasterSubmit = () => {
-        if (!selectedClient) {
-            triggerNotification('Please select a client first.', 'error');
-            return;
-        }
-
-        if (!isReadyForMasterSubmit()) {
-            triggerNotification('Please submit all checked individual sections before master submission.', 'error');
-            return;
-        }
-
-        setMasterSubmitting(true);
-
-        setTimeout(() => {
-            // Build the update object
-            const activeSections = Object.keys(selectedSections).filter(key => selectedSections[key]);
-            const finalUpdate = {
-                id: 'upd_' + Math.random().toString(36).substring(2, 9),
-                client: selectedClient,
-                timestamp: new Date().toLocaleString(),
-                sectionsSubmitted: activeSections,
-                data: {
-                    pressReleases: selectedSections.pressReleases ? sectionData.pressReleases : null,
-                    tracker: selectedSections.tracker ? sectionData.tracker : null,
-                    annualReport: selectedSections.annualReport ? sectionData.annualReport : null,
-                    outreach: selectedSections.outreach ? sectionData.outreach : null,
-                    overallWork: selectedSections.overallWork ? sectionData.overallWork : null
-                }
-            };
-
-            const existingUpdates = JSON.parse(localStorage.getItem('anexar_client_updates') || '[]');
-            const updatedList = [finalUpdate, ...existingUpdates];
-            localStorage.setItem('anexar_client_updates', JSON.stringify(updatedList));
-
-            // Reset Form State
-            setSelectedClient('');
-            setSelectedSections({
-                pressReleases: false,
-                tracker: false,
-                annualReport: false,
-                outreach: false,
-                overallWork: false
-            });
-            setFiles({
-                pressReleases: null,
-                tracker: null,
-                annualReport: null,
-                outreach: null
-            });
-            setSectionData({
-                pressReleases: null,
-                tracker: null,
-                annualReport: null,
-                outreach: null,
-                overallWork: null
-            });
-            setOverallText('');
-            setRecentUpdates(updatedList);
-            setMasterSubmitting(false);
-
-            triggerNotification(`Master client update for ${finalUpdate.client} has been published successfully!`, 'success');
-        }, 2000);
     };
 
     return (
@@ -251,10 +227,10 @@ export default function Clients() {
                             Manager Workspace
                         </span>
                         <h1 className="text-3xl font-extrabold text-slate-900 dark:text-white mt-1">
-                            Client Updates & Submissions
+                            Client Goals & Commitments
                         </h1>
-                        <p className="text-sm text-slate-600 dark:text-slate-400 mt-2 font-medium">
-                            Onboard files, compile weekly trackings, and push real-time campaign updates directly to the client's dashboard.
+                        <p className="text-sm text-slate-650 dark:text-slate-400 mt-2 font-medium">
+                            Create, update, and manage goals and target deliverables requested by client brands in real-time.
                         </p>
                     </div>
                     <div className="p-3 bg-white dark:bg-slate-950 rounded-2xl border border-slate-100 dark:border-slate-800 shadow-sm flex items-center justify-center shrink-0 w-12 h-12">
@@ -274,7 +250,7 @@ export default function Clients() {
                             notification.type === 'success' 
                                 ? 'bg-emerald-50 dark:bg-emerald-950/20 border-emerald-200 dark:border-emerald-900/30 text-emerald-700 dark:text-emerald-400' 
                                 : notification.type === 'error'
-                                ? 'bg-rose-50 dark:bg-rose-950/20 border-rose-200 dark:border-rose-900/30 text-rose-700 dark:text-rose-400'
+                                ? 'bg-rose-550 dark:bg-rose-950/20 border-rose-200 dark:border-rose-900/30 text-rose-700 dark:text-rose-400'
                                 : 'bg-blue-50 dark:bg-blue-950/20 border-blue-200 dark:border-blue-900/30 text-blue-700 dark:text-blue-400'
                         }`}
                     >
@@ -284,446 +260,254 @@ export default function Clients() {
                 )}
             </AnimatePresence>
 
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-                {/* Left Column - Setup Options */}
-                <div className="space-y-6 lg:col-span-1">
-                    <Card className="border-none shadow-md bg-white dark:bg-slate-950 rounded-3xl p-6 border border-slate-100 dark:border-slate-800">
-                        <h2 className="text-lg font-bold text-gray-900 dark:text-white flex items-center gap-2 mb-6">
-                            <Layers size={18} className="text-amber-500" />
-                            Update Configuration
-                        </h2>
-
-                        {/* Select Your Client */}
-                        <div className="space-y-2">
-                            <label className="text-xs font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500">
-                                Select Your Client
-                            </label>
-                            <div className="relative">
-                                <select
-                                    value={selectedClient}
-                                    onChange={(e) => {
-                                        setSelectedClient(e.target.value);
-                                        // Reset files/sub-submissions if client changes
-                                        setFiles({ pressReleases: null, tracker: null, annualReport: null, outreach: null });
-                                        setSectionData({ pressReleases: null, tracker: null, annualReport: null, outreach: null, overallWork: null });
-                                        setOverallText('');
-                                    }}
-                                    className="w-full appearance-none bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-gray-900 dark:text-white rounded-xl px-4 py-3 pr-10 focus:outline-none focus:border-amber-500 focus:ring-1 focus:ring-amber-500 transition-all font-medium cursor-pointer"
-                                >
-                                    <option value="">-- Choose Client --</option>
-                                    {CLIENTS.map((client) => (
-                                        <option key={client} value={client}>{client}</option>
-                                    ))}
-                                </select>
-                                <ChevronDown className="absolute right-3.5 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" size={16} />
-                            </div>
+            {assignedClients.length === 0 ? (
+                <div className="bg-white dark:bg-[#111827] border border-[#EAE8E4] dark:border-white/10 rounded-[2rem] p-8 text-center text-slate-400 dark:text-slate-500 py-16 flex flex-col items-center justify-center shadow-[0_10px_30px_rgba(0,0,0,0.05)]">
+                    <Users className="mb-4 text-slate-350 dark:text-slate-700" size={48} />
+                    <h3 className="text-sm font-bold uppercase tracking-wider text-slate-750 dark:text-slate-355">No Allocated Clients</h3>
+                    <p className="text-xs text-slate-400 dark:text-slate-555 max-w-md mx-auto mt-2 font-medium">
+                        You are not currently allocated to any client workspaces. Please contact an administrator or manager to assign client accounts to your profile.
+                    </p>
+                </div>
+            ) : (
+                <>
+                    {/* Client Selection Card */}
+                    <Card className="border-none shadow-md bg-white dark:bg-slate-955 rounded-3xl p-6 border border-slate-100 dark:border-slate-800 flex flex-col md:flex-row md:items-center justify-between gap-6">
+                        <div>
+                            <h2 className="text-md font-bold text-gray-900 dark:text-white flex items-center gap-2">
+                                <Layers size={18} className="text-amber-500" />
+                                Select Client Account
+                            </h2>
+                            <p className="text-2xs text-slate-450 dark:text-slate-555 mt-0.5 font-medium">
+                                Choose which active brand partner goals you wish to display and update.
+                            </p>
                         </div>
-
-                        {/* Checkboxes List */}
-                        {selectedClient && (
-                            <motion.div 
-                                initial={{ opacity: 0, height: 0 }}
-                                animate={{ opacity: 1, height: 'auto' }}
-                                className="mt-8 space-y-4 pt-6 border-t border-slate-100 dark:border-slate-900"
+                        <div className="relative min-w-[240px]">
+                            <select
+                                value={selectedClient}
+                                onChange={(e) => setSelectedClient(e.target.value)}
+                                className="w-full appearance-none bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-gray-900 dark:text-white rounded-xl px-4 py-3 pr-10 focus:outline-none focus:border-amber-500 focus:ring-1 focus:ring-amber-500 transition-all font-bold text-xs cursor-pointer shadow-sm"
                             >
-                                <label className="text-xs font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500 block mb-2">
-                                    Select Sections to Update
-                                </label>
-                                
-                                {Object.keys(selectedSections).map((key) => {
-                                    const formattedName = key === 'pressReleases' ? 'Press Releases'
-                                                        : key === 'tracker' ? 'Daily/Monthly Tracker'
-                                                        : key === 'annualReport' ? 'Annual Report'
-                                                        : key === 'outreach' ? 'Outreach'
-                                                        : 'Overall Work';
-
-                                    return (
-                                        <label 
-                                            key={key} 
-                                            className={`flex items-center gap-3 px-4 py-3 rounded-xl border transition-all cursor-pointer ${
-                                                selectedSections[key] 
-                                                    ? 'bg-amber-50/20 dark:bg-amber-500/5 border-amber-500/30 text-amber-600 dark:text-amber-400 font-semibold' 
-                                                    : 'bg-transparent border-slate-200 dark:border-slate-850 hover:bg-slate-50 dark:hover:bg-slate-900 text-slate-600 dark:text-slate-400 font-medium'
-                                            }`}
-                                        >
-                                            <input
-                                                type="checkbox"
-                                                checked={selectedSections[key]}
-                                                onChange={() => handleCheckboxChange(key)}
-                                                className="w-4 h-4 rounded text-amber-500 focus:ring-amber-500 border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-950 cursor-pointer"
-                                            />
-                                            <span className="text-xs">{formattedName}</span>
-                                        </label>
-                                    );
-                                })}
-                            </motion.div>
-                        )}
+                                <option value="">-- Choose Client --</option>
+                                {assignedClients.map((client) => (
+                                    <option key={client} value={client}>{client}</option>
+                                ))}
+                            </select>
+                            <ChevronDown className="absolute right-3.5 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" size={16} />
+                        </div>
                     </Card>
 
-                    {/* Master Submit Card */}
-                    {selectedClient && Object.values(selectedSections).some(v => v) && (
-                        <motion.div
-                            initial={{ opacity: 0, scale: 0.95 }}
-                            animate={{ opacity: 1, scale: 1 }}
-                        >
-                            <Card className="border-none shadow-md bg-gradient-to-tr from-slate-900 to-slate-950 dark:from-slate-950 dark:to-slate-990 rounded-3xl p-6 text-white border border-slate-800">
-                                <h3 className="text-md font-bold mb-2 flex items-center gap-2">
-                                    <Sparkles size={16} className="text-amber-400" />
-                                    Publish Updates
-                                </h3>
-                                <p className="text-3xs text-slate-400 leading-relaxed mb-6 font-medium">
-                                    Once all checked sections show a submitted state, hit Master Submit to compile and sync.
-                                </p>
-
+                    {/* Goals & Commitments control panel */}
+                    {selectedClient ? (
+                        <Card className="border-none shadow-md bg-white dark:bg-slate-955 rounded-3xl p-6 border border-slate-100 dark:border-slate-800">
+                            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
+                                <div>
+                                    <h2 className="text-md font-bold text-gray-900 dark:text-white flex items-center gap-2">
+                                        <CheckSquare size={18} className="text-amber-500" />
+                                        {selectedClient} Goals & Commitments
+                                    </h2>
+                                    <p className="text-2xs text-slate-450 dark:text-slate-555 mt-0.5 font-medium">
+                                        Monitor and update metrics for deliverables requested by the client.
+                                    </p>
+                                </div>
                                 <button
-                                    onClick={handleMasterSubmit}
-                                    disabled={!isReadyForMasterSubmit() || masterSubmitting}
-                                    className={`w-full py-3.5 rounded-xl font-bold text-xs tracking-wider uppercase flex items-center justify-center gap-2 transition-all cursor-pointer ${
-                                        isReadyForMasterSubmit() && !masterSubmitting
-                                            ? 'bg-amber-500 hover:bg-amber-600 text-white shadow-lg shadow-amber-500/20'
-                                            : 'bg-slate-850 text-slate-500 cursor-not-allowed border border-slate-800'
-                                    }`}
+                                    onClick={() => setIsAddGoalModalOpen(true)}
+                                    className="bg-[#1A1A1A] hover:bg-black dark:bg-amber-500 dark:text-[#0B0F19] dark:hover:bg-amber-400 text-white text-[11px] font-bold px-4 py-2 rounded-xl transition-all cursor-pointer flex items-center gap-1"
                                 >
-                                    {masterSubmitting ? (
-                                        <>
-                                            <span className="h-4 w-4 border-2 border-white/20 border-t-white rounded-full animate-spin"></span>
-                                            <span>Publishing...</span>
-                                        </>
-                                    ) : (
-                                        <>
-                                            <Send size={14} />
-                                            <span>Master Submit</span>
-                                        </>
-                                    )}
+                                    <Plus size={14} className="stroke-[2.5px]" /> Add Goal
                                 </button>
-                            </Card>
-                        </motion.div>
-                    )}
-                </div>
+                            </div>
 
-                {/* Right Column - Workspaces / Forms */}
-                <div className="space-y-6 lg:col-span-2">
-                    {!selectedClient ? (
-                        <Card className="border-none shadow-md bg-white dark:bg-slate-950 rounded-3xl p-8 text-center text-slate-400 dark:text-slate-600 flex flex-col items-center justify-center py-20 border border-slate-100 dark:border-slate-900">
-                            <Users size={48} className="mb-4 text-slate-300 dark:text-slate-700" />
-                            <h3 className="text-sm font-bold uppercase tracking-wider text-slate-700 dark:text-slate-350">
-                                Setup Required
-                            </h3>
-                            <p className="text-xs text-slate-400 dark:text-slate-500 max-w-sm mt-2 font-medium">
-                                Select a client from the dropdown configuration list on the left to start compiling updates.
-                            </p>
-                        </Card>
-                    ) : !Object.values(selectedSections).some(v => v) ? (
-                        <Card className="border-none shadow-md bg-white dark:bg-slate-950 rounded-3xl p-8 text-center text-slate-400 dark:text-slate-600 flex flex-col items-center justify-center py-20 border border-slate-100 dark:border-slate-900">
-                            <CheckSquare size={48} className="mb-4 text-slate-300 dark:text-slate-700" />
-                            <h3 className="text-sm font-bold uppercase tracking-wider text-slate-700 dark:text-slate-350">
-                                Select Sections
-                            </h3>
-                            <p className="text-xs text-slate-400 dark:text-slate-500 max-w-sm mt-2 font-medium">
-                                Choose one or more update sections (e.g. Press Releases, Overall Work) to show upload forms.
-                            </p>
-                        </Card>
-                    ) : (
-                        <div className="space-y-6">
-                            <AnimatePresence>
-                                {/* Press Releases Upload */}
-                                {selectedSections.pressReleases && (
-                                    <motion.div
-                                        initial={{ opacity: 0, y: 15 }}
-                                        animate={{ opacity: 1, y: 0 }}
-                                        exit={{ opacity: 0, y: -15 }}
-                                    >
-                                        <SectionUploadCard
-                                            title="Press Releases"
-                                            description="Upload news templates, PR drafts, or media release kits."
-                                            sectionKey="pressReleases"
-                                            file={files.pressReleases}
-                                            submittedData={sectionData.pressReleases}
-                                            uploading={uploadingState.pressReleases}
-                                            onFileChange={(e) => handleFileChange('pressReleases', e)}
-                                            onSubmit={() => handleIndividualSubmit('pressReleases')}
-                                            onDelete={() => handleDeleteSectionData('pressReleases')}
-                                        />
-                                    </motion.div>
-                                )}
-
-                                {/* Daily/Monthly Tracker */}
-                                {selectedSections.tracker && (
-                                    <motion.div
-                                        initial={{ opacity: 0, y: 15 }}
-                                        animate={{ opacity: 1, y: 0 }}
-                                        exit={{ opacity: 0, y: -15 }}
-                                    >
-                                        <SectionUploadCard
-                                            title="Daily/Monthly Tracker"
-                                            description="Upload tracking spreadsheets containing daily logs and stats."
-                                            sectionKey="tracker"
-                                            file={files.tracker}
-                                            submittedData={sectionData.tracker}
-                                            uploading={uploadingState.tracker}
-                                            onFileChange={(e) => handleFileChange('tracker', e)}
-                                            onSubmit={() => handleIndividualSubmit('tracker')}
-                                            onDelete={() => handleDeleteSectionData('tracker')}
-                                        />
-                                    </motion.div>
-                                )}
-
-                                {/* Annual Report */}
-                                {selectedSections.annualReport && (
-                                    <motion.div
-                                        initial={{ opacity: 0, y: 15 }}
-                                        animate={{ opacity: 1, y: 0 }}
-                                        exit={{ opacity: 0, y: -15 }}
-                                    >
-                                        <SectionUploadCard
-                                            title="Annual Report"
-                                            description="Upload comprehensive annual strategy, outcomes, or financial sheets."
-                                            sectionKey="annualReport"
-                                            file={files.annualReport}
-                                            submittedData={sectionData.annualReport}
-                                            uploading={uploadingState.annualReport}
-                                            onFileChange={(e) => handleFileChange('annualReport', e)}
-                                            onSubmit={() => handleIndividualSubmit('annualReport')}
-                                            onDelete={() => handleDeleteSectionData('annualReport')}
-                                        />
-                                    </motion.div>
-                                )}
-
-                                {/* Outreach */}
-                                {selectedSections.outreach && (
-                                    <motion.div
-                                        initial={{ opacity: 0, y: 15 }}
-                                        animate={{ opacity: 1, y: 0 }}
-                                        exit={{ opacity: 0, y: -15 }}
-                                    >
-                                        <SectionUploadCard
-                                            title="Outreach"
-                                            description="Upload journalist lists, campaign contacts, or outreach progress reports."
-                                            sectionKey="outreach"
-                                            file={files.outreach}
-                                            submittedData={sectionData.outreach}
-                                            uploading={uploadingState.outreach}
-                                            onFileChange={(e) => handleFileChange('outreach', e)}
-                                            onSubmit={() => handleIndividualSubmit('outreach')}
-                                            onDelete={() => handleDeleteSectionData('outreach')}
-                                        />
-                                    </motion.div>
-                                )}
-
-                                {/* Overall Work Section */}
-                                {selectedSections.overallWork && (
-                                    <motion.div
-                                        initial={{ opacity: 0, y: 15 }}
-                                        animate={{ opacity: 1, y: 0 }}
-                                        exit={{ opacity: 0, y: -15 }}
-                                    >
-                                        <Card className="border-none shadow-md bg-white dark:bg-slate-950 rounded-3xl p-6 border border-slate-100 dark:border-slate-800">
-                                            <div className="flex justify-between items-start gap-4 mb-4">
-                                                <div>
-                                                    <h3 className="text-md font-bold text-slate-900 dark:text-white">Overall Work</h3>
-                                                    <p className="text-2xs text-slate-400 dark:text-slate-500 mt-0.5 font-medium">
-                                                        Summarize key achievements, weekly briefs, or updates on the accounts.
-                                                    </p>
-                                                </div>
-                                                {sectionData.overallWork && (
-                                                    <span className="px-2.5 py-0.5 bg-emerald-50 dark:bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 text-3xs font-extrabold uppercase tracking-wider rounded-full flex items-center gap-1.5 border border-emerald-250/20">
-                                                        <FileCheck size={10} /> Submitted
+                            {clientGoals.length === 0 ? (
+                                <div className="p-8 text-center bg-slate-50 dark:bg-slate-900/40 rounded-2xl border border-dashed border-slate-200 dark:border-slate-800 text-slate-400 dark:text-slate-500 text-xs font-semibold">
+                                    No goals found for this client. Click "Add Goal" to set one.
+                                </div>
+                            ) : (
+                                <div className="space-y-4">
+                                    {clientGoals.map((goal) => (
+                                        <div key={goal.docId} className="bg-slate-50 dark:bg-slate-900/50 border border-slate-200/50 dark:border-slate-800/80 p-4 sm:p-5 rounded-2xl hover:shadow-sm transition-all flex flex-col md:flex-row md:items-center justify-between gap-6">
+                                            {/* Left section: Info */}
+                                            <div className="space-y-1.5 md:max-w-md flex-1">
+                                                <div className="flex items-center gap-2">
+                                                    <span className="px-2 py-0.5 text-[9px] font-extrabold uppercase bg-slate-200/60 dark:bg-slate-850 text-slate-655 dark:text-slate-455 rounded-md border border-slate-300/30">
+                                                        {goal.period || 'Monthly'}
                                                     </span>
-                                                )}
+                                                    <span className={`px-2 py-0.5 text-[9px] font-extrabold uppercase rounded-md border ${
+                                                        goal.status === 'Completed' ? 'bg-emerald-500/10 text-emerald-500 border-emerald-500/20' :
+                                                        goal.status === 'At Risk' ? 'bg-rose-500/10 text-rose-500 border-rose-500/20' :
+                                                        goal.status === 'On Track' ? 'bg-amber-500/10 text-amber-500 border-amber-500/20' :
+                                                        'bg-slate-100 dark:bg-[#1E293B] text-slate-500 border-slate-200'
+                                                    }`}>
+                                                        {goal.status}
+                                                    </span>
+                                                </div>
+                                                <p className="text-xs font-bold text-slate-800 dark:text-slate-200">{goal.deliverable}</p>
+                                                <div className="flex items-center gap-2 pt-1">
+                                                    <div className="w-24 bg-slate-200 dark:bg-slate-800 rounded-full h-1.5 overflow-hidden">
+                                                        <div 
+                                                            className={`h-full rounded-full ${
+                                                                goal.status === 'Completed' ? 'bg-emerald-500' :
+                                                                goal.status === 'At Risk' ? 'bg-rose-500' :
+                                                                'bg-amber-550'
+                                                            }`}
+                                                            style={{ width: `${goal.progress || 0}%` }}
+                                                        ></div>
+                                                    </div>
+                                                    <span className="text-[10px] font-extrabold text-slate-500 dark:text-slate-400">{goal.progress || 0}% Progress</span>
+                                                </div>
                                             </div>
 
-                                            {sectionData.overallWork ? (
-                                                <div className="bg-slate-50 dark:bg-slate-900/60 p-4 rounded-xl border border-slate-100 dark:border-slate-850 space-y-4">
-                                                    <p className="text-xs text-slate-700 dark:text-slate-350 leading-relaxed font-semibold italic">
-                                                        "{sectionData.overallWork.text}"
-                                                    </p>
-                                                    <div className="flex justify-between items-center text-3xs text-slate-400 pt-2 border-t border-slate-200/50 dark:border-slate-800">
-                                                        <span>Logged at {sectionData.overallWork.timestamp}</span>
-                                                        <button 
-                                                            onClick={() => handleDeleteSectionData('overallWork')}
-                                                            className="text-red-500 hover:text-red-600 flex items-center gap-1 cursor-pointer font-bold uppercase tracking-wider"
+                                            {/* Middle section: Qty controls */}
+                                            <div className="flex flex-wrap items-center gap-4 sm:gap-6">
+                                                {/* Achieved counter */}
+                                                <div className="flex flex-col gap-1">
+                                                    <span className="text-[10px] font-bold text-slate-455 uppercase">Achieved</span>
+                                                    <div className="flex items-center gap-1 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl p-1">
+                                                        <button
+                                                            onClick={() => handleUpdateGoalField(goal.docId, goal, 'achieved', Math.max(0, (parseFloat(goal.achieved) || 0) - 1))}
+                                                            className="w-7 h-7 flex items-center justify-center bg-slate-100 hover:bg-slate-200 dark:bg-slate-850 dark:hover:bg-slate-800 text-slate-655 dark:text-slate-450 rounded-lg text-xs font-black transition-colors cursor-pointer border border-slate-200/20"
                                                         >
-                                                            <Trash2 size={10} /> Clear
+                                                            -
+                                                        </button>
+                                                        <input
+                                                            type="number"
+                                                            min="0"
+                                                            value={goal.achieved}
+                                                            onChange={(e) => handleUpdateGoalField(goal.docId, goal, 'achieved', parseFloat(e.target.value) || 0)}
+                                                            className="w-10 text-center text-xs font-bold bg-transparent border-none focus:outline-none dark:text-white"
+                                                        />
+                                                        <button
+                                                            onClick={() => handleUpdateGoalField(goal.docId, goal, 'achieved', (parseFloat(goal.achieved) || 0) + 1)}
+                                                            className="w-7 h-7 flex items-center justify-center bg-slate-100 hover:bg-slate-200 dark:bg-slate-850 dark:hover:bg-slate-800 text-slate-655 dark:text-slate-450 rounded-lg text-xs font-black transition-colors cursor-pointer border border-slate-200/20"
+                                                        >
+                                                            +
                                                         </button>
                                                     </div>
                                                 </div>
-                                            ) : (
-                                                <div className="space-y-4">
-                                                    <textarea
-                                                        value={overallText}
-                                                        onChange={(e) => setOverallText(e.target.value)}
-                                                        placeholder="Enter update notes or notes describing the overall progress on this account..."
-                                                        rows={4}
-                                                        className="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-gray-900 dark:text-white rounded-xl px-4 py-3 focus:outline-none focus:border-amber-500 focus:ring-1 focus:ring-amber-500 transition-all font-medium text-xs"
+
+                                                {/* Target input */}
+                                                <div className="flex flex-col gap-1">
+                                                    <span className="text-[10px] font-bold text-slate-455 uppercase">Target</span>
+                                                    <input
+                                                        type="number"
+                                                        min="1"
+                                                        value={goal.target}
+                                                        onChange={(e) => handleUpdateGoalField(goal.docId, goal, 'target', parseFloat(e.target.value) || 0)}
+                                                        className="w-16 h-9 px-2 text-center text-xs font-bold bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl focus:outline-none focus:border-amber-500 dark:text-white"
                                                     />
-
-                                                    <button
-                                                        onClick={handleNotesSubmit}
-                                                        disabled={submittingNotes || !overallText.trim()}
-                                                        className={`w-full py-2.5 rounded-xl font-bold text-xs flex items-center justify-center gap-1.5 transition-all cursor-pointer ${
-                                                            overallText.trim() && !submittingNotes
-                                                                ? 'bg-amber-500 hover:bg-amber-600 text-white shadow-md'
-                                                                : 'bg-slate-100 dark:bg-slate-900 text-slate-450 dark:text-slate-600 cursor-not-allowed border border-slate-200/40 dark:border-slate-800/40'
-                                                        }`}
-                                                    >
-                                                        {submittingNotes ? (
-                                                            <>
-                                                                <span className="h-4 w-4 border-2 border-white/20 border-t-white rounded-full animate-spin"></span>
-                                                                <span>Submitting Update...</span>
-                                                            </>
-                                                        ) : (
-                                                            <>
-                                                                <Send size={12} />
-                                                                <span>Submit Overall Work Update</span>
-                                                            </>
-                                                        )}
-                                                    </button>
                                                 </div>
-                                            )}
-                                        </Card>
-                                    </motion.div>
-                                )}
-                            </AnimatePresence>
-                        </div>
-                    )}
-                </div>
-            </div>
 
-            {/* Recent submissions logs table at bottom */}
-            {recentUpdates.length > 0 && (
-                <Card className="border-none shadow-md bg-white dark:bg-slate-950 rounded-3xl p-6 border border-slate-100 dark:border-slate-800">
-                    <h2 className="text-md font-bold text-gray-900 dark:text-white flex items-center gap-2 mb-4">
-                        <Clock size={16} className="text-amber-500" />
-                        Recent Master Submissions (Real-time Synced Log)
-                    </h2>
-                    <div className="overflow-x-auto">
-                        <table className="w-full text-left border-collapse text-xs">
-                            <thead>
-                                <tr className="border-b border-slate-150 dark:border-slate-850 text-slate-450 dark:text-slate-650 uppercase font-black tracking-wider text-[10px]">
-                                    <th className="py-3 px-4">Client</th>
-                                    <th className="py-3 px-4">Published At</th>
-                                    <th className="py-3 px-4">Submitted Sections</th>
-                                    <th className="py-3 px-4 text-right">Action</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                {recentUpdates.map((update) => (
-                                    <tr key={update.id} className="border-b border-slate-100 dark:border-slate-900 hover:bg-slate-50/50 dark:hover:bg-slate-900/20">
-                                        <td className="py-3.5 px-4 font-bold text-slate-800 dark:text-slate-200">{update.client}</td>
-                                        <td className="py-3.5 px-4 font-medium text-slate-500 dark:text-slate-400">{update.timestamp}</td>
-                                        <td className="py-3.5 px-4">
-                                            <div className="flex flex-wrap gap-1.5">
-                                                {(update.sectionsSubmitted || []).map((sec) => (
-                                                    <span key={sec} className="px-2 py-0.5 bg-slate-100 dark:bg-slate-900 text-slate-650 dark:text-slate-405 rounded text-[10px] font-semibold border border-slate-200/30 dark:border-slate-805">
-                                                        {sec === 'pressReleases' ? 'PR'
-                                                         : sec === 'tracker' ? 'Tracker'
-                                                         : sec === 'annualReport' ? 'Annual Report'
-                                                         : sec === 'outreach' ? 'Outreach'
-                                                         : 'Notes'}
-                                                    </span>
-                                                ))}
+                                                {/* Status dropdown */}
+                                                <div className="flex flex-col gap-1">
+                                                    <span className="text-[10px] font-bold text-slate-455 uppercase">Status</span>
+                                                    <select
+                                                        value={goal.status}
+                                                        onChange={(e) => handleUpdateGoalField(goal.docId, goal, 'status', e.target.value)}
+                                                        className="h-9 px-3 text-xs font-bold bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl focus:outline-none focus:border-amber-500 cursor-pointer dark:text-white"
+                                                    >
+                                                        <option value="Pending">Pending</option>
+                                                        <option value="On Track">On Track</option>
+                                                        <option value="Completed">Completed</option>
+                                                        <option value="At Risk">At Risk</option>
+                                                    </select>
+                                                </div>
                                             </div>
-                                        </td>
-                                        <td className="py-3.5 px-4 text-right">
-                                            <button 
-                                                onClick={() => {
-                                                    const updatedList = recentUpdates.filter(u => u.id !== update.id);
-                                                    localStorage.setItem('anexar_client_updates', JSON.stringify(updatedList));
-                                                    setRecentUpdates(updatedList);
-                                                    triggerNotification('Submissions history deleted', 'info');
-                                                }}
-                                                className="text-red-500 hover:text-red-600 cursor-pointer font-semibold uppercase tracking-wider text-[10px]"
-                                            >
-                                                Delete
-                                            </button>
-                                        </td>
-                                    </tr>
-                                ))}
-                            </tbody>
-                        </table>
+
+                                            {/* Right section: Delete */}
+                                            <div className="flex md:flex-col justify-end items-center shrink-0 border-t md:border-t-0 md:border-l border-slate-200/60 dark:border-slate-800 pt-3 md:pt-0 md:pl-4">
+                                                <button
+                                                    onClick={() => handleDeleteGoal(goal.docId)}
+                                                    className="text-red-500 hover:text-red-655 p-2 rounded-lg hover:bg-red-50 dark:hover:bg-red-500/10 cursor-pointer transition-colors"
+                                                    title="Delete Goal"
+                                                >
+                                                    <Trash2 size={16} />
+                                                </button>
+                                            </div>
+                                        </div>
+                                    ))}
+                                </div>
+                            )}
+                        </Card>
+                    ) : (
+                        <Card className="border-none shadow-md bg-white dark:bg-slate-950 rounded-3xl p-8 text-center text-slate-400 dark:text-slate-600 flex flex-col items-center justify-center py-20 border border-slate-100 dark:border-slate-900">
+                            <Users size={48} className="mb-4 text-slate-350 dark:text-slate-700" />
+                            <h3 className="text-sm font-bold uppercase tracking-wider text-slate-750 dark:text-slate-355">
+                                Select a Client
+                            </h3>
+                            <p className="text-xs text-slate-400 dark:text-slate-500 max-w-sm mt-2 font-medium">
+                                Select a client from the dropdown list above to display and manage goals & commitments.
+                            </p>
+                        </Card>
+                    )}
+                </>
+            )}
+
+            {/* Create Goal Modal inside Team Portal */}
+            {isAddGoalModalOpen && (
+                <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+                    <div className="fixed inset-0 bg-black/40 backdrop-blur-sm" onClick={() => setIsAddGoalModalOpen(false)}></div>
+                    <div className="relative bg-white dark:bg-slate-955 rounded-3xl border border-slate-200 dark:border-slate-850 p-6 w-full max-w-md shadow-2xl animate-in fade-in zoom-in-95">
+                        <button
+                            onClick={() => setIsAddGoalModalOpen(false)}
+                            className="absolute top-6 right-6 text-gray-400 hover:text-gray-900 dark:hover:text-white transition-colors"
+                        >
+                            <X size={20} />
+                        </button>
+
+                        <div className="mb-6">
+                            <h2 className="text-md font-black text-gray-900 dark:text-white">Add New Goal for {selectedClient}</h2>
+                            <p className="text-2xs text-slate-450 mt-1">Set a deliverable and success target for this account.</p>
+                        </div>
+
+                        <form onSubmit={handleAddClientGoal} className="space-y-4">
+                            <div>
+                                <label className="block text-xs font-bold text-slate-500 dark:text-slate-400 mb-1.5">Deliverable Title</label>
+                                <input
+                                    type="text"
+                                    required
+                                    placeholder="e.g. Secure 5 Tier-1 Placements"
+                                    value={newGoalDeliverable}
+                                    onChange={(e) => setNewGoalDeliverable(e.target.value)}
+                                    className="w-full bg-slate-50 dark:bg-slate-905 border border-slate-200 dark:border-slate-800 text-slate-900 dark:text-white rounded-xl px-4 py-2.5 focus:outline-none focus:border-amber-500 transition-all text-xs font-semibold"
+                                />
+                            </div>
+
+                            <div className="grid grid-cols-2 gap-4">
+                                <div>
+                                    <label className="block text-xs font-bold text-slate-500 dark:text-slate-400 mb-1.5">Target Count</label>
+                                    <input
+                                        type="number"
+                                        required
+                                        min="1"
+                                        placeholder="e.g. 5"
+                                        value={newGoalTarget}
+                                        onChange={(e) => setNewGoalTarget(e.target.value)}
+                                        className="w-full bg-slate-50 dark:bg-slate-905 border border-slate-200 dark:border-slate-800 text-slate-900 dark:text-white rounded-xl px-4 py-2.5 focus:outline-none focus:border-amber-500 transition-all text-xs font-semibold"
+                                    />
+                                </div>
+                                <div>
+                                    <label className="block text-xs font-bold text-slate-500 dark:text-slate-400 mb-1.5">Period</label>
+                                    <select
+                                        value={newGoalPeriod}
+                                        onChange={(e) => setNewGoalPeriod(e.target.value)}
+                                        className="w-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-slate-900 dark:text-white rounded-xl px-4 py-2.5 focus:outline-none focus:border-amber-500 cursor-pointer text-xs font-semibold"
+                                    >
+                                        <option value="Monthly">Monthly</option>
+                                        <option value="Quarterly">Quarterly</option>
+                                        <option value="Annual">Annual</option>
+                                    </select>
+                                </div>
+                            </div>
+
+                            <button
+                                type="submit"
+                                className="w-full mt-2 bg-amber-500 hover:bg-amber-600 text-white font-bold py-2.5 rounded-xl transition-all shadow-md shadow-amber-500/10 cursor-pointer flex items-center justify-center gap-1.5 text-xs"
+                            >
+                                <CheckSquare size={14} /> Create Goal
+                            </button>
+                        </form>
                     </div>
-                </Card>
+                </div>
             )}
         </div>
-    );
-}
-
-// Inner Component for File Upload Sections
-function SectionUploadCard({ title, description, sectionKey, file, submittedData, uploading, onFileChange, onSubmit, onDelete }) {
-    const formattedInputId = `file_input_${sectionKey}`;
-
-    return (
-        <Card className="border-none shadow-md bg-white dark:bg-slate-950 rounded-3xl p-6 border border-slate-100 dark:border-slate-800">
-            <div className="flex justify-between items-start gap-4 mb-4">
-                <div>
-                    <h3 className="text-md font-bold text-slate-900 dark:text-white">{title}</h3>
-                    <p className="text-2xs text-slate-400 dark:text-slate-500 mt-0.5 font-medium">{description}</p>
-                </div>
-                {submittedData && (
-                    <span className="px-2.5 py-0.5 bg-emerald-50 dark:bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 text-3xs font-extrabold uppercase tracking-wider rounded-full flex items-center gap-1.5 border border-emerald-250/20">
-                        <FileCheck size={10} /> Submitted
-                    </span>
-                )}
-            </div>
-
-            {submittedData ? (
-                <div className="bg-slate-50 dark:bg-slate-900/60 p-4 rounded-xl border border-slate-100 dark:border-slate-850 flex items-center justify-between gap-4">
-                    <div className="flex items-center gap-3">
-                        <div className="h-9 w-9 bg-emerald-50 dark:bg-emerald-950/40 text-emerald-600 dark:text-emerald-400 rounded-lg flex items-center justify-center shrink-0 border border-emerald-200/30">
-                            <FileSpreadsheet size={16} />
-                        </div>
-                        <div className="min-w-0">
-                            <p className="text-xs font-bold text-slate-850 dark:text-slate-205 truncate max-w-xs">{submittedData.fileName}</p>
-                            <p className="text-4xs text-slate-400 font-semibold">{submittedData.fileSize} • Uploaded at {submittedData.timestamp}</p>
-                        </div>
-                    </div>
-                    <button 
-                        onClick={onDelete}
-                        className="text-red-500 hover:text-red-600 flex items-center gap-1 cursor-pointer text-[10px] font-bold uppercase tracking-wider hover:scale-105 transition-all shrink-0"
-                    >
-                        <Trash2 size={12} /> Clear
-                    </button>
-                </div>
-            ) : (
-                <div className="space-y-4">
-                    {/* Drag and Drop Box */}
-                    <div className="border border-dashed border-slate-200 dark:border-slate-800 rounded-xl p-4 flex flex-col items-center justify-center bg-slate-50/50 dark:bg-slate-900/30 hover:bg-slate-50 dark:hover:bg-slate-900/50 transition-colors relative">
-                        <input
-                            type="file"
-                            id={formattedInputId}
-                            onChange={onFileChange}
-                            className="absolute inset-0 opacity-0 cursor-pointer w-full h-full"
-                        />
-                        <Upload size={20} className="text-slate-400 mb-2" />
-                        <span className="text-2xs text-slate-600 dark:text-slate-400 font-bold">
-                            {file ? file.name : "Select or drag file here"}
-                        </span>
-                        <span className="text-4xs text-slate-400 mt-1">PDF, DOCX, XLSX up to 10MB</span>
-                    </div>
-
-                    <button
-                        onClick={onSubmit}
-                        disabled={uploading || !file}
-                        className={`w-full py-2.5 rounded-xl font-bold text-xs flex items-center justify-center gap-1.5 transition-all cursor-pointer ${
-                            file && !uploading
-                                ? 'bg-amber-500 hover:bg-amber-600 text-white shadow-md'
-                                : 'bg-slate-100 dark:bg-slate-900 text-slate-450 dark:text-slate-600 cursor-not-allowed border border-slate-200/40 dark:border-slate-800/40'
-                        }`}
-                    >
-                        {uploading ? (
-                            <>
-                                <span className="h-4 w-4 border-2 border-white/20 border-t-white rounded-full animate-spin"></span>
-                                <span>Uploading file...</span>
-                            </>
-                        ) : (
-                            <>
-                                <Upload size={12} />
-                                <span>Submit {title}</span>
-                            </>
-                        )}
-                    </button>
-                </div>
-            )}
-        </Card>
     );
 }

@@ -95,18 +95,7 @@ export default function Login() {
                 <div className="text-center mb-8">
                     <Link to="/" className="inline-block mb-3">
                         <div className="w-16 h-16 rounded-xl bg-white shadow-md flex items-center justify-center p-2 mx-auto border border-brand-border/20">
-                            <svg viewBox="0 0 100 100" className="w-full h-full" xmlns="http://www.w3.org/2000/svg">
-                                <circle cx="35" cy="25" r="5" fill="#E62222" />
-                                <circle cx="50" cy="25" r="5" fill="#E62222" />
-                                <circle cx="65" cy="25" r="5" fill="#E62222" />
-                                <path d="M 25,60 C 25,35 40,35 40,55 C 40,35 50,35 50,55 C 50,35 60,35 60,55 C 60,35 75,35 75,60 C 75,75 60,70 60,55 C 60,70 50,70 50,55 C 50,70 40,70 40,55 C 40,70 25,75 25,60 Z"
-                                    fill="none"
-                                    stroke="#000000"
-                                    strokeWidth="5"
-                                    strokeLinecap="round"
-                                    strokeLinejoin="round"
-                                />
-                            </svg>
+                            <img src="/anexar_collapsed.png" alt="Logo" className="w-full h-full object-contain rounded" />
                         </div>
                     </Link>
                     <Link to="/" className="block">
@@ -202,28 +191,32 @@ export default function Login() {
 
                             <div className="mt-5 flex justify-center">
                                 <GoogleLogin
-                                    onSuccess={(credentialResponse) => {
-                                        const decoded = jwtDecode(credentialResponse.credential);
-                                        console.log("User Info:", decoded);
-                                        const userEmail = decoded.email || '';
+                                    onSuccess={async (credentialResponse) => {
+                                        try {
+                                            const decoded = jwtDecode(credentialResponse.credential);
+                                            console.log("User Info:", decoded);
+                                            const userEmail = decoded.email || '';
 
-                                        // Rule 1: Only @themavericksindia.com allowed for Team
-                                        if (role === 'Team' && !userEmail.toLowerCase().endsWith('@themavericksindia.com')) {
-                                            setError("Access Restricted: Only @themavericksindia.com accounts are allowed to log in as Mavericks.");
-                                            return;
-                                        }
+                                            // Rule 1: Only @themavericksindia.com allowed for Team
+                                            if (role === 'Team' && !userEmail.toLowerCase().endsWith('@themavericksindia.com')) {
+                                                setError("Access Restricted: Only @themavericksindia.com accounts are allowed to log in as Mavericks.");
+                                                return;
+                                            }
 
-                                        // Rule 2: If client tries with @themavericksindia.com, redirect to Mavericks
-                                        if (role === 'Client' && userEmail.toLowerCase().endsWith('@themavericksindia.com')) {
-                                            setRole('Team');
-                                            setError("Strategic Redirect: @themavericksindia.com accounts must log in as Mavericks. Switched view to Maverick Sign-In.");
-                                            const loggedInUser = loginWithGoogle({ ...decoded, role: 'Team' });
+                                            // Rule 2: If client tries with @themavericksindia.com, redirect to Mavericks
+                                            if (role === 'Client' && userEmail.toLowerCase().endsWith('@themavericksindia.com')) {
+                                                setRole('Team');
+                                                setError("Strategic Redirect: @themavericksindia.com accounts must log in as Mavericks. Switched view to Maverick Sign-In.");
+                                                const loggedInUser = await loginWithGoogle({ ...decoded, role: 'Team' });
+                                                navigate('/dashboard');
+                                                return;
+                                            }
+
+                                            const loggedInUser = await loginWithGoogle({ ...decoded, role });
                                             navigate('/dashboard');
-                                            return;
+                                        } catch (err) {
+                                            setError(err.message || "Failed to log in with Google");
                                         }
-
-                                        const loggedInUser = loginWithGoogle({ ...decoded, role });
-                                        navigate('/dashboard');
                                     }}
                                     onError={() => {
                                         console.log("Google Login Failed");

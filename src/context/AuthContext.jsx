@@ -7,6 +7,8 @@ const AuthContext = createContext(undefined);
 const USERS_KEY = 'anexar_users_db';
 const CURRENT_USER_KEY = 'anexar_current_user';
 
+import { supabase } from '../lib/supabaseClient';
+
 export function AuthProvider({ children }) {
     const [user, setUser] = useState(null);
     const [isLoading, setIsLoading] = useState(true);
@@ -16,7 +18,31 @@ export function AuthProvider({ children }) {
         const storedUser = localStorage.getItem(CURRENT_USER_KEY);
         if (storedUser) {
             try {
-                setUser(JSON.parse(storedUser));
+                const parsedUser = JSON.parse(storedUser);
+                setUser(parsedUser);
+
+                // Fetch fresh profile details from Supabase in background
+                if (parsedUser.email) {
+                    supabase
+                        .from('users')
+                        .select('id, title, role')
+                        .ilike('email', parsedUser.email.toLowerCase())
+                        .maybeSingle()
+                        .then(({ data, error }) => {
+                            console.log("Supabase query details:", { data, error, email: parsedUser.email });
+                            if (data) {
+                                const updatedUser = {
+                                    ...parsedUser,
+                                    id: data.id || parsedUser.id,
+                                    title: data.title || "",
+                                    role: ['core', 'manager', 'team'].includes(data.role) ? data.role : parsedUser.role
+                                };
+                                localStorage.setItem(CURRENT_USER_KEY, JSON.stringify(updatedUser));
+                                setUser(updatedUser);
+                            }
+                        })
+                        .catch(err => console.error("Error refreshing profile in background:", err));
+                }
             } catch (e) {
                 console.error("Failed to parse stored user", e);
             }
@@ -124,13 +150,48 @@ export function AuthProvider({ children }) {
         }
     };
 
-    const loginWithGoogle = (googleUser) => {
+    const loginWithGoogle = async (googleUser) => {
+        const userEmail = googleUser.email?.toLowerCase() || '';
+        let role = googleUser.role || "Client";
+
+        // Enforce Maverick email domain restriction
+        if ((role === 'Team' || role === 'Employee' || role === 'core' || role === 'manager' || role === 'team') && 
+            !userEmail.endsWith('@themavericksindia.com')) {
+            throw new Error("Access Restricted: Only @themavericksindia.com accounts are allowed to log in as Mavericks.");
+        }
+
+        let title = "";
+        let dbId = null;
+
+        try {
+            const { data, error } = await supabase
+                .from('users')
+                .select('id, title, role')
+                .ilike('email', googleUser.email.toLowerCase())
+                .maybeSingle();
+
+            if (error) {
+                console.error("Supabase user lookup error:", error);
+            } else if (data) {
+                dbId = data.id;
+                if (data.title) title = data.title;
+                // Map to the specific Supabase role if they log in as Mavericks
+                if (googleUser.role === 'Team' || googleUser.role === 'Employee') {
+                    role = ['core', 'manager', 'team'].includes(data.role) ? data.role : 'team';
+                }
+            }
+        } catch (e) {
+            console.error("Failed to query Supabase user profile:", e);
+        }
+
         const userData = {
+            id: dbId,
             name: googleUser.name,
             email: googleUser.email,
             picture: googleUser.picture,
             provider: "google",
-            role: googleUser.role || "Client"
+            role: role,
+            title: title
         };
 
         localStorage.setItem(CURRENT_USER_KEY, JSON.stringify(userData));

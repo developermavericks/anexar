@@ -21,6 +21,8 @@ import {
     CheckCircle2
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { db } from '../../lib/firebaseClient';
+import { collection, addDoc, doc, deleteDoc, query, onSnapshot, orderBy, writeBatch } from 'firebase/firestore';
 
 import INITIAL_JOURNALISTS from '../../data/journalists_extracted.json';
 
@@ -55,46 +57,57 @@ export default function JournalistSource() {
         setVisibleCount(12);
     }, [searchQuery, selectedCategoryFilter]);
 
-    // Load from local storage or seed initial
+    // Load from Firestore or seed initial subset if database is empty
     useEffect(() => {
-        const stored = localStorage.getItem('anexar_journalist_db');
-        if (stored) {
-            try {
-                const parsed = JSON.parse(stored);
-                // Schema validation: if we only have the old 4 mock contacts or less, seed the full extracted sheet database
-                if (parsed.length < 10) {
-                    localStorage.setItem('anexar_journalist_db', JSON.stringify(INITIAL_JOURNALISTS));
-                    setJournalists(INITIAL_JOURNALISTS);
-                    if (INITIAL_JOURNALISTS.length > 0) {
-                        setSelectedId(INITIAL_JOURNALISTS[0].id);
+        const q = query(collection(db, "journalists"), orderBy("createdAt", "desc"));
+        const unsubscribe = onSnapshot(q, (snapshot) => {
+            const list = [];
+            snapshot.forEach(docSnap => {
+                list.push({ docId: docSnap.id, id: docSnap.id, ...docSnap.data() });
+            });
+            
+            if (list.length === 0) {
+                const seedData = async () => {
+                    try {
+                        // Seed first 150 items using a single batch commit
+                        const subset = INITIAL_JOURNALISTS.slice(0, 150);
+                        const batch = writeBatch(db);
+                        subset.forEach(item => {
+                            const docRef = doc(collection(db, "journalists"));
+                            batch.set(docRef, {
+                                name: item.name || '',
+                                role: item.role || 'Reporter',
+                                publication: item.publication || 'Independent',
+                                category: item.category || 'General',
+                                email: item.email || '',
+                                phone: item.phone || '',
+                                address: item.address || '',
+                                bio: item.bio || '',
+                                createdAt: new Date().toISOString()
+                            });
+                        });
+                        await batch.commit();
+                    } catch (err) {
+                        console.error("Error seeding initial journalists to Firestore:", err);
                     }
-                } else {
-                    setJournalists(parsed);
-                    if (parsed.length > 0) {
-                        setSelectedId(parsed[0].id);
-                    }
-                }
-            } catch (e) {
-                console.error(e);
-                setJournalists(INITIAL_JOURNALISTS);
-                if (INITIAL_JOURNALISTS.length > 0) {
-                    setSelectedId(INITIAL_JOURNALISTS[0].id);
+                };
+                seedData();
+            } else {
+                list.sort((a, b) => {
+                    const nameA = (a.name || '').trim().toLowerCase();
+                    const nameB = (b.name || '').trim().toLowerCase();
+                    return nameA.localeCompare(nameB);
+                });
+                setJournalists(list);
+                if (list.length > 0 && !selectedId) {
+                    setSelectedId(list[0].id);
                 }
             }
-        } else {
-            localStorage.setItem('anexar_journalist_db', JSON.stringify(INITIAL_JOURNALISTS));
-            setJournalists(INITIAL_JOURNALISTS);
-            if (INITIAL_JOURNALISTS.length > 0) {
-                setSelectedId(INITIAL_JOURNALISTS[0].id);
-            }
-        }
+        }, (err) => {
+            console.error("Error listening to journalists collection:", err);
+        });
+        return () => unsubscribe();
     }, []);
-
-    // Save db helper
-    const saveDatabase = (updatedList) => {
-        setJournalists(updatedList);
-        localStorage.setItem('anexar_journalist_db', JSON.stringify(updatedList));
-    };
 
     const triggerNotification = (message, type = 'success') => {
         setNotification({ message, type });
@@ -107,40 +120,83 @@ export default function JournalistSource() {
         setTimeout(() => setCopiedField(null), 2000);
     };
 
-    const handleAddJournalist = (e) => {
+    const handleAddJournalist = async (e) => {
         e.preventDefault();
-        if (!newJournalist.name || !newJournalist.email) return;
+        const displayName = newJournalist.name.trim();
+        if (!displayName) {
+            triggerNotification('Journalist Name is required.', 'error');
+            return;
+        }
         
-        const added = {
-            ...newJournalist,
-            id: 'man_' + Date.now()
-        };
-        
-        const updated = [added, ...journalists];
-        saveDatabase(updated);
-        setSelectedId(added.id);
-        setIsAddModalOpen(false);
-        setNewJournalist({
-            name: '',
-            role: '',
-            publication: '',
-            category: 'Technology & Startups',
-            email: '',
-            phone: '',
-            address: '',
-            bio: ''
-        });
-        triggerNotification(`${added.name} added to the directory.`, 'success');
+        try {
+            const docRef = await addDoc(collection(db, "journalists"), {
+                name: displayName,
+                role: newJournalist.role || '',
+                publication: newJournalist.publication || '',
+                category: newJournalist.category || 'General',
+                email: newJournalist.email || '',
+                phone: newJournalist.phone || '',
+                address: newJournalist.address || '',
+                bio: newJournalist.bio || '',
+                createdAt: new Date().toISOString()
+            });
+            
+            setSelectedId(docRef.id);
+            setIsAddModalOpen(false);
+            setNewJournalist({
+                name: '',
+                role: '',
+                publication: '',
+                category: 'Technology & Startups',
+                email: '',
+                phone: '',
+                address: '',
+                bio: ''
+            });
+            triggerNotification(`${displayName} successfully added to cloud.`, 'success');
+        } catch (err) {
+            console.error("Error adding journalist to cloud:", err);
+            triggerNotification('Failed to add journalist contact.', 'error');
+        }
     };
 
-    const handleDeleteJournalist = (id) => {
-        const remaining = journalists.filter(j => j.id !== id);
-        saveDatabase(remaining);
-        setIsDetailModalOpen(false);
-        if (selectedId === id && remaining.length > 0) {
-            setSelectedId(remaining[0].id);
+    const handleDeleteJournalist = async (id) => {
+        if (!window.confirm("Are you sure you want to delete this journalist contact?")) return;
+        try {
+            await deleteDoc(doc(db, "journalists", id));
+            setIsDetailModalOpen(false);
+            if (selectedId === id && journalists.length > 1) {
+                const remaining = journalists.filter(j => j.id !== id);
+                setSelectedId(remaining[0].id);
+            }
+            triggerNotification('Journalist contact deleted from cloud.', 'info');
+        } catch (err) {
+            console.error("Error deleting journalist contact:", err);
+            triggerNotification('Failed to delete contact.', 'error');
         }
-        triggerNotification('Journalist record deleted.', 'info');
+    };
+
+    const uploadInBatches = async (records) => {
+        const CHUNK_SIZE = 400;
+        for (let i = 0; i < records.length; i += CHUNK_SIZE) {
+            const chunk = records.slice(i, i + CHUNK_SIZE);
+            const batch = writeBatch(db);
+            chunk.forEach((record) => {
+                const docRef = doc(collection(db, "journalists"));
+                batch.set(docRef, {
+                    name: record.name || 'Unnamed Journalist',
+                    role: record.role || 'Reporter',
+                    publication: record.publication || 'Independent',
+                    category: record.category || 'General',
+                    email: record.email || '',
+                    phone: record.phone || '',
+                    address: record.address || '',
+                    bio: record.bio || '',
+                    createdAt: new Date().toISOString()
+                });
+            });
+            await batch.commit();
+        }
     };
 
     // CSV and Excel Import Handler
@@ -155,7 +211,7 @@ export default function JournalistSource() {
         // If it's a CSV file, parse actual text content
         if (fileExt === 'csv') {
             const reader = new FileReader();
-            reader.onload = (event) => {
+            reader.onload = async (event) => {
                 const text = event.target.result;
                 try {
                     const parsedRecords = parseCSV(text);
@@ -164,14 +220,11 @@ export default function JournalistSource() {
                         setIsImporting(false);
                         return;
                     }
-                    const updated = [...parsedRecords, ...journalists];
-                    saveDatabase(updated);
-                    if (parsedRecords.length > 0) {
-                        setSelectedId(parsedRecords[0].id);
-                    }
-                    triggerNotification(`Successfully imported ${parsedRecords.length} contacts from CSV!`, 'success');
+                    await uploadInBatches(parsedRecords);
+                    triggerNotification(`Successfully uploaded ${parsedRecords.length} contacts to cloud from CSV!`, 'success');
                 } catch (err) {
-                    triggerNotification('Failed to parse CSV file.', 'error');
+                    console.error("Error uploading CSV records:", err);
+                    triggerNotification('Failed to parse and upload CSV file.', 'error');
                 }
                 setIsImporting(false);
             };
@@ -180,7 +233,7 @@ export default function JournalistSource() {
         // If it's Excel, perform a high-fidelity simulation
         else if (fileExt === 'xlsx' || fileExt === 'xls') {
             const reader = new FileReader();
-            reader.onload = (event) => {
+            reader.onload = async (event) => {
                 try {
                     const data = new Uint8Array(event.target.result);
                     const workbook = XLSX.read(data, { type: 'array' });
@@ -217,7 +270,6 @@ export default function JournalistSource() {
                         if (!name) continue;
                         
                         parsedRecords.push({
-                            id: 'xls_' + Date.now() + '_' + i,
                             name: name,
                             role: getVal('role', 1, 'Reporter'),
                             publication: getVal('publication', 2, 'Independent'),
@@ -234,14 +286,11 @@ export default function JournalistSource() {
                         setIsImporting(false);
                         return;
                     }
-                    
-                    const updated = [...parsedRecords, ...journalists];
-                    saveDatabase(updated);
-                    setSelectedId(parsedRecords[0].id);
-                    triggerNotification(`Successfully imported ${parsedRecords.length} contacts from Excel!`, 'success');
+                    await uploadInBatches(parsedRecords);
+                    triggerNotification(`Successfully uploaded ${parsedRecords.length} contacts to cloud from Excel!`, 'success');
                 } catch (err) {
-                    console.error(err);
-                    triggerNotification('Failed to parse Excel file.', 'error');
+                    console.error("Error uploading Excel records:", err);
+                    triggerNotification('Failed to parse and upload Excel file.', 'error');
                 }
                 setIsImporting(false);
             };
@@ -348,10 +397,16 @@ export default function JournalistSource() {
 
     // Filter logic
     const filteredJournalists = journalists.filter(j => {
-        const matchesSearch = j.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                            j.publication.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                            j.role.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                            (j.bio && j.bio.toLowerCase().includes(searchQuery.toLowerCase()));
+        const nameVal = (j.name || '').toLowerCase();
+        const pubVal = (j.publication || '').toLowerCase();
+        const roleVal = (j.role || '').toLowerCase();
+        const bioVal = (j.bio || '').toLowerCase();
+        const searchLower = searchQuery.toLowerCase();
+        
+        const matchesSearch = nameVal.includes(searchLower) ||
+                            pubVal.includes(searchLower) ||
+                            roleVal.includes(searchLower) ||
+                            bioVal.includes(searchLower);
         const matchesCategory = selectedCategoryFilter === 'All' || j.category === selectedCategoryFilter;
         return matchesSearch && matchesCategory;
     });
@@ -437,21 +492,22 @@ export default function JournalistSource() {
                 )}
             </AnimatePresence>
 
-            {/* Search and filter controls - full width */}
-            <div className="bg-white/60 dark:bg-gray-900/60 backdrop-blur-md rounded-2xl border border-gray-150 dark:border-gray-800 p-5 shadow-sm flex flex-col md:flex-row md:items-center justify-between gap-4">
-                <div className="relative flex-grow max-w-md">
-                    <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-400 h-4.5 w-4.5" />
+            {/* Search and filter controls - stacked nicely */}
+            <div className="bg-white/60 dark:bg-gray-900/60 backdrop-blur-md rounded-2xl border border-gray-150 dark:border-gray-800 p-5 shadow-sm space-y-4">
+                {/* Search Bar - Full Width / Maximum visibility */}
+                <div className="relative w-full">
+                    <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-400 h-5 w-5" />
                     <input
                         type="text"
-                        placeholder="Search name, outlet, title, or bio..."
+                        placeholder="Search name, publication, role, or bio..."
                         value={searchQuery}
                         onChange={(e) => setSearchQuery(e.target.value)}
-                        className="w-full pl-10 pr-4 py-2.5 rounded-xl border border-gray-205 dark:border-gray-700 bg-white/70 dark:bg-gray-800/70 text-gray-900 dark:text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-indigo-500/50 text-sm transition-all font-semibold"
+                        className="w-full pl-11 pr-4 py-3 rounded-xl border border-gray-200 dark:border-gray-700 bg-white/70 dark:bg-gray-800/70 text-gray-900 dark:text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-indigo-500/50 text-sm transition-all font-semibold"
                     />
                 </div>
 
-                {/* Category Badges Filter */}
-                <div className="flex items-center gap-2 overflow-x-auto pb-1 no-scrollbar max-w-full">
+                {/* Category Badges Filter - Horizontal Scroll below search */}
+                <div className="flex items-center gap-2 overflow-x-auto pb-1 no-scrollbar w-full">
                     <Filter className="h-4 w-4 text-gray-400 shrink-0" />
                     {categories.map(cat => (
                         <button
@@ -459,7 +515,7 @@ export default function JournalistSource() {
                             onClick={() => setSelectedCategoryFilter(cat)}
                             className={`px-3.5 py-1.5 rounded-xl text-xs font-bold whitespace-nowrap transition-all duration-200 cursor-pointer ${
                                 selectedCategoryFilter === cat
-                                    ? 'bg-indigo-650 text-white shadow-sm'
+                                    ? 'bg-indigo-600 text-white shadow-sm'
                                     : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-350 hover:bg-slate-200 dark:hover:bg-slate-700'
                             }`}
                         >
@@ -480,10 +536,10 @@ export default function JournalistSource() {
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                         {filteredJournalists.slice(0, visibleCount).map((j) => {
                             // Define gradient based on category
-                            let grad = "from-indigo-550 to-purple-650";
+                            let grad = "from-indigo-500 to-purple-600";
                             const catLower = (j.category || "").toLowerCase();
                             if (catLower.includes("tech") || catLower.includes("start")) {
-                                grad = "from-blue-500 to-indigo-650";
+                                grad = "from-blue-500 to-indigo-600";
                             } else if (catLower.includes("market") || catLower.includes("finance") || catLower.includes("business") || catLower.includes("economy")) {
                                 grad = "from-emerald-500 to-teal-600";
                             } else if (catLower.includes("politics") || catLower.includes("ethics") || catLower.includes("opinion")) {
@@ -519,7 +575,7 @@ export default function JournalistSource() {
                                                 {j.name ? j.name.charAt(0) : '?'}
                                             </div>
                                             <div className="min-w-0">
-                                                <h3 className="font-bold text-slate-900 dark:text-white truncate text-sm leading-snug group-hover:text-indigo-650 dark:group-hover:text-indigo-400 transition-colors">
+                                                <h3 className="font-bold text-slate-900 dark:text-white truncate text-sm leading-snug group-hover:text-indigo-600 dark:group-hover:text-indigo-400 transition-colors">
                                                     {j.name}
                                                 </h3>
                                                 <p className="text-4xs text-slate-450 dark:text-slate-500 font-black uppercase tracking-wider truncate mt-0.5">
@@ -778,10 +834,9 @@ export default function JournalistSource() {
                                     />
                                 </div>
                                 <div>
-                                    <label className="block text-3xs font-extrabold uppercase tracking-wider text-gray-450 mb-1">Publication *</label>
+                                    <label className="block text-3xs font-extrabold uppercase tracking-wider text-gray-455 mb-1">Publication</label>
                                     <input
                                         type="text"
-                                        required
                                         value={newJournalist.publication}
                                         onChange={(e) => setNewJournalist({ ...newJournalist, publication: e.target.value })}
                                         placeholder="e.g. VentureBeat"
@@ -818,10 +873,9 @@ export default function JournalistSource() {
                             </div>
 
                             <div>
-                                <label className="block text-3xs font-extrabold uppercase tracking-wider text-gray-455 mb-1">Email Address *</label>
+                                <label className="block text-3xs font-extrabold uppercase tracking-wider text-gray-455 mb-1">Email Address</label>
                                 <input
                                     type="email"
-                                    required
                                     value={newJournalist.email}
                                     onChange={(e) => setNewJournalist({ ...newJournalist, email: e.target.value })}
                                     placeholder="e.g. liam.foster@outlet.com"

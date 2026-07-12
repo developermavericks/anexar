@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { useNavigate } from 'react-router-dom';
+import { supabase } from '../lib/supabaseClient';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Button } from '../components/ui/Button';
 import { Card, CardContent } from '../components/ui/Card';
@@ -230,6 +231,79 @@ export default function TeamDashboard() {
         localStorage.setItem('anexar_assigned_clients', JSON.stringify(assignedClients));
     }, [assignedClients]);
 
+    useEffect(() => {
+        const fetchClients = async () => {
+            if (!user || !user.email) return;
+
+            try {
+                const userRole = user.role?.toLowerCase();
+                
+                if (userRole === 'core') {
+                    // Core gets all clients for their core owner name
+                    // We extract the first name as the core_owner (e.g. "Chetan", "Mitali", "Archana", "Smriti")
+                    const coreName = user.name ? user.name.split(' ')[0] : '';
+                    
+                    const { data, error } = await supabase
+                        .from('clients')
+                        .select('name')
+                        .eq('core_owner', coreName)
+                        .eq('is_active', true);
+
+                    if (error) throw error;
+                    if (data) {
+                        const clientNames = data.map(c => c.name);
+                        if (clientNames.length > 0) {
+                            setAssignedClients(clientNames);
+                        }
+                    }
+                } else if (user.id) {
+                    // Regular team members get their allocated clients
+                    const [weeklyRes, monthlyRes] = await Promise.all([
+                        supabase
+                            .from('allocations_weekly')
+                            .select('clients(name)')
+                            .eq('user_id', user.id),
+                        supabase
+                            .from('allocations_monthly')
+                            .select('clients(name)')
+                            .eq('user_id', user.id)
+                    ]);
+
+                    const clientNamesSet = new Set();
+                    
+                    if (weeklyRes.data) {
+                        weeklyRes.data.forEach(item => {
+                            if (item.clients?.name) clientNamesSet.add(item.clients.name);
+                        });
+                    }
+                    if (monthlyRes.data) {
+                        monthlyRes.data.forEach(item => {
+                            if (item.clients?.name) clientNamesSet.add(item.clients.name);
+                        });
+                    }
+
+                    const clientNames = Array.from(clientNamesSet);
+                    if (clientNames.length > 0) {
+                        setAssignedClients(clientNames);
+                    } else {
+                        // Fallback to default list if they have no allocations logged in DB yet
+                        setAssignedClients(['RedBull Racing', 'Spotify', 'Vercel', 'Acura Corporate', 'Nike']);
+                    }
+                }
+            } catch (err) {
+                console.error("Error fetching user clients from Supabase:", err);
+            }
+        };
+
+        fetchClients();
+    }, [user, user?.id]);
+
+    useEffect(() => {
+        if (assignedClients.length > 0 && !assignedClients.includes(selectedClient)) {
+            setSelectedClient(assignedClients[0]);
+        }
+    }, [assignedClients, selectedClient]);
+
     // Client Updates State
     const [clientUpdates, setClientUpdates] = useState(() => {
         const saved = localStorage.getItem('anexar_client_updates');
@@ -428,7 +502,7 @@ export default function TeamDashboard() {
                         {/* Profile Info Dropdown */}
                         <div className="flex items-center gap-2.5">
                             {user?.picture ? (
-                                <img src={user.picture} alt="Avatar" className="w-9 h-9 rounded-full border border-brand-border/40 shadow-soft" />
+                                <img src={user.picture} alt="Avatar" referrerPolicy="no-referrer" className="w-9 h-9 rounded-full border border-brand-border/40 shadow-soft" />
                             ) : (
                                 <div className="w-9 h-9 rounded-full bg-brand-charcoal text-white text-xs flex items-center justify-center font-bold border border-brand-charcoal/20">
                                     {user?.name?.charAt(0) || 'M'}
@@ -436,7 +510,9 @@ export default function TeamDashboard() {
                             )}
                             <div className="hidden sm:flex flex-col text-left">
                                 <span className="text-xs font-bold text-brand-charcoal leading-none">{user?.name || 'Anexar Core'}</span>
-                                <span className="text-3xs text-brand-amber font-extrabold mt-0.5 uppercase tracking-wider">Associate Strategist</span>
+                                {user?.title && (
+                                    <span className="text-3xs text-brand-amber font-extrabold mt-0.5 uppercase tracking-wider">{user.title}</span>
+                                )}
                             </div>
                         </div>
 
@@ -475,6 +551,26 @@ export default function TeamDashboard() {
                         <p className="text-white/80 mt-3 text-sm md:text-base leading-relaxed">
                             Monitor performance indexes, document client deliverables, allocate campaign hours, and drive strategic communication growth for our premium brand partners.
                         </p>
+                    </div>
+                </div>
+
+                {/* Brand Partner Focus Selector */}
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-white dark:bg-slate-900 border border-brand-border/25 rounded-2xl p-5 shadow-soft">
+                    <div>
+                        <h3 className="text-sm font-bold text-brand-charcoal dark:text-white">Active Brand Partner Focus</h3>
+                        <p className="text-3xs text-brand-gray mt-0.5 font-bold uppercase tracking-wide">Workspaces you report on or have allocations mapped to in the database</p>
+                    </div>
+                    <div className="flex items-center gap-2">
+                        <span className="text-2xs font-extrabold text-brand-charcoal dark:text-gray-300 uppercase tracking-wider">Focus Client:</span>
+                        <select
+                            value={selectedClient}
+                            onChange={(e) => setSelectedClient(e.target.value)}
+                            className="h-10 px-4 text-xs font-bold rounded-xl border border-brand-border/40 focus:outline-none focus:ring-2 focus:ring-brand-amber bg-white dark:bg-slate-800 text-brand-charcoal dark:text-white cursor-pointer shadow-3xs"
+                        >
+                            {assignedClients.map(c => (
+                                <option key={c} value={c}>{c}</option>
+                            ))}
+                        </select>
                     </div>
                 </div>
 

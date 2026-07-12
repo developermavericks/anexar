@@ -19,12 +19,14 @@ export default function ProtectedRoute({ role, children }) {
         return <Navigate to="/login" state={{ from: location }} replace />;
     }
 
-    // Convert to lowercase for comparison just in case
+    // Convert to lowercase and support array of roles
     const userRole = user.role?.toLowerCase();
-    const requiredRole = role?.toLowerCase();
-
-    if (requiredRole && userRole !== requiredRole) {
-        return <Navigate to="/unauthorized" replace />;
+    if (role) {
+        const allowedRoles = Array.isArray(role) ? role : [role];
+        const lowercaseAllowed = allowedRoles.map(r => r.toLowerCase());
+        if (!lowercaseAllowed.includes(userRole)) {
+            return <Navigate to="/" replace />;
+        }
     }
 
     return children;

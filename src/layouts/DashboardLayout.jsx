@@ -88,7 +88,7 @@ export default function DashboardLayout() {
                         </button>
                         <div className="w-10 h-10 bg-brand-beige border border-brand-border radius-pill flex items-center justify-center overflow-hidden">
                             {user?.avatarUrl ? (
-                                <img src={user.avatarUrl} alt="Avatar" className="w-full h-full object-cover" />
+                                <img src={user.avatarUrl} alt="Avatar" referrerPolicy="no-referrer" className="w-full h-full object-cover" />
                             ) : (
                                 <UserIcon size={20} className="text-brand-gray" />
                             )}

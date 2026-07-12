@@ -64,7 +64,7 @@ const ProfileTab = () => {
                     <div className="relative cursor-pointer group" onClick={() => fileInputRef.current?.click()}>
                         <div className="w-24 h-24 rounded-full bg-gray-100 dark:bg-[#374151] border-4 border-white shadow-sm flex items-center justify-center text-2xl font-bold text-amber-500 dark:text-amber-400 overflow-hidden group-hover:opacity-80 transition-opacity">
                             {formData.avatar ? (
-                                <img src={formData.avatar} alt="Avatar Preview" className="w-full h-full object-cover" />
+                                <img src={formData.avatar} alt="Avatar Preview" referrerPolicy="no-referrer" className="w-full h-full object-cover" />
                             ) : (
                                 formData.name.charAt(0)
                             )}

@@ -38,7 +38,9 @@ import CrisisPredictor from './pages/employee/CrisisPredictor';
 function RoleRedirect() {
   const { user } = useAuth();
   if (!user) return <Navigate to="/login" replace />;
-  if (user.role === 'Employee' || user.role === 'Team') {
+  
+  const userRole = user.role?.toLowerCase();
+  if (['employee', 'team', 'core', 'manager'].includes(userRole)) {
     return <Navigate to="/team" replace />;
   }
   // Default to Client
@@ -71,7 +73,7 @@ function App() {
             <Route
               path="/client"
               element={
-                <ProtectedRoute>
+                <ProtectedRoute role="Client">
                   <ClientLayout />
                 </ProtectedRoute>
               }
@@ -92,7 +94,7 @@ function App() {
             <Route
               path="/team"
               element={
-                <ProtectedRoute>
+                <ProtectedRoute role={['employee', 'team', 'core', 'manager']}>
                   <TeamLayout />
                 </ProtectedRoute>
               }
