@@ -237,24 +237,38 @@ export default function TeamDashboard() {
 
             try {
                 const userRole = user.role?.toLowerCase();
+                const emailLower = user.email?.toLowerCase() || '';
                 
-                if (userRole === 'core') {
-                    // Core gets all clients for their core owner name
-                    // We extract the first name as the core_owner (e.g. "Chetan", "Mitali", "Archana", "Smriti")
+                if (userRole === 'core' || userRole === 'manager') {
+                    // Core gets clients for their core owner name, or all active clients if 0 assigned
                     const coreName = user.name ? user.name.split(' ')[0] : '';
+                    let clientNames = [];
                     
-                    const { data, error } = await supabase
-                        .from('clients')
-                        .select('name')
-                        .eq('core_owner', coreName)
-                        .eq('is_active', true);
-
-                    if (error) throw error;
-                    if (data) {
-                        const clientNames = data.map(c => c.name);
-                        if (clientNames.length > 0) {
-                            setAssignedClients(clientNames);
+                    if (coreName) {
+                        const { data } = await supabase
+                            .from('clients')
+                            .select('name')
+                            .eq('core_owner', coreName)
+                            .eq('is_active', true);
+                        if (data && data.length > 0) {
+                            clientNames = data.map(c => c.name);
                         }
+                    }
+
+                    // Fallback if 0 clients listed for this core member
+                    if (clientNames.length === 0) {
+                        const { data } = await supabase
+                            .from('clients')
+                            .select('name')
+                            .eq('is_active', true)
+                            .order('name', { ascending: true });
+                        if (data && data.length > 0) {
+                            clientNames = data.map(c => c.name);
+                        }
+                    }
+
+                    if (clientNames.length > 0) {
+                        setAssignedClients(clientNames);
                     }
                 } else if (user.id) {
                     // Regular team members get their allocated clients

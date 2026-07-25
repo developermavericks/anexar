@@ -10,47 +10,49 @@ const CURRENT_USER_KEY = 'anexar_current_user';
 import { supabase } from '../lib/supabaseClient';
 
 export function AuthProvider({ children }) {
-    const [user, setUser] = useState(null);
-    const [isLoading, setIsLoading] = useState(true);
-
-    // Load user from local storage on mount
-    useEffect(() => {
-        const storedUser = localStorage.getItem(CURRENT_USER_KEY);
-        if (storedUser) {
-            try {
-                const parsedUser = JSON.parse(storedUser);
-                setUser(parsedUser);
-
-                // Fetch fresh profile details from Supabase in background
-                if (parsedUser.email) {
-                    supabase
-                        .from('users')
-                        .select('id, title, role')
-                        .ilike('email', parsedUser.email.toLowerCase())
-                        .maybeSingle()
-                        .then(({ data, error }) => {
-                            console.log("Supabase query details:", { data, error, email: parsedUser.email });
-                            if (data) {
-                                const updatedUser = {
-                                    ...parsedUser,
-                                    id: data.id || parsedUser.id,
-                                    title: data.title || "",
-                                    role: ['core', 'manager', 'team'].includes(data.role) ? data.role : parsedUser.role
-                                };
-                                localStorage.setItem(CURRENT_USER_KEY, JSON.stringify(updatedUser));
-                                setUser(updatedUser);
-                            }
-                        })
-                        .catch(err => console.error("Error refreshing profile in background:", err));
-                }
-            } catch (e) {
-                console.error("Failed to parse stored user", e);
-            }
+    // Lazy initialization: read cached user synchronously on first render
+    const [user, setUser] = useState(() => {
+        try {
+            const storedUser = localStorage.getItem(CURRENT_USER_KEY);
+            return storedUser ? JSON.parse(storedUser) : null;
+        } catch (e) {
+            console.error("Failed to parse stored user from localStorage:", e);
+            return null;
         }
-        setIsLoading(false);
+    });
+
+    const [isLoading, setIsLoading] = useState(false);
+
+    // Background profile refresh from Supabase after initial render
+    useEffect(() => {
+        if (user && user.email) {
+            supabase
+                .from('users')
+                .select('id, title, role')
+                .ilike('email', user.email.toLowerCase())
+                .maybeSingle()
+                .then(({ data, error }) => {
+                    if (data) {
+                        const newRole = data.role ? data.role.toLowerCase() : user.role;
+                        const newTitle = data.title || "";
+                        const newId = data.id || user.id;
+
+                        // Only update state if profile fields actually changed
+                        if (user.role !== newRole || user.title !== newTitle || user.id !== newId) {
+                            setUser(prev => prev ? {
+                                ...prev,
+                                id: newId,
+                                title: newTitle,
+                                role: newRole
+                            } : null);
+                        }
+                    }
+                })
+                .catch(err => console.error("Error refreshing profile in background:", err));
+        }
     }, []);
 
-    // Sync current user to local storage whenever it changes state
+    // Sync state changes to local storage
     useEffect(() => {
         if (user) {
             localStorage.setItem(CURRENT_USER_KEY, JSON.stringify(user));
@@ -176,8 +178,10 @@ export function AuthProvider({ children }) {
                 dbId = data.id;
                 if (data.title) title = data.title;
                 // Map to the specific Supabase role if they log in as Mavericks
-                if (googleUser.role === 'Team' || googleUser.role === 'Employee') {
-                    role = ['core', 'manager', 'team'].includes(data.role) ? data.role : 'team';
+                if (data.role) {
+                    role = data.role.toLowerCase();
+                } else if (googleUser.role === 'Team' || googleUser.role === 'Employee' || googleUser.role === 'core') {
+                    role = 'team';
                 }
             }
         } catch (e) {

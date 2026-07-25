@@ -86,9 +86,8 @@ export const UserProvider = ({ children }) => {
             if (!authUser || !authUser.email) return;
             
             const emailLower = authUser.email.toLowerCase();
-            const isDeveloperSatyam = emailLower.includes('satyam') || emailLower.includes('test') || emailLower.includes('ss1084169');
-            if (isDeveloperSatyam) {
-                setUserState(prev => ({ ...prev, clientBrand: 'FUJIFILM' }));
+            if (emailLower.includes('ss1084169')) {
+                setUserState(prev => ({ ...prev, clientBrand: 'Scapia' }));
                 return;
             }
 

@@ -4,7 +4,7 @@ import { Card, CardContent } from '../../components/ui/Card';
 import { Button } from '../../components/ui/Button';
 import { db } from '../../lib/firebaseClient';
 import { supabase } from '../../lib/supabaseClient';
-import { collection, addDoc, deleteDoc, doc, onSnapshot, query, orderBy, getDoc } from 'firebase/firestore';
+import { collection, addDoc, deleteDoc, doc, setDoc, onSnapshot, query, orderBy, getDoc } from 'firebase/firestore';
 import mammoth from 'mammoth';
 import {
     Newspaper,
@@ -31,7 +31,10 @@ import {
     Upload,
     ShieldCheck,
     ChevronDown,
-    Users
+    Users,
+    Link2,
+    ExternalLink,
+    TrendingUp
 } from 'lucide-react';
 import { pressReleases as defaultPress } from '../../mock/clientData';
 import * as XLSX from 'xlsx';
@@ -53,8 +56,12 @@ export default function UploadCoverage() {
     const [coverageList, setCoverageList] = useState([]);
 
     const [activeClients, setActiveClients] = useState(() => {
-        const saved = localStorage.getItem('anexar_assigned_clients');
-        return saved ? JSON.parse(saved) : ['FUJIFILM', 'Google', 'Spotify', 'Plum', 'Nike', 'Udaiti', 'Scapia', 'Musashi-D'];
+        try {
+            const saved = localStorage.getItem('anexar_assigned_clients');
+            const parsed = saved ? JSON.parse(saved) : [];
+            if (parsed && parsed.length > 0) return parsed;
+        } catch (e) {}
+        return ['FUJIFILM', 'Google', 'Spotify', 'Plum', 'Nike', 'Udaiti', 'Scapia', 'Musashi-D'];
     });
 
     useEffect(() => {
@@ -63,23 +70,31 @@ export default function UploadCoverage() {
 
             const emailLower = user.email.toLowerCase();
             const isDeveloperSatyam = emailLower.includes('satyam') || emailLower.includes('ss1084169') || emailLower.includes('test') || user.name?.toLowerCase().includes('satyam');
+            const isCoreUser = user.role?.toLowerCase() === 'core' || user.role?.toLowerCase() === 'manager';
             const isChetan = emailLower === 'chetan@themavericksindia.com' || user.name?.toLowerCase().includes('chetan');
-            const hasWholeAccess = isChetan || isDeveloperSatyam;
+            const hasWholeAccess = isChetan || isDeveloperSatyam || isCoreUser;
+
+            const DEFAULT_FALLBACK = ['FUJIFILM', 'Google', 'Spotify', 'Plum', 'Nike', 'Udaiti', 'Scapia', 'Musashi-D'];
 
             try {
-                // 1. Core, Manager, or Satyam (Developer) bypass - fetch all active clients
+                // 1. Core, Manager, or Developer bypass - fetch all active clients
                 if (hasWholeAccess) {
-                    const { data, error } = await supabase
-                        .from('clients')
-                        .select('name')
-                        .eq('is_active', true)
-                        .order('name', { ascending: true });
+                    try {
+                        const { data, error } = await supabase
+                            .from('clients')
+                            .select('name')
+                            .eq('is_active', true)
+                            .order('name', { ascending: true });
 
-                    if (error) throw error;
-                    if (data && data.length > 0) {
-                        setActiveClients(data.map(c => c.name));
-                        return;
+                        if (!error && data && data.length > 0) {
+                            setActiveClients(data.map(c => c.name));
+                            return;
+                        }
+                    } catch (e) {
+                        console.error("Supabase client fetch exception:", e);
                     }
+                    setActiveClients(DEFAULT_FALLBACK);
+                    return;
                 }
 
                 // 2. Otherwise try loading user clients from Firestore
@@ -127,10 +142,10 @@ export default function UploadCoverage() {
                     }
                 }
 
-                setActiveClients([]); // Empty list if no allocations mapped
+                setActiveClients(DEFAULT_FALLBACK);
             } catch (err) {
                 console.error("Error loading active clients:", err);
-                setActiveClients([]);
+                setActiveClients(DEFAULT_FALLBACK);
             }
         };
         fetchClientsList();
@@ -162,34 +177,310 @@ export default function UploadCoverage() {
     const [sortColumn, setSortColumn] = useState(null);
     const [sortDirection, setSortDirection] = useState('asc');
 
+    // ReachLens results, keyed by row index, for the Excel viewer and the day-preview table
+    const [excelReachResults, setExcelReachResults] = useState({});
+    const [excelReachRunning, setExcelReachRunning] = useState(false);
+    const [dayPreviewReachResults, setDayPreviewReachResults] = useState({});
+    const [dayPreviewReachRunning, setDayPreviewReachRunning] = useState(false);
+
     // Search
     const [searchTerm, setSearchTerm] = useState('');
 
 
 
     // Multi-tab layout states
-    const [activeTab, setActiveTab] = useState('press'); // 'press', 'reports', 'overall'
+    const [activeTab, setActiveTab] = useState('press'); // 'press', 'reports'
     
     // Reports tab form states
     const [reportType, setReportType] = useState('Daily Tracker');
+    const [reportDate, setReportDate] = useState(new Date().toISOString().split('T')[0]);
     const [reportFile, setReportFile] = useState(null);
     const [reportUploading, setReportUploading] = useState(false);
     const reportFileInputRef = useRef(null);
 
-    // Overall Work Updates form states
-    const [overallWorkText, setOverallWorkText] = useState('');
-    const [overallWorkSubmitting, setOverallWorkSubmitting] = useState(false);
-
-    // Pitch Proposals form states
-    const [pitchTitle, setPitchTitle] = useState('');
-    const [pitchDeadline, setPitchDeadline] = useState('');
-    const [pitchMatchScore, setPitchMatchScore] = useState('95');
-    const [pitchSubmitting, setPitchSubmitting] = useState(false);
-
     // Dynamic documents and updates feeds from Firestore
     const [documentList, setDocumentList] = useState([]);
-    const [overallBriefsList, setOverallBriefsList] = useState([]);
-    const [pitchList, setPitchList] = useState([]);
+
+    // Master Live Links states (Google Sheets & Docs)
+    const DEFAULT_CLIENT_MASTER_LINKS = {
+        'Scapia': {
+            cumulativeSheetUrl: 'https://docs.google.com/spreadsheets/d/1AurFLe0YYeM81fYoMCJF_b70UjgGVe-A/edit?usp=drivesdk&ouid=111134406246031913275&rtpof=true&sd=true',
+            filteredDocUrl: 'https://docs.google.com/document/d/1PteVNfa7xF9szNX2eGcq3lMqI7B2lcBMs0GFGjaijm4/edit?usp=drivesdk',
+            masterDocUrl: 'https://docs.google.com/document/d/16XWEakARxprnrsf2fHgHm8GGqqFdN5hYwZH_gvjZm-Y/edit?usp=drivesdk'
+        },
+        'Wadhwani AI': {
+            cumulativeSheetUrl: 'https://docs.google.com/spreadsheets/d/1PQCIQM8yU-luDNmfT35pO5zk5jI4Ib0y/edit?usp=drivesdk&ouid=111134406246031913275&rtpof=true&sd=true',
+            filteredDocUrl: 'https://docs.google.com/document/d/1ZszkbDi7kFLIOMLYAmaUijctT8IddlY7NPCf68tANBg/edit?usp=drivesdk',
+            masterDocUrl: 'https://docs.google.com/document/d/1qQpENdja3Tg1O-ED4jzKuaHkq5wgZit1lbIGOdJBZ8o/edit?usp=drivesdk'
+        },
+        'Wadhwani': {
+            cumulativeSheetUrl: 'https://docs.google.com/spreadsheets/d/1PQCIQM8yU-luDNmfT35pO5zk5jI4Ib0y/edit?usp=drivesdk&ouid=111134406246031913275&rtpof=true&sd=true',
+            filteredDocUrl: 'https://docs.google.com/document/d/1ZszkbDi7kFLIOMLYAmaUijctT8IddlY7NPCf68tANBg/edit?usp=drivesdk',
+            masterDocUrl: 'https://docs.google.com/document/d/1qQpENdja3Tg1O-ED4jzKuaHkq5wgZit1lbIGOdJBZ8o/edit?usp=drivesdk'
+        },
+        'E3 Electric AI': {
+            cumulativeSheetUrl: 'https://docs.google.com/spreadsheets/d/16AbQMygKpWhYmvhmyFc7oxcz5WNsYacs/edit?usp=drivesdk&ouid=111134406246031913275&rtpof=true&sd=true',
+            filteredDocUrl: 'https://docs.google.com/document/d/1_VCUF7QaCtsqiS5nz191RVZ0ayt0Paves52OMo4EmOY/edit?usp=drivesdk',
+            masterDocUrl: 'https://docs.google.com/document/d/1RHG8y63xEVd-N4o5Kb0pThgXTpu4yfSzGvAlELu2788/edit?usp=drivesdk'
+        },
+        'E3 Electric.AI': {
+            cumulativeSheetUrl: 'https://docs.google.com/spreadsheets/d/16AbQMygKpWhYmvhmyFc7oxcz5WNsYacs/edit?usp=drivesdk&ouid=111134406246031913275&rtpof=true&sd=true',
+            filteredDocUrl: 'https://docs.google.com/document/d/1_VCUF7QaCtsqiS5nz191RVZ0ayt0Paves52OMo4EmOY/edit?usp=drivesdk',
+            masterDocUrl: 'https://docs.google.com/document/d/1RHG8y63xEVd-N4o5Kb0pThgXTpu4yfSzGvAlELu2788/edit?usp=drivesdk'
+        },
+        'Murf AI': {
+            cumulativeSheetUrl: '',
+            filteredDocUrl: 'https://docs.google.com/document/d/11o3qSpOeuPRwAHNdhHNqHTLLctMSPLTIDhwitajq9TA/edit?usp=drivesdk',
+            masterDocUrl: 'https://docs.google.com/document/d/1qCxg--XA89qV1luwtJA5K0GMg9NOGfQInW3B4wBwkTw/edit?usp=drivesdk'
+        },
+        'Murf-AI': {
+            cumulativeSheetUrl: '',
+            filteredDocUrl: 'https://docs.google.com/document/d/11o3qSpOeuPRwAHNdhHNqHTLLctMSPLTIDhwitajq9TA/edit?usp=drivesdk',
+            masterDocUrl: 'https://docs.google.com/document/d/1qCxg--XA89qV1luwtJA5K0GMg9NOGfQInW3B4wBwkTw/edit?usp=drivesdk'
+        }
+    };
+
+    const [cumulativeSheetUrl, setCumulativeSheetUrl] = useState('');
+    const [filteredDocUrl, setFilteredDocUrl] = useState('');
+    const [masterDocUrl, setMasterDocUrl] = useState('');
+    const [isSavingMasterLinks, setIsSavingMasterLinks] = useState(false);
+    const [masterLinksSaveSuccess, setMasterLinksSaveSuccess] = useState(false);
+
+    const APPS_SCRIPT_EXPORT_URL = import.meta.env.VITE_APPS_SCRIPT_EXPORT_URL || '';
+    const REACH_LENS_API_URL = import.meta.env.VITE_REACH_LENS_API_URL || '';
+    const REACH_CONCURRENCY = 3;
+
+    const fetchReachForUrl = async (url) => {
+        const res = await fetch(REACH_LENS_API_URL, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ url, version: 'v10' })
+        });
+        const data = await res.json().catch(() => ({}));
+        if (!res.ok) {
+            throw new Error(data.error || `Request failed (${res.status})`);
+        }
+        return data;
+    };
+
+    // Reach is expensive (a real Puppeteer scrape) and, once calculated for a
+    // given article, doesn't need recalculating - persist it in Firestore keyed
+    // by URL so it survives closing the modal, reopening it later, or even
+    // opening the same article from a different client/day/table.
+    const REACH_CACHE_COLLECTION = 'reach_cache';
+    const urlToReachCacheId = (url) => encodeURIComponent(url);
+
+    const getCachedReach = async (url) => {
+        try {
+            const snap = await getDoc(doc(db, REACH_CACHE_COLLECTION, urlToReachCacheId(url)));
+            if (snap.exists()) return snap.data().reach;
+        } catch (err) {
+            console.error('Error reading reach cache:', err);
+        }
+        return null;
+    };
+
+    const setCachedReach = async (url, reach) => {
+        try {
+            await setDoc(doc(db, REACH_CACHE_COLLECTION, urlToReachCacheId(url)), {
+                url,
+                reach,
+                calculatedAt: new Date().toISOString()
+            });
+        } catch (err) {
+            console.error('Error writing reach cache:', err);
+        }
+    };
+
+    // Runs ReachLens over a list of {key, url} jobs with limited concurrency,
+    // reporting each result back via onUpdate(key, {status, reach, error}) as it lands.
+    // Cache hits resolve instantly with no Cloud Function call.
+    const runReachBatch = async (jobs, onUpdate) => {
+        let cursor = 0;
+        const worker = async () => {
+            while (cursor < jobs.length) {
+                const job = jobs[cursor++];
+                onUpdate(job.key, { status: 'loading' });
+                try {
+                    const cachedReach = await getCachedReach(job.url);
+                    if (cachedReach !== null) {
+                        onUpdate(job.key, { status: 'done', reach: cachedReach });
+                        continue;
+                    }
+                    const result = await fetchReachForUrl(job.url);
+                    await setCachedReach(job.url, result.estimatedReach);
+                    onUpdate(job.key, { status: 'done', reach: result.estimatedReach });
+                } catch (err) {
+                    onUpdate(job.key, { status: 'error', error: err.message });
+                }
+            }
+        };
+        const workers = Array.from({ length: Math.min(REACH_CONCURRENCY, jobs.length) }, () => worker());
+        await Promise.all(workers);
+    };
+
+    // On opening a table, silently pull in whatever's already cached (no API
+    // calls) so previously-calculated days show their reach immediately -
+    // "Calculate Reach" only ever has to compute what's genuinely new.
+    const hydrateCachedReach = async (jobs, setResults) => {
+        if (jobs.length === 0) return;
+        const entries = await Promise.all(jobs.map(async (job) => {
+            const cachedReach = await getCachedReach(job.url);
+            return cachedReach !== null ? [job.key, { status: 'done', reach: cachedReach }] : null;
+        }));
+        const updates = {};
+        entries.filter(Boolean).forEach(([key, val]) => { updates[key] = val; });
+        if (Object.keys(updates).length > 0) {
+            setResults(prev => ({ ...prev, ...updates }));
+        }
+    };
+
+    const extractGoogleId = (url) => {
+        if (!url) return null;
+        const sheetMatch = url.match(/\/spreadsheets\/d\/([a-zA-Z0-9-_]+)/);
+        if (sheetMatch) return { id: sheetMatch[1], type: 'sheet' };
+        const docMatch = url.match(/\/document\/d\/([a-zA-Z0-9-_]+)/);
+        if (docMatch) return { id: docMatch[1], type: 'doc' };
+        return null;
+    };
+
+    const getGoogleExportUrl = (url, format = 'xlsx') => {
+        if (!url) return '#';
+        if (url.includes('/spreadsheets/d/')) {
+            const idMatch = url.match(/\/spreadsheets\/d\/([a-zA-Z0-9-_]+)/);
+            if (idMatch && idMatch[1]) {
+                return `https://docs.google.com/spreadsheets/d/${idMatch[1]}/export?format=${format}`;
+            }
+        }
+        if (url.includes('/document/d/')) {
+            const idMatch = url.match(/\/document\/d\/([a-zA-Z0-9-_]+)/);
+            if (idMatch && idMatch[1]) {
+                return `https://docs.google.com/document/d/${idMatch[1]}/export?format=${format === 'xlsx' ? 'docx' : format}`;
+            }
+        }
+        return url;
+    };
+
+    const [dayPreview, setDayPreview] = useState(null);
+
+    const handlePreviewSingleDay = async (rawUrl, clientNameStr, reportDateIso, docType = 'Filtered_Report') => {
+        if (!rawUrl) return;
+        if (!APPS_SCRIPT_EXPORT_URL) {
+            alert("Preview isn't configured yet. Deploy google-apps-script/Code.gs and set VITE_APPS_SCRIPT_EXPORT_URL in .env.");
+            return;
+        }
+        if (!reportDateIso) {
+            alert("Please select a Daily Tracker Date first.");
+            return;
+        }
+        const parsed = extractGoogleId(rawUrl);
+        if (!parsed) {
+            alert("Could not read a valid Google Doc/Sheet ID from this URL.");
+            return;
+        }
+
+        setDayPreview({ type: parsed.type, clientName: clientNameStr, dateLabel: reportDateIso, docType, loading: true, error: '', html: '', rows: [] });
+        setDayPreviewReachResults({});
+        setDayPreviewReachRunning(false);
+
+        try {
+            const params = new URLSearchParams({
+                mode: 'preview',
+                docId: parsed.id,
+                type: parsed.type,
+                date: reportDateIso,
+                client: clientNameStr || 'Client',
+                docType
+            });
+            const res = await fetch(`${APPS_SCRIPT_EXPORT_URL}?${params.toString()}`);
+            const data = await res.json();
+            if (!data.found) {
+                setDayPreview(prev => prev ? { ...prev, loading: false, error: data.message || 'No matching section found for this date.' } : null);
+                return;
+            }
+            setDayPreview(prev => prev ? {
+                ...prev,
+                loading: false,
+                html: data.html || '',
+                rows: data.rows || []
+            } : null);
+        } catch (err) {
+            console.error("Error previewing single day:", err);
+            setDayPreview(prev => prev ? { ...prev, loading: false, error: 'Failed to load preview. Check the Apps Script deployment.' } : null);
+        }
+    };
+
+    const handleExtractSingleDayFile = (rawUrl, clientNameStr, reportDateIso, docType = 'Filtered_Report') => {
+        if (!rawUrl) return;
+        if (!APPS_SCRIPT_EXPORT_URL) {
+            alert("Single-day extraction isn't configured yet. Deploy google-apps-script/Code.gs as a Web App and set its URL as VITE_APPS_SCRIPT_EXPORT_URL in .env.");
+            return;
+        }
+        if (!reportDateIso) {
+            alert("Please select a Daily Tracker Date first.");
+            return;
+        }
+        const parsed = extractGoogleId(rawUrl);
+        if (!parsed) {
+            alert("Could not read a valid Google Doc/Sheet ID from this URL.");
+            return;
+        }
+
+        const params = new URLSearchParams({
+            docId: parsed.id,
+            type: parsed.type,
+            date: reportDateIso,
+            client: clientNameStr || 'Client',
+            docType
+        });
+        window.open(`${APPS_SCRIPT_EXPORT_URL}?${params.toString()}`, '_blank');
+    };
+
+    useEffect(() => {
+        if (!clientName) return;
+        const docRef = doc(db, "client_master_links", clientName);
+        const unsubscribe = onSnapshot(docRef, (docSnap) => {
+            if (docSnap.exists()) {
+                const data = docSnap.data();
+                setCumulativeSheetUrl(data.cumulativeSheetUrl || '');
+                setFilteredDocUrl(data.filteredDocUrl || '');
+                setMasterDocUrl(data.masterDocUrl || '');
+            } else {
+                const foundKey = Object.keys(DEFAULT_CLIENT_MASTER_LINKS).find(k => k.toLowerCase() === clientName.toLowerCase());
+                const defaults = foundKey ? DEFAULT_CLIENT_MASTER_LINKS[foundKey] : null;
+                setCumulativeSheetUrl(defaults?.cumulativeSheetUrl || '');
+                setFilteredDocUrl(defaults?.filteredDocUrl || '');
+                setMasterDocUrl(defaults?.masterDocUrl || '');
+            }
+        });
+        return () => unsubscribe();
+    }, [clientName]);
+
+    const handleSaveMasterLinks = async (e) => {
+        e.preventDefault();
+        if (!clientName) {
+            alert("Please select a client account name first.");
+            return;
+        }
+        setIsSavingMasterLinks(true);
+        try {
+            await setDoc(doc(db, "client_master_links", clientName), {
+                client: clientName,
+                cumulativeSheetUrl: cumulativeSheetUrl.trim(),
+                filteredDocUrl: filteredDocUrl.trim(),
+                masterDocUrl: masterDocUrl.trim(),
+                updatedAt: new Date().toISOString(),
+                updatedBy: user?.email || user?.name || 'Team'
+            }, { merge: true });
+            setMasterLinksSaveSuccess(true);
+            setTimeout(() => setMasterLinksSaveSuccess(false), 3000);
+        } catch (err) {
+            console.error("Error saving client master links:", err);
+            alert("Failed to save master links.");
+        } finally {
+            setIsSavingMasterLinks(false);
+        }
+    };
 
     useEffect(() => {
         const q = query(collection(db, "press_releases"), orderBy("createdAt", "desc"));
@@ -220,34 +511,6 @@ export default function UploadCoverage() {
         return () => unsubscribe();
     }, []);
 
-    useEffect(() => {
-        const q = query(collection(db, "client_overall_work"), orderBy("createdAt", "desc"));
-        const unsubscribe = onSnapshot(q, (snapshot) => {
-            const list = [];
-            snapshot.forEach(docSnap => {
-                list.push({ docId: docSnap.id, ...docSnap.data() });
-            });
-            setOverallBriefsList(list);
-        }, (err) => {
-            console.error("Error listening to client_overall_work:", err);
-        });
-        return () => unsubscribe();
-    }, []);
-
-    useEffect(() => {
-        const q = query(collection(db, "thought_leadership"), orderBy("createdAt", "desc"));
-        const unsubscribe = onSnapshot(q, (snapshot) => {
-            const list = [];
-            snapshot.forEach(docSnap => {
-                list.push({ docId: docSnap.id, ...docSnap.data() });
-            });
-            setPitchList(list);
-        }, (err) => {
-            console.error("Error listening to thought_leadership collection:", err);
-        });
-        return () => unsubscribe();
-    }, []);
-
     const handleReportSubmit = async (e) => {
         e.preventDefault();
         if (!reportFile) {
@@ -257,14 +520,26 @@ export default function UploadCoverage() {
         setReportUploading(true);
 
         try {
+            let fileData = null;
+            if (reportFile) {
+                fileData = await new Promise((resolve) => {
+                    const reader = new FileReader();
+                    reader.onload = () => resolve(reader.result);
+                    reader.onerror = () => resolve(null);
+                    reader.readAsDataURL(reportFile);
+                });
+            }
+
             const newDoc = {
                 client: clientName,
                 type: reportType,
                 fileName: reportFile.name,
                 fileSize: (reportFile.size / 1024).toFixed(1) + ' KB',
                 uploadedBy: user?.email || user?.name || 'Manager',
+                reportDate: reportDate || new Date().toISOString().split('T')[0],
                 month,
                 year,
+                fileData,
                 createdAt: new Date().toISOString()
             };
             await addDoc(collection(db, "client_documents"), newDoc);
@@ -289,42 +564,6 @@ export default function UploadCoverage() {
         }
     };
 
-    const handleOverallWorkSubmit = async (e) => {
-        e.preventDefault();
-        if (!overallWorkText.trim()) {
-            alert("Please enter some update brief notes.");
-            return;
-        }
-        setOverallWorkSubmitting(true);
-
-        try {
-            const newBrief = {
-                client: clientName,
-                text: overallWorkText.trim(),
-                uploadedBy: user?.email || user?.name || 'Manager',
-                createdAt: new Date().toISOString()
-            };
-            await addDoc(collection(db, "client_overall_work"), newBrief);
-
-            // Send notification
-            await addDoc(collection(db, "notifications"), {
-                email: user?.email || '',
-                title: "Client Brief Updated",
-                description: `Overall work update published for ${clientName}`,
-                read: false,
-                createdAt: new Date().toISOString()
-            });
-
-            setOverallWorkText('');
-            alert("Overall Work Brief updated and published successfully!");
-        } catch (err) {
-            console.error("Error publishing overall work updates:", err);
-            alert("Failed to update brief.");
-        } finally {
-            setOverallWorkSubmitting(false);
-        }
-    };
-
     const handleDeleteDocument = async (docId) => {
         if (!window.confirm("Are you sure you want to delete this document record?")) return;
         try {
@@ -335,74 +574,12 @@ export default function UploadCoverage() {
         }
     };
 
-    const handleDeleteOverallBrief = async (docId) => {
-        if (!window.confirm("Are you sure you want to delete this brief record?")) return;
-        try {
-            await deleteDoc(doc(db, "client_overall_work", docId));
-        } catch (err) {
-            console.error("Error deleting brief record:", err);
-            alert("Failed to delete brief record.");
-        }
-    };
-
-    const handlePitchSubmit = async (e) => {
-        e.preventDefault();
-        if (!pitchTitle.trim() || !pitchDeadline || !pitchMatchScore) {
-            alert("Please fill out all pitch proposal fields.");
-            return;
-        }
-
-        setPitchSubmitting(true);
-
-        try {
-            const newProposal = {
-                client: clientName,
-                title: pitchTitle.trim(),
-                deadline: pitchDeadline,
-                matchScore: parseInt(pitchMatchScore, 10) || 90,
-                status: 'Pending',
-                proposedBy: user?.email || user?.name || 'Manager',
-                createdAt: new Date().toISOString()
-            };
-
-            await addDoc(collection(db, "thought_leadership"), newProposal);
-
-            // Send notification for coordinator
-            await addDoc(collection(db, "notifications"), {
-                email: user?.email || '',
-                title: "New Pitch Proposal",
-                description: `Thought Leadership idea pitched for ${clientName}`,
-                read: false,
-                createdAt: new Date().toISOString()
-            });
-
-            setPitchTitle('');
-            setPitchDeadline('');
-            setPitchMatchScore('95');
-            alert("Thought leadership proposal published successfully to client portal!");
-        } catch (err) {
-            console.error("Error creating pitch proposal:", err);
-            alert("Failed to publish pitch proposal.");
-        } finally {
-            setPitchSubmitting(false);
-        }
-    };
-
-    const handleDeletePitch = async (docId) => {
-        if (!window.confirm("Are you sure you want to delete this pitch proposal?")) return;
-        try {
-            await deleteDoc(doc(db, "thought_leadership", docId));
-            alert("Pitch proposal deleted successfully.");
-        } catch (err) {
-            console.error("Error deleting pitch proposal:", err);
-            alert("Failed to delete pitch proposal.");
-        }
-    };
-
     // Reset states when modal closes
     const handleCloseModal = () => {
         setSelectedExcelReport(null);
         setSortColumn(null);
+        setExcelReachResults({});
+        setExcelReachRunning(false);
     };
 
     // ----------------------------------------------------
@@ -648,6 +825,165 @@ export default function UploadCoverage() {
         });
     };
 
+    const getRowLinkExcel = (row) => {
+        if (!selectedExcelReport) return null;
+        for (const h of selectedExcelReport.headers) {
+            const val = row[h] !== undefined ? row[h].toString() : '';
+            if (val.startsWith('http://') || val.startsWith('https://')) return val;
+        }
+        return null;
+    };
+
+    const handleCalculateExcelReach = async () => {
+        if (!REACH_LENS_API_URL) {
+            alert("ReachLens isn't configured yet. Set VITE_REACH_LENS_API_URL in .env once the Cloud Function is deployed.");
+            return;
+        }
+        const rows = getSortedRows();
+        const jobs = rows
+            .map(row => ({ key: getRowLinkExcel(row), url: getRowLinkExcel(row) }))
+            .filter(job => job.url);
+
+        if (jobs.length === 0) return;
+
+        setExcelReachRunning(true);
+        setExcelReachResults(prev => {
+            const next = { ...prev };
+            jobs.forEach(job => { next[job.key] = { status: 'loading' }; });
+            return next;
+        });
+
+        await runReachBatch(jobs, (key, update) => {
+            setExcelReachResults(prev => ({ ...prev, [key]: update }));
+        });
+
+        setExcelReachRunning(false);
+    };
+
+    const getRowLinkDayPreview = (row) => {
+        const cell = row.find(c => c && c.url);
+        return cell ? cell.url : null;
+    };
+
+    const handleCalculateDayPreviewReach = async () => {
+        if (!REACH_LENS_API_URL) {
+            alert("ReachLens isn't configured yet. Set VITE_REACH_LENS_API_URL in .env once the Cloud Function is deployed.");
+            return;
+        }
+        if (!dayPreview || dayPreview.type !== 'sheet') return;
+        const jobs = dayPreview.rows
+            .map(row => ({ key: getRowLinkDayPreview(row), url: getRowLinkDayPreview(row) }))
+            .filter(job => job.url);
+
+        if (jobs.length === 0) return;
+
+        setDayPreviewReachRunning(true);
+        setDayPreviewReachResults(prev => {
+            const next = { ...prev };
+            jobs.forEach(job => { next[job.key] = { status: 'loading' }; });
+            return next;
+        });
+
+        await runReachBatch(jobs, (key, update) => {
+            setDayPreviewReachResults(prev => ({ ...prev, [key]: update }));
+        });
+
+        setDayPreviewReachRunning(false);
+    };
+
+    // Auto-fill already-cached reach values as soon as a table's data is ready,
+    // with no API calls - "Calculate Reach" then only has genuinely new links left to do.
+    useEffect(() => {
+        if (dayPreview && dayPreview.type === 'sheet' && !dayPreview.loading && !dayPreview.error) {
+            const jobs = dayPreview.rows
+                .map(row => ({ key: getRowLinkDayPreview(row), url: getRowLinkDayPreview(row) }))
+                .filter(job => job.url);
+            hydrateCachedReach(jobs, setDayPreviewReachResults);
+        }
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [dayPreview]);
+
+    useEffect(() => {
+        if (selectedExcelReport && selectedExcelReport.type === 'excel') {
+            const jobs = (selectedExcelReport.rows || [])
+                .map(row => ({ key: getRowLinkExcel(row), url: getRowLinkExcel(row) }))
+                .filter(job => job.url);
+            hydrateCachedReach(jobs, setExcelReachResults);
+        }
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [selectedExcelReport]);
+
+    // Builds a client-ready .xlsx with a Reach column appended, preserving the
+    // original article hyperlinks, and triggers a browser download.
+    const downloadDayPreviewWithReach = () => {
+        if (!dayPreview || dayPreview.type !== 'sheet') return;
+
+        const aoa = dayPreview.rows.map((row, r) => {
+            const values = row.map(cell => cell?.text ?? '');
+            if (r === 0) return [...values, 'Reach'];
+            const link = getRowLinkDayPreview(row);
+            const result = link ? dayPreviewReachResults[link] : null;
+            const reachValue = result?.status === 'done' ? Math.round(result.reach) : '';
+            return [...values, reachValue];
+        });
+
+        const ws = XLSX.utils.aoa_to_sheet(aoa);
+        dayPreview.rows.forEach((row, r) => {
+            row.forEach((cell, c) => {
+                if (cell?.url) {
+                    const cellRef = XLSX.utils.encode_cell({ r, c });
+                    if (ws[cellRef]) ws[cellRef].l = { Target: cell.url };
+                }
+            });
+        });
+
+        const wb = XLSX.utils.book_new();
+        XLSX.utils.book_append_sheet(wb, ws, String(dayPreview.dateLabel || 'Sheet1').slice(0, 31));
+        XLSX.writeFile(wb, `${dayPreview.clientName || 'Client'}_${dayPreview.docType || 'Report'}_${dayPreview.dateLabel}_with_Reach.xlsx`);
+    };
+
+    const downloadExcelReportWithReach = () => {
+        if (!selectedExcelReport) return;
+        const rows = getSortedRows();
+        const headers = [...selectedExcelReport.headers, 'Reach'];
+        const aoa = [headers];
+
+        rows.forEach(row => {
+            const values = selectedExcelReport.headers.map(h => row[h] !== undefined ? row[h].toString() : '');
+            const link = getRowLinkExcel(row);
+            const result = link ? excelReachResults[link] : null;
+            const reachValue = result?.status === 'done' ? Math.round(result.reach) : '';
+            aoa.push([...values, reachValue]);
+        });
+
+        const ws = XLSX.utils.aoa_to_sheet(aoa);
+        rows.forEach((row, rIdx) => {
+            selectedExcelReport.headers.forEach((h, cIdx) => {
+                const val = row[h] !== undefined ? row[h].toString() : '';
+                if (val.startsWith('http://') || val.startsWith('https://')) {
+                    const cellRef = XLSX.utils.encode_cell({ r: rIdx + 1, c: cIdx });
+                    if (ws[cellRef]) ws[cellRef].l = { Target: val };
+                }
+            });
+        });
+
+        const wb = XLSX.utils.book_new();
+        XLSX.utils.book_append_sheet(wb, ws, 'Report');
+        const baseName = (selectedExcelReport.fileName || 'Report').replace(/\.[^.]+$/, '');
+        XLSX.writeFile(wb, `${baseName}_with_Reach.xlsx`);
+    };
+
+    const renderReachCell = (result) => {
+        if (!result) return <span className="text-slate-300 dark:text-slate-700">&mdash;</span>;
+        if (result.status === 'loading') {
+            return <span className="inline-block h-3 w-3 border-2 border-slate-300 dark:border-slate-700 border-t-amber-500 rounded-full animate-spin"></span>;
+        }
+        if (result.status === 'error') {
+            return <span className="text-red-500 text-2xs font-bold" title={result.error}>Failed</span>;
+        }
+        return <span className="font-bold text-emerald-600 dark:text-emerald-400">{Math.round(result.reach).toLocaleString()}</span>;
+    };
+
     return (
         <div className="space-y-8 max-w-6xl mx-auto font-sans pb-12 text-slate-900 dark:text-slate-100 animate-fade-in relative">
             
@@ -702,28 +1038,6 @@ export default function UploadCoverage() {
                         >
                             Trackers & Reports
                         </button>
-                        <button
-                            type="button"
-                            onClick={() => setActiveTab('overall')}
-                            className={`py-2 px-3 text-[10px] font-extrabold uppercase tracking-wide rounded-xl transition-all cursor-pointer ${
-                                activeTab === 'overall'
-                                    ? 'bg-purple-600 text-white shadow-md'
-                                    : 'text-slate-500 hover:text-slate-800 dark:hover:text-slate-200 hover:bg-slate-200/55 dark:hover:bg-slate-800/50'
-                            }`}
-                        >
-                            Overall Briefs
-                        </button>
-                        <button
-                            type="button"
-                            onClick={() => setActiveTab('pitch')}
-                            className={`py-2 px-3 text-[10px] font-extrabold uppercase tracking-wide rounded-xl transition-all cursor-pointer ${
-                                activeTab === 'pitch'
-                                    ? 'bg-purple-600 text-white shadow-md'
-                                    : 'text-slate-500 hover:text-slate-800 dark:hover:text-slate-200 hover:bg-slate-200/55 dark:hover:bg-slate-800/50'
-                            }`}
-                        >
-                            Pitch Proposals
-                        </button>
                     </div>
 
                     {/* Left Form Card */}
@@ -750,22 +1064,6 @@ export default function UploadCoverage() {
                                              </h3>
                                          </>
                                      )}
-                                     {activeTab === 'pitch' && (
-                                         <>
-                                             <Sparkles className="text-purple-500 dark:text-purple-400 animate-pulse" size={16} />
-                                             <h3 className="font-extrabold text-sm uppercase tracking-wider text-slate-800 dark:text-slate-200">
-                                                 Thought Leadership Pitch
-                                             </h3>
-                                         </>
-                                     )}
-                                    {activeTab === 'overall' && (
-                                        <>
-                                            <Send className="text-purple-500 dark:text-purple-400 animate-pulse" size={16} />
-                                            <h3 className="font-extrabold text-sm uppercase tracking-wider text-slate-800 dark:text-slate-200">
-                                                Overall Work Update Brief
-                                            </h3>
-                                        </>
-                                    )}
                                 </div>
                                 {activeTab === 'press' && (
                                     <button
@@ -803,9 +1101,30 @@ export default function UploadCoverage() {
                                     </div>
                                 </div>
 
-                                {/* Month & Year Dropdowns (for press releases & trackers/reports) */}
+                                {/* Date (Day-wise), Month & Year Dropdowns */}
                                 {activeTab !== 'overall' && (
-                                    <div className="grid grid-cols-2 gap-4">
+                                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                                        <div className="flex flex-col gap-1.5">
+                                            <label className="text-xs font-bold text-slate-500 dark:text-slate-400 flex items-center gap-1.5">
+                                                <Calendar size={14} className="text-purple-500" />
+                                                Daily Tracker Date
+                                            </label>
+                                            <input
+                                                type="date"
+                                                value={reportDate}
+                                                onChange={(e) => {
+                                                    setReportDate(e.target.value);
+                                                    if (e.target.value) {
+                                                        const d = new Date(e.target.value);
+                                                        const monthName = d.toLocaleString('default', { month: 'long' });
+                                                        setMonth(monthName);
+                                                        setYear(d.getFullYear().toString());
+                                                    }
+                                                }}
+                                                className="w-full h-11 px-3 text-xs font-semibold rounded-2xl border border-slate-200 focus:border-purple-500 focus:ring-2 focus:ring-purple-500/20 bg-slate-50 dark:bg-slate-900 border-slate-200 dark:border-slate-800 dark:text-white transition-all outline-none"
+                                            />
+                                        </div>
+
                                         <div className="flex flex-col gap-1.5">
                                             <label className="text-xs font-bold text-slate-500 dark:text-slate-400 flex items-center gap-1.5">
                                                 <Calendar size={14} className="text-purple-500" />
@@ -908,169 +1227,219 @@ export default function UploadCoverage() {
                                 </div>
                             )}
 
-                            {/* TAB 2: REPORTS & TRACKERS */}
+                            {/* TAB 2: TRACKERS & REPORTS (MASTER LINKS & FILE ONBOARDING) */}
                             {activeTab === 'reports' && (
-                                <form onSubmit={handleReportSubmit} className="space-y-4">
-                                    <div className="flex flex-col gap-1.5">
-                                        <label className="text-xs font-bold text-slate-500 dark:text-slate-400">Report Category</label>
-                                        <select
-                                            value={reportType}
-                                            onChange={(e) => setReportType(e.target.value)}
-                                            className="w-full h-11 px-4 text-xs font-semibold rounded-2xl border border-slate-200 focus:border-purple-500 focus:ring-2 focus:ring-purple-500/20 bg-slate-50 dark:bg-slate-900 border-slate-200 dark:border-slate-800 dark:text-white transition-all outline-none"
-                                        >
-                                            <option value="Daily Tracker">Daily Tracker</option>
-                                            <option value="Weekly Tracker">Weekly Tracker</option>
-                                            <option value="Monthly Tracker">Monthly Tracker</option>
-                                            <option value="Annual Report">Annual Report</option>
-                                            <option value="Outreach">Outreach</option>
-                                        </select>
-                                    </div>
+                                <div className="space-y-6">
+                                    {/* Pinned Master Live Links (Google Sheets & Docs) */}
+                                    <div className="bg-purple-500/5 dark:bg-purple-500/10 p-5 rounded-2xl border border-purple-500/20 space-y-3">
+                                        <div className="flex items-center justify-between">
+                                            <h4 className="text-xs font-extrabold text-slate-800 dark:text-slate-200 uppercase tracking-wider flex items-center gap-1.5">
+                                                <Link2 size={14} className="text-purple-500" />
+                                                Pinned Master Live Links
+                                            </h4>
+                                            {masterLinksSaveSuccess && (
+                                                <span className="text-[10px] font-bold text-emerald-500 flex items-center gap-1">
+                                                    <CheckCircle2 size={12} /> Live Saved!
+                                                </span>
+                                            )}
+                                        </div>
+                                        <p className="text-[10px] text-slate-500 font-medium leading-tight">
+                                            Set permanent Google Sheet & Doc master links for <strong className="text-purple-600 dark:text-purple-400">{clientName || 'selected client'}</strong>. Updated daily date-wise.
+                                        </p>
 
-                                    <div className="flex flex-col gap-1.5">
-                                        <label className="text-xs font-bold text-slate-500 dark:text-slate-400">Choose File</label>
-                                        <div 
-                                            onClick={() => reportFileInputRef.current?.click()}
-                                            className="border border-dashed border-slate-250 dark:border-slate-850 rounded-xl p-4 flex flex-col items-center justify-center bg-slate-50 dark:bg-slate-900/35 hover:bg-purple-500/5 transition-colors relative cursor-pointer animate-fade-in"
-                                        >
-                                            <input
-                                                type="file"
-                                                ref={reportFileInputRef}
-                                                onChange={(e) => setReportFile(e.target.files[0])}
-                                                className="hidden"
-                                            />
-                                            <UploadCloud size={20} className="text-slate-400 mb-1.5" />
-                                            <span className="text-2xs text-slate-655 dark:text-slate-300 font-bold">
-                                                {reportFile ? reportFile.name : "Select tracker or report file"}
-                                            </span>
-                                            <span className="text-4xs text-slate-400 mt-0.5">XLSX, PDF, Word up to 15MB</span>
+                                        <div className="space-y-3 pt-1">
+                                            <div className="flex flex-col gap-1">
+                                                <div className="flex items-center justify-between">
+                                                    <label className="text-[10px] font-bold uppercase tracking-wider text-slate-600 dark:text-slate-400">1. Cumulative Master Google Sheet URL</label>
+                                                    {cumulativeSheetUrl && (
+                                                        <div className="flex items-center gap-2">
+                                                            <a href={cumulativeSheetUrl} target="_blank" rel="noopener noreferrer" className="text-[10px] text-purple-600 dark:text-purple-400 font-bold hover:underline flex items-center gap-0.5">
+                                                                Open Sheet <ExternalLink size={10} />
+                                                            </a>
+                                                            <button
+                                                                type="button"
+                                                                onClick={() => handlePreviewSingleDay(cumulativeSheetUrl, clientName, reportDate, 'Daily_Tracker')}
+                                                                title={`Preview ${reportDate} in-app`}
+                                                                className="text-[10px] bg-sky-500/10 text-sky-600 dark:text-sky-400 px-2 py-0.5 rounded-lg font-bold hover:bg-sky-500/20 flex items-center gap-1 transition-all cursor-pointer"
+                                                            >
+                                                                <Eye size={10} /> Preview
+                                                            </button>
+                                                            <button
+                                                                type="button"
+                                                                onClick={() => handleExtractSingleDayFile(cumulativeSheetUrl, clientName, reportDate, 'Daily_Tracker')}
+                                                                title={`Extract only ${reportDate} into a standalone .xlsx`}
+                                                                className="text-[10px] bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 px-2 py-0.5 rounded-lg font-bold hover:bg-emerald-500/20 flex items-center gap-1 transition-all cursor-pointer"
+                                                            >
+                                                                <Download size={10} /> Extract Day .xlsx ({reportDate})
+                                                            </button>
+                                                            <a href={getGoogleExportUrl(cumulativeSheetUrl, 'xlsx')} target="_blank" rel="noopener noreferrer" title="Downloads the full cumulative month, not just one day" className="text-[10px] text-slate-400 dark:text-slate-500 font-semibold hover:underline flex items-center gap-1">
+                                                                Full Export
+                                                            </a>
+                                                        </div>
+                                                    )}
+                                                </div>
+                                                <input
+                                                    type="url"
+                                                    value={cumulativeSheetUrl}
+                                                    onChange={(e) => setCumulativeSheetUrl(e.target.value)}
+                                                    placeholder="https://docs.google.com/spreadsheets/d/..."
+                                                    className="w-full h-9 px-3 text-xs rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-purple-500/20 transition-all font-mono"
+                                                />
+                                            </div>
+
+                                            <div className="flex flex-col gap-1">
+                                                <div className="flex items-center justify-between">
+                                                    <label className="text-[10px] font-bold uppercase tracking-wider text-slate-600 dark:text-slate-400">2. Filtered Report Google Doc (Relevant Articles)</label>
+                                                    {filteredDocUrl && (
+                                                        <div className="flex items-center gap-2">
+                                                            <a href={filteredDocUrl} target="_blank" rel="noopener noreferrer" className="text-[10px] text-purple-600 dark:text-purple-400 font-bold hover:underline flex items-center gap-0.5">
+                                                                Open Doc <ExternalLink size={10} />
+                                                            </a>
+                                                            <button
+                                                                type="button"
+                                                                onClick={() => handlePreviewSingleDay(filteredDocUrl, clientName, reportDate, 'Filtered_Report')}
+                                                                title={`Preview ${reportDate} in-app`}
+                                                                className="text-[10px] bg-sky-500/10 text-sky-600 dark:text-sky-400 px-2 py-0.5 rounded-lg font-bold hover:bg-sky-500/20 flex items-center gap-1 transition-all cursor-pointer"
+                                                            >
+                                                                <Eye size={10} /> Preview
+                                                            </button>
+                                                            <button
+                                                                type="button"
+                                                                onClick={() => handleExtractSingleDayFile(filteredDocUrl, clientName, reportDate, 'Filtered_Report')}
+                                                                title={`Extract only ${reportDate} into a standalone .docx`}
+                                                                className="text-[10px] bg-purple-500/10 text-purple-600 dark:text-purple-400 px-2 py-0.5 rounded-lg font-bold hover:bg-purple-500/20 flex items-center gap-1 transition-all cursor-pointer"
+                                                            >
+                                                                <Download size={10} /> Extract Day .docx ({reportDate})
+                                                            </button>
+                                                            <a href={getGoogleExportUrl(filteredDocUrl, 'docx')} target="_blank" rel="noopener noreferrer" title="Downloads the full cumulative month, not just one day" className="text-[10px] text-slate-400 dark:text-slate-500 font-semibold hover:underline flex items-center gap-1">
+                                                                Full Export
+                                                            </a>
+                                                        </div>
+                                                    )}
+                                                </div>
+                                                <input
+                                                    type="url"
+                                                    value={filteredDocUrl}
+                                                    onChange={(e) => setFilteredDocUrl(e.target.value)}
+                                                    placeholder="https://docs.google.com/document/d/..."
+                                                    className="w-full h-9 px-3 text-xs rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-purple-500/20 transition-all font-mono"
+                                                />
+                                            </div>
+
+                                            <div className="flex flex-col gap-1">
+                                                <div className="flex items-center justify-between">
+                                                    <label className="text-[10px] font-bold uppercase tracking-wider text-slate-600 dark:text-slate-400">3. Master Report Google Doc (All Search Matches)</label>
+                                                    {masterDocUrl && (
+                                                        <div className="flex items-center gap-2">
+                                                            <a href={masterDocUrl} target="_blank" rel="noopener noreferrer" className="text-[10px] text-indigo-600 dark:text-indigo-400 font-bold hover:underline flex items-center gap-0.5">
+                                                                Open Doc <ExternalLink size={10} />
+                                                            </a>
+                                                            <button
+                                                                type="button"
+                                                                onClick={() => handlePreviewSingleDay(masterDocUrl, clientName, reportDate, 'Master_Report')}
+                                                                title={`Preview ${reportDate} in-app`}
+                                                                className="text-[10px] bg-sky-500/10 text-sky-600 dark:text-sky-400 px-2 py-0.5 rounded-lg font-bold hover:bg-sky-500/20 flex items-center gap-1 transition-all cursor-pointer"
+                                                            >
+                                                                <Eye size={10} /> Preview
+                                                            </button>
+                                                            <button
+                                                                type="button"
+                                                                onClick={() => handleExtractSingleDayFile(masterDocUrl, clientName, reportDate, 'Master_Report')}
+                                                                title={`Extract only ${reportDate} into a standalone .docx`}
+                                                                className="text-[10px] bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 px-2 py-0.5 rounded-lg font-bold hover:bg-indigo-500/20 flex items-center gap-1 transition-all cursor-pointer"
+                                                            >
+                                                                <Download size={10} /> Extract Day .docx ({reportDate})
+                                                            </button>
+                                                            <a href={getGoogleExportUrl(masterDocUrl, 'docx')} target="_blank" rel="noopener noreferrer" title="Downloads the full cumulative month, not just one day" className="text-[10px] text-slate-400 dark:text-slate-500 font-semibold hover:underline flex items-center gap-1">
+                                                                Full Export
+                                                            </a>
+                                                        </div>
+                                                    )}
+                                                </div>
+                                                <input
+                                                    type="url"
+                                                    value={masterDocUrl}
+                                                    onChange={(e) => setMasterDocUrl(e.target.value)}
+                                                    placeholder="https://docs.google.com/document/d/..."
+                                                    className="w-full h-9 px-3 text-xs rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-purple-500/20 transition-all font-mono"
+                                                />
+                                            </div>
+
+                                            <button
+                                                type="button"
+                                                onClick={handleSaveMasterLinks}
+                                                disabled={isSavingMasterLinks || !clientName}
+                                                className="w-full h-9 bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700 text-white rounded-xl text-[10px] font-extrabold uppercase tracking-wider transition-all flex items-center justify-center gap-1.5 shadow-sm cursor-pointer disabled:opacity-50"
+                                            >
+                                                {isSavingMasterLinks ? "Saving Links..." : `Pin All 3 Master Links for ${clientName || 'Client'}`}
+                                            </button>
                                         </div>
                                     </div>
 
-                                    <button
-                                        type="submit"
-                                        disabled={reportUploading || !reportFile}
-                                        className={`w-full h-11 rounded-2xl font-bold text-xs uppercase tracking-wider flex items-center justify-center gap-1.5 transition-all cursor-pointer ${
-                                            reportFile && !reportUploading
-                                                ? 'bg-purple-600 hover:bg-purple-700 text-white shadow-md shadow-purple-500/10'
-                                                : 'bg-slate-100 dark:bg-slate-900 text-slate-450 dark:text-slate-600 cursor-not-allowed border border-slate-200/40 dark:border-slate-800/40'
-                                        }`}
-                                    >
-                                        {reportUploading ? (
-                                            <>
-                                                <span className="h-4 w-4 border-2 border-white/20 border-t-white rounded-full animate-spin"></span>
-                                                <span>Onboarding...</span>
-                                            </>
-                                        ) : (
-                                            <>
-                                                <FileCheck size={14} />
-                                                <span>Onboard Report</span>
-                                            </>
-                                        )}
-                                    </button>
-                                </form>
-                            )}
-
-                            {/* TAB 3: OVERALL WORK BRIEF */}
-                            {activeTab === 'overall' && (
-                                <form onSubmit={handleOverallWorkSubmit} className="space-y-4">
-                                    <div className="flex flex-col gap-1.5">
-                                        <label className="text-xs font-bold text-slate-500 dark:text-slate-400">Brief Updates & Summary</label>
-                                        <textarea
-                                            value={overallWorkText}
-                                            onChange={(e) => setOverallWorkText(e.target.value)}
-                                            placeholder="Write general achievements or weekly briefs here..."
-                                            rows={5}
-                                            required
-                                            className="w-full bg-slate-50 dark:bg-slate-900 border border-slate-250 dark:border-slate-800 text-gray-900 dark:text-white rounded-2xl p-4 focus:outline-none focus:ring-2 focus:ring-purple-500/20 transition-all font-semibold text-xs leading-relaxed"
-                                        />
-                                    </div>
-
-                                    <button
-                                        type="submit"
-                                        disabled={overallWorkSubmitting || !overallWorkText.trim()}
-                                        className={`w-full h-11 rounded-2xl font-bold text-xs uppercase tracking-wider flex items-center justify-center gap-1.5 transition-all cursor-pointer ${
-                                            overallWorkText.trim() && !overallWorkSubmitting
-                                                ? 'bg-purple-600 hover:bg-purple-700 text-white shadow-md shadow-purple-500/10'
-                                                : 'bg-slate-100 dark:bg-slate-900 text-slate-450 dark:text-slate-600 cursor-not-allowed border border-slate-200/40 dark:border-slate-800/40'
-                                        }`}
-                                    >
-                                        {overallWorkSubmitting ? (
-                                            <>
-                                                <span className="h-4 w-4 border-2 border-white/20 border-t-white rounded-full animate-spin"></span>
-                                                <span>Publishing...</span>
-                                            </>
-                                        ) : (
-                                            <>
-                                                <Send size={14} />
-                                                <span>Publish Brief Update</span>
-                                            </>
-                                        )}
-                                    </button>
-                                </form>
-                            )}
-
-                            {/* TAB 4: THOUGHT LEADERSHIP PITCH PROPOSALS */}
-                            {activeTab === 'pitch' && (
-                                <form onSubmit={handlePitchSubmit} className="space-y-4">
-                                    <div className="flex flex-col gap-1.5">
-                                        <label className="text-xs font-bold text-slate-500 dark:text-slate-400">Proposed Topic Title</label>
-                                        <input
-                                            type="text"
-                                            value={pitchTitle}
-                                            onChange={(e) => setPitchTitle(e.target.value)}
-                                            placeholder="e.g. The Future of AI in PR"
-                                            required
-                                            className="w-full h-11 px-4 text-xs font-semibold rounded-2xl border border-slate-200 focus:border-purple-500 focus:ring-2 focus:ring-purple-500/20 bg-slate-50 dark:bg-slate-900 border-slate-200 dark:border-slate-800 dark:text-white transition-all outline-none"
-                                        />
-                                    </div>
-
-                                    <div className="grid grid-cols-2 gap-4">
+                                    {/* Daily Snapshot File Onboarding Form */}
+                                    <form onSubmit={handleReportSubmit} className="space-y-4 pt-2 border-t border-slate-100 dark:border-slate-800">
+                                        <h4 className="text-xs font-extrabold text-slate-800 dark:text-slate-200 uppercase tracking-wider flex items-center gap-1.5">
+                                            <UploadCloud size={14} className="text-purple-500" />
+                                            Onboard Daily Snapshot File (.xlsx / .docx)
+                                        </h4>
                                         <div className="flex flex-col gap-1.5">
-                                            <label className="text-xs font-bold text-slate-500 dark:text-slate-400">Pitch Deadline</label>
-                                            <input
-                                                type="date"
-                                                value={pitchDeadline}
-                                                onChange={(e) => setPitchDeadline(e.target.value)}
-                                                required
+                                            <label className="text-xs font-bold text-slate-500 dark:text-slate-400">Report Category</label>
+                                            <select
+                                                value={reportType}
+                                                onChange={(e) => setReportType(e.target.value)}
                                                 className="w-full h-11 px-4 text-xs font-semibold rounded-2xl border border-slate-200 focus:border-purple-500 focus:ring-2 focus:ring-purple-500/20 bg-slate-50 dark:bg-slate-900 border-slate-200 dark:border-slate-800 dark:text-white transition-all outline-none"
-                                            />
+                                            >
+                                                <option value="Daily Tracker">Daily Tracker</option>
+                                                <option value="Weekly Tracker">Weekly Tracker</option>
+                                                <option value="Monthly Tracker">Monthly Tracker</option>
+                                                <option value="Annual Report">Annual Report</option>
+                                                <option value="Outreach">Outreach</option>
+                                            </select>
                                         </div>
-                                        <div className="flex flex-col gap-1.5">
-                                            <label className="text-xs font-bold text-slate-500 dark:text-slate-400">Match Score (%)</label>
-                                            <input
-                                                type="number"
-                                                min="0"
-                                                max="100"
-                                                value={pitchMatchScore}
-                                                onChange={(e) => setPitchMatchScore(e.target.value)}
-                                                required
-                                                className="w-full h-11 px-4 text-xs font-semibold rounded-2xl border border-slate-200 focus:border-purple-500 focus:ring-2 focus:ring-purple-500/20 bg-slate-50 dark:bg-slate-900 border-slate-200 dark:border-slate-800 dark:text-white transition-all outline-none"
-                                            />
-                                        </div>
-                                    </div>
 
-                                    <button
-                                        type="submit"
-                                        disabled={pitchSubmitting || !pitchTitle.trim() || !pitchDeadline}
-                                        className={`w-full h-11 rounded-2xl font-bold text-xs uppercase tracking-wider flex items-center justify-center gap-1.5 transition-all cursor-pointer ${
-                                            pitchTitle.trim() && pitchDeadline && !pitchSubmitting
-                                                ? 'bg-purple-600 hover:bg-purple-700 text-white shadow-md shadow-purple-500/10'
-                                                : 'bg-slate-100 dark:bg-slate-900 text-slate-450 dark:text-slate-600 cursor-not-allowed border border-slate-200/40 dark:border-slate-800/40'
-                                        }`}
-                                    >
-                                        {pitchSubmitting ? (
-                                            <>
-                                                <span className="h-4 w-4 border-2 border-white/20 border-t-white rounded-full animate-spin"></span>
-                                                <span>Publishing Pitch...</span>
-                                            </>
-                                        ) : (
-                                            <>
-                                                <Sparkles size={14} />
-                                                <span>Publish Pitch Proposal</span>
-                                            </>
-                                        )}
-                                    </button>
-                                </form>
+                                        <div className="flex flex-col gap-1.5">
+                                            <label className="text-xs font-bold text-slate-500 dark:text-slate-400">Choose File</label>
+                                            <div 
+                                                onClick={() => reportFileInputRef.current?.click()}
+                                                className="border border-dashed border-slate-250 dark:border-slate-850 rounded-xl p-4 flex flex-col items-center justify-center bg-slate-50 dark:bg-slate-900/35 hover:bg-purple-500/5 transition-colors relative cursor-pointer animate-fade-in"
+                                            >
+                                                <input
+                                                    type="file"
+                                                    ref={reportFileInputRef}
+                                                    onChange={(e) => setReportFile(e.target.files[0])}
+                                                    className="hidden"
+                                                />
+                                                <UploadCloud size={20} className="text-slate-400 mb-1.5" />
+                                                <span className="text-2xs text-slate-655 dark:text-slate-300 font-bold">
+                                                    {reportFile ? reportFile.name : "Select tracker or report file"}
+                                                </span>
+                                                <span className="text-4xs text-slate-400 mt-0.5">XLSX, PDF, Word up to 15MB</span>
+                                            </div>
+                                        </div>
+
+                                        <button
+                                            type="submit"
+                                            disabled={reportUploading || !reportFile}
+                                            className={`w-full h-11 rounded-2xl font-bold text-xs uppercase tracking-wider flex items-center justify-center gap-1.5 transition-all cursor-pointer ${
+                                                reportFile && !reportUploading
+                                                    ? 'bg-purple-600 hover:bg-purple-700 text-white shadow-md shadow-purple-500/10'
+                                                    : 'bg-slate-100 dark:bg-slate-900 text-slate-450 dark:text-slate-600 cursor-not-allowed border border-slate-200/40 dark:border-slate-800/40'
+                                            }`}
+                                        >
+                                            {reportUploading ? (
+                                                <>
+                                                    <span className="h-4 w-4 border-2 border-white/20 border-t-white rounded-full animate-spin"></span>
+                                                    <span>Onboarding...</span>
+                                                </>
+                                            ) : (
+                                                <>
+                                                    <FileCheck size={14} />
+                                                    <span>Onboard Report</span>
+                                                </>
+                                            )}
+                                        </button>
+                                    </form>
+                                </div>
                             )}
 
                         </CardContent>
@@ -1232,109 +1601,24 @@ export default function UploadCoverage() {
                                                     <p className="text-[10px] text-slate-450 font-semibold">{doc.fileSize} • Uploaded by {doc.uploadedBy} on {new Date(doc.createdAt).toLocaleDateString()}</p>
                                                 </div>
                                             </div>
-                                            <button
-                                                onClick={() => handleDeleteDocument(doc.docId)}
-                                                className="p-2 text-slate-405 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-500/10 rounded-xl transition-all cursor-pointer shrink-0"
-                                                title="Delete document"
-                                            >
-                                                <Trash2 size={16} />
-                                            </button>
-                                        </div>
-                                    ))
-                            )}
-                        </div>
-                    )}
-
-                    {/* TAB 3: OVERALL BRIEFS LIST */}
-                    {activeTab === 'overall' && (
-                        <div className="space-y-5 max-h-[700px] overflow-y-auto pr-2 animate-fade-in">
-                            {overallBriefsList.filter(b => b.client.toLowerCase().includes(searchTerm.toLowerCase())).length === 0 ? (
-                                <div className="p-16 text-center text-slate-455 bg-white dark:bg-slate-955 border border-dashed border-slate-200 dark:border-slate-800 rounded-3xl shadow-lg">
-                                    <Send className="mx-auto text-slate-300 dark:text-slate-700 mb-3" size={40} />
-                                    <p className="text-xs font-bold uppercase tracking-widest">No Brief Updates Found</p>
-                                    <p className="text-[11px] text-slate-500 mt-1">Ready for overall work updates & operational summaries.</p>
-                                </div>
-                            ) : (
-                                overallBriefsList
-                                    .filter(b => b.client.toLowerCase().includes(searchTerm.toLowerCase()))
-                                    .map((brief) => (
-                                        <div key={brief.docId} className="bg-white dark:bg-slate-955 border border-slate-100 dark:border-slate-905 p-6 rounded-3xl shadow-lg flex flex-col gap-3 relative overflow-hidden">
-                                            <div className="flex items-center justify-between gap-2 border-b border-slate-100 dark:border-slate-900 pb-2">
-                                                <div className="flex gap-2 items-center">
-                                                    <span className="px-2 py-0.5 bg-purple-500/10 text-purple-655 dark:text-purple-400 text-[9px] font-extrabold uppercase rounded">
-                                                        {brief.client}
-                                                    </span>
-                                                    <span className="text-[10px] text-slate-400 font-bold">
-                                                        Brief Update
-                                                    </span>
-                                                </div>
+                                            <div className="flex items-center gap-2 shrink-0">
+                                                {doc.fileData && (
+                                                    <a
+                                                        href={doc.fileData}
+                                                        download={doc.fileName}
+                                                        className="p-2 text-purple-600 dark:text-purple-400 hover:bg-purple-500/10 rounded-xl transition-all cursor-pointer"
+                                                        title="Download this day's exact uploaded file"
+                                                    >
+                                                        <Download size={16} />
+                                                    </a>
+                                                )}
                                                 <button
-                                                    onClick={() => handleDeleteOverallBrief(brief.docId)}
-                                                    className="p-2 text-slate-405 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-500/10 rounded-xl transition-all cursor-pointer"
-                                                    title="Delete brief"
+                                                    onClick={() => handleDeleteDocument(doc.docId)}
+                                                    className="p-2 text-slate-405 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-500/10 rounded-xl transition-all cursor-pointer shrink-0"
+                                                    title="Delete document"
                                                 >
-                                                    <Trash2 size={14} />
+                                                    <Trash2 size={16} />
                                                 </button>
-                                            </div>
-                                            <p className="text-xs text-slate-700 dark:text-slate-350 leading-relaxed font-semibold italic">
-                                                "{brief.text}"
-                                            </p>
-                                            <p className="text-[10px] text-slate-450 font-semibold self-end">
-                                                Updated by {brief.uploadedBy} on {new Date(brief.createdAt).toLocaleString()}
-                                            </p>
-                                        </div>
-                                    ))
-                            )}
-                        </div>
-                    )}
-
-                    {/* TAB 4: THOUGHT LEADERSHIP PITCH LIST */}
-                    {activeTab === 'pitch' && (
-                        <div className="space-y-5 max-h-[700px] overflow-y-auto pr-2 animate-fade-in">
-                            {pitchList.filter(p => p.client.toLowerCase().includes(searchTerm.toLowerCase())).length === 0 ? (
-                                <div className="p-16 text-center text-slate-455 bg-white dark:bg-slate-955 border border-dashed border-slate-200 dark:border-slate-800 rounded-3xl shadow-lg">
-                                    <Sparkles className="mx-auto text-slate-300 dark:text-slate-700 mb-3 animate-pulse" size={40} />
-                                    <p className="text-xs font-bold uppercase tracking-widest">No Pitch Proposals Found</p>
-                                    <p className="text-[11px] text-slate-500 mt-1">Ready for custom thought leadership pitches.</p>
-                                </div>
-                            ) : (
-                                pitchList
-                                    .filter(p => p.client.toLowerCase().includes(searchTerm.toLowerCase()))
-                                    .map((pitch) => (
-                                        <div key={pitch.docId} className="bg-white dark:bg-slate-955 border border-slate-100 dark:border-slate-905 p-6 rounded-3xl shadow-lg flex flex-col gap-3 relative overflow-hidden">
-                                            <div className="flex items-center justify-between gap-2 border-b border-slate-100 dark:border-slate-900 pb-2">
-                                                <div className="flex gap-2 items-center flex-wrap">
-                                                    <span className="px-2 py-0.5 bg-purple-500/10 text-purple-655 dark:text-purple-400 text-[9px] font-extrabold uppercase rounded">
-                                                        {pitch.client}
-                                                    </span>
-                                                    <span className="px-2 py-0.5 bg-amber-500/10 text-amber-655 dark:text-amber-400 text-[9px] font-extrabold uppercase rounded flex items-center gap-1">
-                                                        Match: {pitch.matchScore}%
-                                                    </span>
-                                                    <span className={`px-2 py-0.5 text-[9px] font-extrabold uppercase rounded ${
-                                                        pitch.status === 'Approved'
-                                                            ? 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400'
-                                                            : pitch.status === 'Rejected'
-                                                                ? 'bg-rose-500/10 text-rose-600 dark:text-rose-400'
-                                                                : 'bg-slate-500/10 text-slate-600 dark:text-slate-400'
-                                                    }`}>
-                                                        {pitch.status || 'Pending'}
-                                                    </span>
-                                                </div>
-                                                <button
-                                                    onClick={() => handleDeletePitch(pitch.docId)}
-                                                    className="p-2 text-slate-405 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-500/10 rounded-xl transition-all cursor-pointer"
-                                                    title="Delete pitch proposal"
-                                                >
-                                                    <Trash2 size={14} />
-                                                </button>
-                                            </div>
-                                            <div>
-                                                <p className="text-xs font-bold text-slate-800 dark:text-slate-200">
-                                                    {pitch.title}
-                                                </p>
-                                                <p className="text-[10px] text-slate-450 font-semibold mt-1">
-                                                    Deadline: {pitch.deadline} • Proposed by {pitch.proposedBy} on {new Date(pitch.createdAt).toLocaleDateString()}
-                                                </p>
                                             </div>
                                         </div>
                                     ))
@@ -1364,13 +1648,35 @@ export default function UploadCoverage() {
                                     Client: {selectedExcelReport.client} | Period: {selectedExcelReport.month} {selectedExcelReport.year} | {selectedExcelReport.type === 'excel' ? `${selectedExcelReport.rows.length} rows loaded` : "Word Document Report"}
                                 </p>
                             </div>
-                            
-                            <button
-                                onClick={handleCloseModal}
-                                className="p-2 text-slate-400 hover:text-slate-800 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-900 rounded-xl transition-all cursor-pointer"
-                            >
-                                <X size={20} />
-                            </button>
+
+                            <div className="flex items-center gap-2">
+                                {selectedExcelReport.type === 'excel' && (
+                                    <button
+                                        onClick={handleCalculateExcelReach}
+                                        disabled={excelReachRunning}
+                                        className="flex items-center gap-1.5 bg-amber-500/10 text-amber-600 dark:text-amber-400 hover:bg-amber-500/20 text-[11px] font-bold px-3 py-2 rounded-xl transition-all cursor-pointer disabled:opacity-50"
+                                    >
+                                        <TrendingUp size={14} />
+                                        {excelReachRunning ? 'Calculating Reach...' : 'Calculate Reach'}
+                                    </button>
+                                )}
+                                {selectedExcelReport.type === 'excel' && (
+                                    <button
+                                        onClick={downloadExcelReportWithReach}
+                                        title="Download an .xlsx with the Reach column included, ready to send to the client"
+                                        className="flex items-center gap-1.5 bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 hover:bg-emerald-500/20 text-[11px] font-bold px-3 py-2 rounded-xl transition-all cursor-pointer"
+                                    >
+                                        <Download size={14} />
+                                        Download with Reach
+                                    </button>
+                                )}
+                                <button
+                                    onClick={handleCloseModal}
+                                    className="p-2 text-slate-400 hover:text-slate-800 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-900 rounded-xl transition-all cursor-pointer"
+                                >
+                                    <X size={20} />
+                                </button>
+                            </div>
                         </div>
 
                         {/* Modal Body Content (Word Document html OR Excel Table) */}
@@ -1404,6 +1710,11 @@ export default function UploadCoverage() {
                                                         </th>
                                                     );
                                                 })}
+                                                <th className="p-4 min-w-[100px] w-[100px] bg-amber-500/5 border-l border-amber-500/20">
+                                                    <div className="flex items-center gap-1.5">
+                                                        <TrendingUp size={11} /> Reach
+                                                    </div>
+                                                </th>
                                             </tr>
                                         </thead>
                                         <tbody className="divide-y divide-slate-100 dark:divide-slate-800/60">
@@ -1414,7 +1725,7 @@ export default function UploadCoverage() {
                                                 if (isDividerRow) {
                                                     return (
                                                         <tr key={rIdx} className="bg-amber-500/5 dark:bg-amber-500/10 font-black text-amber-600 dark:text-amber-400">
-                                                            <td colSpan={selectedExcelReport.headers.length} className="p-4 text-center font-bold tracking-wider uppercase text-2xs bg-amber-500/5">
+                                                            <td colSpan={selectedExcelReport.headers.length + 1} className="p-4 text-center font-bold tracking-wider uppercase text-2xs bg-amber-500/5">
                                                                 {rowValues[0]}
                                                             </td>
                                                         </tr>
@@ -1441,6 +1752,9 @@ export default function UploadCoverage() {
                                                                 </td>
                                                             );
                                                         })}
+                                                        <td className="p-4 align-top text-center min-w-[100px] w-[100px] bg-amber-500/5 border-l border-amber-500/20">
+                                                            {renderReachCell(excelReachResults[getRowLinkExcel(row)])}
+                                                        </td>
                                                     </tr>
                                                 );
                                             })}
@@ -1449,6 +1763,111 @@ export default function UploadCoverage() {
                                 </div>
                             </div>
                         )}
+                    </div>
+                </div>
+            )}
+
+            {dayPreview && (
+                <div className="fixed inset-0 z-50 bg-black/60 flex items-center justify-center p-4" onClick={() => { setDayPreview(null); setDayPreviewReachResults({}); setDayPreviewReachRunning(false); }}>
+                    <div
+                        className="bg-white dark:bg-slate-950 rounded-3xl shadow-2xl w-full max-w-4xl h-[85vh] flex flex-col overflow-hidden border border-slate-100 dark:border-slate-800"
+                        onClick={(e) => e.stopPropagation()}
+                    >
+                        <div className="flex items-center justify-between p-5 border-b border-slate-100 dark:border-slate-800 shrink-0">
+                            <h3 className="font-extrabold text-sm uppercase tracking-wider text-slate-800 dark:text-slate-200 flex items-center gap-2">
+                                <Eye size={16} className="text-sky-500" />
+                                {dayPreview.clientName} &mdash; {(dayPreview.docType || '').replace(/_/g, ' ')} ({dayPreview.dateLabel})
+                            </h3>
+                            <div className="flex items-center gap-2">
+                                {dayPreview.type === 'sheet' && !dayPreview.loading && !dayPreview.error && (
+                                    <button
+                                        onClick={handleCalculateDayPreviewReach}
+                                        disabled={dayPreviewReachRunning}
+                                        className="flex items-center gap-1.5 bg-amber-500/10 text-amber-600 dark:text-amber-400 hover:bg-amber-500/20 text-[11px] font-bold px-3 py-2 rounded-xl transition-all cursor-pointer disabled:opacity-50"
+                                    >
+                                        <TrendingUp size={14} />
+                                        {dayPreviewReachRunning ? 'Calculating Reach...' : 'Calculate Reach'}
+                                    </button>
+                                )}
+                                {dayPreview.type === 'sheet' && !dayPreview.loading && !dayPreview.error && (
+                                    <button
+                                        onClick={downloadDayPreviewWithReach}
+                                        title="Download an .xlsx with the Reach column included, ready to send to the client"
+                                        className="flex items-center gap-1.5 bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 hover:bg-emerald-500/20 text-[11px] font-bold px-3 py-2 rounded-xl transition-all cursor-pointer"
+                                    >
+                                        <Download size={14} />
+                                        Download with Reach
+                                    </button>
+                                )}
+                                <button
+                                    onClick={() => { setDayPreview(null); setDayPreviewReachResults({}); setDayPreviewReachRunning(false); }}
+                                    className="text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 cursor-pointer"
+                                >
+                                    <X size={20} />
+                                </button>
+                            </div>
+                        </div>
+
+                        <div className="flex-1 overflow-hidden p-4">
+                            {dayPreview.loading && (
+                                <div className="flex items-center justify-center h-full text-slate-400 text-xs font-bold uppercase tracking-wide">
+                                    Loading preview&hellip;
+                                </div>
+                            )}
+
+                            {!dayPreview.loading && dayPreview.error && (
+                                <div className="flex items-center justify-center h-full text-red-500 text-xs font-bold px-8 text-center">
+                                    {dayPreview.error}
+                                </div>
+                            )}
+
+                            {!dayPreview.loading && !dayPreview.error && dayPreview.type === 'doc' && (
+                                <iframe
+                                    srcDoc={dayPreview.html}
+                                    title="Day preview"
+                                    className="w-full h-full border-0 rounded-2xl bg-white"
+                                />
+                            )}
+
+                            {!dayPreview.loading && !dayPreview.error && dayPreview.type === 'sheet' && (
+                                <div className="overflow-auto h-full rounded-2xl border border-slate-100 dark:border-slate-800">
+                                    {/* A day's tab has multiple embedded section headers (e.g. "Credit Cards,
+                                        Fintechs, Banks & More"), not one clean header row, so this renders as a
+                                        plain grid rather than a fixed thead. */}
+                                    <table className="w-full text-xs border-collapse">
+                                        <tbody>
+                                            {dayPreview.rows.map((row, r) => (
+                                                <tr key={r} className={`border-b border-slate-100 dark:border-slate-900 ${r === 0 ? 'font-bold bg-slate-50 dark:bg-slate-900' : ''}`}>
+                                                    {row.map((cell, c) => (
+                                                        <td key={c} className="p-3 text-slate-700 dark:text-slate-300 align-top">
+                                                            {cell?.url ? (
+                                                                <a
+                                                                    href={cell.url}
+                                                                    target="_blank"
+                                                                    rel="noopener noreferrer"
+                                                                    className="text-sky-600 dark:text-sky-400 underline font-semibold"
+                                                                >
+                                                                    {cell.text || 'Link'}
+                                                                </a>
+                                                            ) : (
+                                                                String(cell?.text ?? '')
+                                                            )}
+                                                        </td>
+                                                    ))}
+                                                    <td className="p-3 text-center align-top min-w-[90px] w-[90px] bg-amber-500/5 border-l border-amber-500/20">
+                                                        {r === 0 ? (
+                                                            <span className="text-[9px] uppercase tracking-wider text-amber-600 dark:text-amber-400">Reach</span>
+                                                        ) : (
+                                                            renderReachCell(dayPreviewReachResults[getRowLinkDayPreview(row)])
+                                                        )}
+                                                    </td>
+                                                </tr>
+                                            ))}
+                                        </tbody>
+                                    </table>
+                                </div>
+                            )}
+                        </div>
                     </div>
                 </div>
             )}

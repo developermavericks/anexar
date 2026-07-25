@@ -237,12 +237,12 @@ export default function CrisisPredictor() {
                         </div>
                         
                         <a 
-                            href="https://crisis-dashboard-themavericksindia.streamlit.app/" 
+                            href="https://brand-tracker-ejw3.onrender.com/" 
                             target="_blank"
                             rel="noopener noreferrer"
                             className="bg-emerald-500 hover:bg-emerald-600 text-white font-bold text-xs tracking-wider uppercase px-6 py-3.5 rounded-xl shadow-lg shadow-emerald-500/25 hover:shadow-emerald-500/35 hover:scale-[1.03] transition-all flex items-center gap-2 cursor-pointer shrink-0"
                         >
-                            <span>Go to Risk Escape</span>
+                            <span>Go to Risk Escape / Brand Tracker</span>
                             <ArrowRight size={13} strokeWidth={2.5} />
                         </a>
                     </div>

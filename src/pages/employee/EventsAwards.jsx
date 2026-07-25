@@ -1,36 +1,37 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { 
-    Play, 
-    Square, 
-    Calendar, 
-    MapPin, 
-    Globe, 
-    RefreshCw, 
+import {
+    Play,
+    Square,
+    Calendar,
+    MapPin,
     Search,
     Database,
-    AlertCircle,
-    CheckCircle,
-    Info,
     ExternalLink,
     Download,
     Cpu,
     TrendingUp,
     Bookmark,
-    ShieldAlert
+    Sparkles
 } from 'lucide-react';
+import { db } from '../../lib/firebaseClient';
+import { collection, doc, onSnapshot, orderBy, query, writeBatch, runTransaction } from 'firebase/firestore';
 
-// Import the copied database of 723 events directly
+// Seed data used only to populate Firestore the first time the collection is empty
 import defaultEvents from '../../data/events_data.json';
+
+const EVENTS_COLLECTION = 'events_awards';
+const SEED_BATCH_SIZE = 400; // stay safely under Firestore's 500-write batch limit
+const SEED_LOCK_REF_PATH = ['events_awards_meta', 'seed_lock'];
 
 export default function EventsAwards() {
     // ----------------------------------------------------
     // STATE MANAGEMENT
     // ----------------------------------------------------
-    const [events, setEvents] = useState(defaultEvents);
-    const [credits, setCredits] = useState({ daily: 0, monthly: 0 });
+    const [events, setEvents] = useState([]);
+    const [isConnected, setIsConnected] = useState(false);
     const [scrapingStatus, setScrapingStatus] = useState({ running: false, current_sector: null, new_found: 0 });
-    
+
     // Filter controls
     const [activeTab, setActiveTab] = useState('all'); // 'all', 'Awards', 'Event'
     const [selectedSector, setSelectedSector] = useState('all');
@@ -39,216 +40,190 @@ export default function EventsAwards() {
     const [searchKeyword, setSearchKeyword] = useState('');
 
     const [isFetching, setIsFetching] = useState(false);
-    const [apiActive, setApiActive] = useState(false);
 
-    // References for intervals
-    const pollIntervalRef = useRef(null);
-    const apiCheckRef = useRef(null);
-    const simulationTimeoutRef = useRef(null);
+    // Flips true when "Stop Fetching" is clicked; the discovery loop checks this
+    // between sectors (an in-flight sector call still finishes, but no new one starts).
+    const stopRequestedRef = useRef(false);
 
     // List of dynamic cities & sectors for filters
     const [citiesList, setCitiesList] = useState([]);
     const [sectorsList, setSectorsList] = useState([]);
 
-    // ----------------------------------------------------
-    // STATIC DATA INITIALIZATION
-    // ----------------------------------------------------
-    useEffect(() => {
-        // Build dynamic filter values from initially loaded events
-        const uniqueSectors = Array.from(new Set(defaultEvents.map(e => e.sector))).filter(Boolean);
-        const uniqueCities = Array.from(new Set(defaultEvents.map(e => e.location))).filter(Boolean);
-        setSectorsList(uniqueSectors.sort());
-        setCitiesList(uniqueCities.sort());
-    }, []);
+    // AI recommendation panel state
+    const [recQuery, setRecQuery] = useState('');
+    const [recLoading, setRecLoading] = useState(false);
+    const [recResults, setRecResults] = useState(null);
+    const [recError, setRecError] = useState('');
+    const RECOMMEND_API_URL = import.meta.env.VITE_RECOMMEND_API_URL || '';
 
-    // ----------------------------------------------------
-    // LIVE SERVER CHECK & SYNC
-    // ----------------------------------------------------
-    const loadBackendData = async () => {
+    const handleGetRecommendations = async () => {
+        if (!RECOMMEND_API_URL) {
+            setRecError("Recommendations aren't configured yet. Set VITE_RECOMMEND_API_URL in .env.");
+            return;
+        }
+        if (!recQuery.trim()) return;
+
+        setRecLoading(true);
+        setRecError('');
+        setRecResults(null);
+
         try {
-            const [eventsRes, creditsRes, statusRes] = await Promise.all([
-                fetch('http://localhost:5000/api/events'),
-                fetch('http://localhost:5000/api/credits'),
-                fetch('http://localhost:5000/api/status')
-            ]);
-
-            if (eventsRes.ok && creditsRes.ok && statusRes.ok) {
-                const eventsData = await eventsRes.json();
-                const creditsData = await creditsRes.json();
-                const statusData = await statusRes.json();
-
-                // Merge live backend data with default static data, filtering duplicates by event_key
-                const merged = [...eventsData];
-                const keys = new Set(eventsData.map(e => e.event_key || (e.event_name + e.location)));
-                
-                defaultEvents.forEach(de => {
-                    const deKey = de.event_key || (de.event_name + de.location);
-                    if (!keys.has(deKey)) {
-                        merged.push(de);
-                    }
-                });
-
-                setEvents(merged);
-                setCredits(creditsData);
-                setScrapingStatus(statusData);
-                setApiActive(true);
-
-                // Build sectors & cities lists from combined set
-                const uniqueSectors = Array.from(new Set(merged.map(e => e.sector))).filter(Boolean);
-                const uniqueCities = Array.from(new Set(merged.map(e => e.location))).filter(Boolean);
-                setSectorsList(uniqueSectors.sort());
-                setCitiesList(uniqueCities.sort());
-
-                // Sync live backend running state with UI spinner
-                if (statusData.running) {
-                    setIsFetching(true);
-                    triggerPollLoop();
-                } else if (!simulationTimeoutRef.current) {
-                    setIsFetching(false);
-                    if (pollIntervalRef.current) clearInterval(pollIntervalRef.current);
-                }
-            }
-        } catch (e) {
-            setApiActive(false);
+            const res = await fetch(RECOMMEND_API_URL, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ type: 'events', query: recQuery.trim() })
+            });
+            const data = await res.json().catch(() => ({}));
+            if (!res.ok) throw new Error(data.error || `Request failed (${res.status})`);
+            setRecResults(data.picks || []);
+        } catch (err) {
+            console.error('Error fetching event/award recommendations:', err);
+            setRecError(err.message || 'Failed to get recommendations.');
+        } finally {
+            setRecLoading(false);
         }
     };
 
-    // Periodically sync with backend
+    // ----------------------------------------------------
+    // FIRESTORE LIVE SYNC (seeds the bundled 723-event dataset once, if empty)
+    // ----------------------------------------------------
     useEffect(() => {
-        loadBackendData();
-        apiCheckRef.current = setInterval(loadBackendData, 6000);
+        const q = query(collection(db, EVENTS_COLLECTION), orderBy('createdAt', 'desc'));
+        const unsubscribe = onSnapshot(q, (snapshot) => {
+            if (snapshot.empty) {
+                seedEventsToFirestore();
+                return;
+            }
+
+            const list = [];
+            snapshot.forEach(docSnap => list.push({ docId: docSnap.id, ...docSnap.data() }));
+            setEvents(list);
+            setIsConnected(true);
+
+            const uniqueSectors = Array.from(new Set(list.map(e => e.sector))).filter(Boolean);
+            const uniqueCities = Array.from(new Set(list.map(e => e.location))).filter(Boolean);
+            setSectorsList(uniqueSectors.sort());
+            setCitiesList(uniqueCities.sort());
+        }, (err) => {
+            console.error('Error listening to events_awards:', err);
+            setIsConnected(false);
+        });
 
         return () => {
-            if (apiCheckRef.current) clearInterval(apiCheckRef.current);
-            if (pollIntervalRef.current) clearInterval(pollIntervalRef.current);
-            if (simulationTimeoutRef.current) clearTimeout(simulationTimeoutRef.current);
+            unsubscribe();
+            stopRequestedRef.current = true;
         };
     }, []);
 
-    // ----------------------------------------------------
-    // POLLING ENGINE FOR CRAWLER STATUS
-    // ----------------------------------------------------
-    const triggerPollLoop = () => {
-        if (pollIntervalRef.current) clearInterval(pollIntervalRef.current);
+    const seedEventsToFirestore = async () => {
+        // onSnapshot can fire "empty" more than once before a previous seed's
+        // writes are visible (page reloads, multiple tabs, HMR) - a transaction
+        // that atomically checks-and-sets a lock doc guarantees only one caller
+        // ever actually seeds, no matter how many times this gets triggered.
+        const lockRef = doc(db, ...SEED_LOCK_REF_PATH);
+        try {
+            const alreadySeeded = await runTransaction(db, async (transaction) => {
+                const lockSnap = await transaction.get(lockRef);
+                if (lockSnap.exists()) return true;
+                transaction.set(lockRef, { seededAt: new Date().toISOString() });
+                return false;
+            });
+            if (alreadySeeded) return;
+        } catch (err) {
+            console.error('Error acquiring events_awards seed lock:', err);
+            return;
+        }
 
-        pollIntervalRef.current = setInterval(async () => {
-            try {
-                const statusRes = await fetch('http://localhost:5000/api/status');
-                if (statusRes.ok) {
-                    const statusData = await statusRes.json();
-                    setScrapingStatus(statusData);
-
-                    if (!statusData.running) {
-                        clearInterval(pollIntervalRef.current);
-                        setIsFetching(false);
-                        loadBackendData(); // Sync discoveries
-                    }
-                }
-            } catch (e) {
-                console.error("Status polling failed", e);
+        try {
+            for (let i = 0; i < defaultEvents.length; i += SEED_BATCH_SIZE) {
+                const chunk = defaultEvents.slice(i, i + SEED_BATCH_SIZE);
+                const batch = writeBatch(db);
+                chunk.forEach((item, idx) => {
+                    const docRef = doc(collection(db, EVENTS_COLLECTION));
+                    batch.set(docRef, {
+                        ...item,
+                        // Stagger seed timestamps so the original dataset order survives the
+                        // createdAt-desc sort (newest real discoveries still land above it).
+                        createdAt: new Date(Date.now() - (defaultEvents.length - (i + idx)) * 1000).toISOString()
+                    });
+                });
+                await batch.commit();
             }
-        }, 1500);
+        } catch (err) {
+            console.error('Error seeding events_awards to Firestore:', err);
+        }
     };
 
     // ----------------------------------------------------
     // ACTIVE START / STOP CONTROLS
     // ----------------------------------------------------
+    const DISCOVERY_SECTORS = [
+        'BFSI', 'Technology', 'Healthcare', 'Fintech', 'Commercial Vehicle',
+        'Marketing', 'Retail', 'Real Estate', 'Startups', 'Manufacturing',
+        'Education', 'Hospitality'
+    ];
+    const DISCOVER_EVENTS_API_URL = import.meta.env.VITE_DISCOVER_EVENTS_API_URL || '';
+
     const startFetching = async () => {
         if (isFetching) return;
-        setIsFetching(true);
+        if (!DISCOVER_EVENTS_API_URL) {
+            alert("Discovery isn't configured yet. Set VITE_DISCOVER_EVENTS_API_URL in .env once the Cloud Function is deployed.");
+            return;
+        }
 
-        if (apiActive) {
-            // Live Server Scraper trigger
+        setIsFetching(true);
+        stopRequestedRef.current = false;
+        let totalFound = 0;
+
+        for (const sector of DISCOVERY_SECTORS) {
+            if (stopRequestedRef.current) break;
+
+            setScrapingStatus({ running: true, current_sector: `Scanning: ${sector} sector...`, new_found: totalFound });
+
             try {
-                const res = await fetch('http://localhost:5000/api/run', {
+                const res = await fetch(DISCOVER_EVENTS_API_URL, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ sector: selectedSector === 'all' ? 'full' : selectedSector })
+                    body: JSON.stringify({ sector })
                 });
+                const data = await res.json().catch(() => ({}));
                 if (res.ok) {
-                    const status = await res.json();
-                    if (status.status === 'started') {
-                        triggerPollLoop();
-                    }
+                    totalFound += data.newFound || 0;
+                    setScrapingStatus({
+                        running: true,
+                        current_sector: `${sector}: found ${data.newFound || 0} new`,
+                        new_found: totalFound
+                    });
+                } else {
+                    console.error(`Discovery failed for ${sector}:`, data.error);
                 }
-            } catch (e) {
-                console.error("Scraper launch failed", e);
+            } catch (err) {
+                console.error(`Discovery request failed for ${sector}:`, err);
             }
-        } else {
-            // Simulation Fallback mode when server is offline
-            let progress = 0;
-            const sectorsToSimulate = ["BFSI", "Technology", "Healthcare", "Fintech", "Commercial vehicle"];
-            
-            const stepSimulation = () => {
-                if (progress >= sectorsToSimulate.length) {
-                    setIsFetching(false);
-                    // Add mock discovery to database
-                    const mockEvent = {
-                        event_name: `India Excellence Leadership Forum (${new Date().getFullYear()})`,
-                        event_type: "Awards",
-                        sector: selectedSector === 'all' ? "Technology" : selectedSector,
-                        date: "14/11/2026",
-                        location: "Delhi NCR",
-                        venue: "Grand Hyatt Regency",
-                        status: "NOMINATIONS_OPEN",
-                        confidence: 95,
-                        nomination_deadline: "30/10/2026",
-                        source_url: "https://example.com/awards-nominations"
-                    };
-                    setEvents(prev => [mockEvent, ...prev]);
-                    setScrapingStatus({ running: false, current_sector: null, new_found: 1 });
-                    return;
-                }
-
-                setScrapingStatus({
-                    running: true,
-                    current_sector: `Scanning: ${sectorsToSimulate[progress]} sector index...`,
-                    new_found: progress + 1
-                });
-
-                progress++;
-                simulationTimeoutRef.current = setTimeout(stepSimulation, 1200);
-            };
-
-            stepSimulation();
         }
+
+        setIsFetching(false);
+        setScrapingStatus({ running: false, current_sector: null, new_found: totalFound });
     };
 
-    const stopFetching = async () => {
-        setIsFetching(false);
-        if (pollIntervalRef.current) clearInterval(pollIntervalRef.current);
-        if (simulationTimeoutRef.current) clearTimeout(simulationTimeoutRef.current);
-
-        setScrapingStatus({ running: false, current_sector: null, new_found: 0 });
-
-        if (apiActive) {
-            try {
-                await fetch('http://localhost:5000/api/reset', { method: 'POST' });
-                loadBackendData();
-            } catch (e) {
-                console.error("Failed to reset backend scraper status", e);
-            }
-        }
+    const stopFetching = () => {
+        stopRequestedRef.current = true;
+        setScrapingStatus(prev => ({ ...prev, current_sector: 'Stopping after current sector...' }));
     };
 
     const handleExport = () => {
-        if (apiActive) {
-            window.location.href = 'http://localhost:5000/api/export';
-        } else {
-            // Simple mock CSV download for offline mode
-            const headers = "Event Name,Category,Sector,Date,Location,Venue,Status,Confidence,Source\n";
-            const rows = events.slice(0, 10).map(e => 
-                `"${e.event_name || e.name}","${e.event_type || e.type || 'Event'}","${e.sector}","${e.date || 'TBD'}","${e.location || 'India'}","${e.venue || ''}","${e.status}","${e.confidence}%","${e.source_url || ''}"`
-            ).join("\n");
-            
-            const blob = new Blob([headers + rows], { type: 'text/csv;charset=utf-8;' });
-            const link = document.createElement("a");
-            link.href = URL.createObjectURL(blob);
-            link.setAttribute("download", "discoveries_export.csv");
-            document.body.appendChild(link);
-            link.click();
-            document.body.removeChild(link);
-        }
+        const headers = "Event Name,Category,Sector,Date,Location,Venue,Status,Confidence,Source\n";
+        const rows = events.map(e =>
+            `"${e.event_name || e.name}","${e.event_type || e.type || 'Event'}","${e.sector}","${e.date || 'TBD'}","${e.location || 'India'}","${e.venue || ''}","${e.status}","${e.confidence}%","${e.source_url || ''}"`
+        ).join("\n");
+
+        const blob = new Blob([headers + rows], { type: 'text/csv;charset=utf-8;' });
+        const link = document.createElement("a");
+        link.href = URL.createObjectURL(blob);
+        link.setAttribute("download", "discoveries_export.csv");
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
     };
 
     // ----------------------------------------------------
@@ -354,23 +329,96 @@ export default function EventsAwards() {
                     </div>
                 </div>
 
-                {/* Serper Credits Badge Counter */}
+                {/* Firestore connection + registry size badge */}
                 <div className="relative flex items-center gap-4 bg-slate-900/80 border border-slate-800 px-4 py-2.5 rounded-2xl">
                     <div className="text-center">
-                        <p className="text-[9px] font-bold text-slate-400 uppercase tracking-wider">Today's Queries</p>
-                        <p className="text-sm font-black text-indigo-400 mt-0.5">{credits.daily} <span className="text-slate-500 text-3xs font-bold">/ 80</span></p>
-                    </div>
-                    <div className="h-6 w-px bg-slate-800" />
-                    <div className="text-center">
-                        <p className="text-[9px] font-bold text-slate-400 uppercase tracking-wider">Monthly Cap</p>
-                        <p className="text-sm font-black text-purple-400 mt-0.5">{credits.monthly} <span className="text-slate-500 text-3xs font-bold">/ 2400</span></p>
+                        <p className="text-[9px] font-bold text-slate-400 uppercase tracking-wider">Total Discoveries</p>
+                        <p className="text-sm font-black text-indigo-400 mt-0.5">{events.length}</p>
                     </div>
                     <div className="h-6 w-px bg-slate-800" />
                     <div className="flex items-center gap-1.5">
-                        <div className={`h-1.5 w-1.5 rounded-full ${apiActive ? 'bg-emerald-400 animate-pulse' : 'bg-amber-400 animate-pulse'}`} />
-                        <span className="text-[9px] font-extrabold uppercase tracking-widest text-slate-300">{apiActive ? 'Active' : 'Standby'}</span>
+                        <div className={`h-1.5 w-1.5 rounded-full ${isConnected ? 'bg-emerald-400 animate-pulse' : 'bg-amber-400 animate-pulse'}`} />
+                        <span className="text-[9px] font-extrabold uppercase tracking-widest text-slate-300">{isConnected ? 'Live' : 'Connecting...'}</span>
                     </div>
                 </div>
+            </div>
+
+            {/* AI Recommendation Panel */}
+            <div className="bg-gradient-to-r from-indigo-500/5 to-purple-500/5 dark:from-indigo-500/10 dark:to-purple-500/10 border border-indigo-200/40 dark:border-indigo-800/40 rounded-2xl p-5 space-y-3">
+                <h3 className="text-sm font-extrabold text-slate-800 dark:text-slate-200 flex items-center gap-2">
+                    <Sparkles size={16} className="text-indigo-500" />
+                    Get Event/Award Recommendations
+                </h3>
+                <p className="text-xs text-slate-500 dark:text-slate-400 -mt-1">
+                    Describe the client/profile in plain language - picks come from the real registry, ranked with a reason for each.
+                </p>
+                <div className="flex flex-col sm:flex-row gap-2">
+                    <input
+                        type="text"
+                        value={recQuery}
+                        onChange={(e) => setRecQuery(e.target.value)}
+                        onKeyDown={(e) => e.key === 'Enter' && handleGetRecommendations()}
+                        placeholder="e.g. fintech startup client in Mumbai looking for leadership awards"
+                        className="flex-1 px-4 py-2.5 rounded-xl border border-indigo-200 dark:border-indigo-800/60 bg-white dark:bg-slate-900 text-sm font-semibold text-slate-800 dark:text-slate-100 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-indigo-500/40"
+                    />
+                    <button
+                        onClick={handleGetRecommendations}
+                        disabled={recLoading || !recQuery.trim()}
+                        className="flex items-center justify-center gap-1.5 px-5 py-2.5 rounded-xl text-white font-bold text-xs uppercase tracking-wider bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-500 hover:to-purple-500 disabled:opacity-50 transition-all cursor-pointer"
+                    >
+                        {recLoading ? (
+                            <>
+                                <span className="h-3.5 w-3.5 border-2 border-white/30 border-t-white rounded-full animate-spin"></span>
+                                Thinking...
+                            </>
+                        ) : (
+                            <>
+                                <Sparkles size={13} />
+                                Get Recommendations
+                            </>
+                        )}
+                    </button>
+                </div>
+
+                {recError && (
+                    <p className="text-xs font-bold text-rose-500">{recError}</p>
+                )}
+
+                {recResults && (
+                    recResults.length === 0 ? (
+                        <p className="text-xs font-semibold text-slate-500 dark:text-slate-400 pt-1">
+                            No strong matches found in the current registry for this request.
+                        </p>
+                    ) : (
+                        <div className="space-y-2 pt-2">
+                            {recResults.map((ev, i) => (
+                                <div key={ev.docId || i} className="bg-white dark:bg-slate-900 border border-slate-150 dark:border-slate-800 rounded-xl p-3.5 flex items-start gap-3 hover:border-indigo-400 dark:hover:border-indigo-500 hover:shadow-md hover:shadow-indigo-500/5 transition-all">
+                                    <span className="shrink-0 h-6 w-6 rounded-full bg-gradient-to-br from-indigo-500 to-purple-500 text-white text-[10px] font-black flex items-center justify-center mt-0.5">
+                                        {i + 1}
+                                    </span>
+                                    <div className="sm:w-56 shrink-0">
+                                        <p className="text-xs font-extrabold text-slate-800 dark:text-slate-100">{ev.event_name || ev.name}</p>
+                                        <p className="text-[10px] font-bold text-indigo-500 uppercase tracking-wide">{ev.sector} &middot; {ev.location || ev.venue}</p>
+                                        {ev.nomination_deadline && <p className="text-[10px] text-rose-500 font-bold mt-0.5">Deadline: {ev.nomination_deadline}</p>}
+                                    </div>
+                                    <p className="flex-1 text-xs text-slate-600 dark:text-slate-400 leading-relaxed">{ev.reason}</p>
+                                    {ev.source_url ? (
+                                        <a
+                                            href={ev.source_url}
+                                            target="_blank"
+                                            rel="noopener noreferrer"
+                                            className="shrink-0 flex items-center gap-1 text-[10px] font-bold text-indigo-600 dark:text-indigo-400 hover:text-indigo-700 dark:hover:text-indigo-300 uppercase tracking-wide bg-indigo-500/10 hover:bg-indigo-500/20 px-2.5 py-1.5 rounded-lg transition-all"
+                                        >
+                                            Visit Site <ExternalLink size={11} />
+                                        </a>
+                                    ) : (
+                                        <span className="shrink-0 text-[10px] font-bold text-slate-300 dark:text-slate-700 uppercase tracking-wide px-2.5 py-1.5">No link</span>
+                                    )}
+                                </div>
+                            ))}
+                        </div>
+                    )
+                )}
             </div>
 
             {/* Metrics cards grid */}
@@ -551,7 +599,7 @@ export default function EventsAwards() {
                             {filteredEvents.length === 0 ? (
                                 <tr>
                                     <td colSpan={8} className="p-16 text-center text-gray-400 font-bold uppercase tracking-wider text-xs">
-                                        No matching discoveries found in SQLite database.
+                                        No matching discoveries found.
                                     </td>
                                 </tr>
                             ) : (
@@ -564,7 +612,7 @@ export default function EventsAwards() {
                                     if (e.status === 'CONCLUDED') statusBg = 'bg-slate-100 dark:bg-slate-800 text-slate-500 border border-slate-200/20';
 
                                     return (
-                                        <tr key={index} className="hover:bg-slate-50/50 dark:hover:bg-slate-800/10 transition-colors group">
+                                        <tr key={e.docId || index} className="hover:bg-slate-50/50 dark:hover:bg-slate-800/10 transition-colors group">
                                             {/* Name */}
                                             <td className="p-4 pl-6">
                                                 <div className="font-extrabold text-xs text-gray-800 dark:text-slate-200 group-hover:text-indigo-600 dark:group-hover:text-indigo-400 transition-colors leading-tight">

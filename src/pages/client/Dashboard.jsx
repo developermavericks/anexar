@@ -58,11 +58,12 @@ const Dashboard = () => {
         return () => unsubscribe();
     }, []);
 
-    useEffect(() => {
-        if (!user?.name) return;
+    const clientBrand = user?.clientBrand || 'FUJIFILM';
 
-        const clientName = user.name;
-        const unsubscribe = onSnapshot(doc(db, "kpis", clientName), (docSnap) => {
+    useEffect(() => {
+        if (!clientBrand) return;
+
+        const unsubscribe = onSnapshot(doc(db, "kpis", clientBrand), (docSnap) => {
             if (docSnap.exists()) {
                 setKpis(docSnap.data());
             }
@@ -71,10 +72,10 @@ const Dashboard = () => {
         });
 
         return () => unsubscribe();
-    }, [user?.name]);
+    }, [clientBrand]);
 
     const isDeveloper = user?.email?.toLowerCase().includes('satyam') || user?.email?.toLowerCase().includes('test') || user?.name?.toLowerCase().includes('satyam');
-    const clientName = user?.clientBrand || '';
+    const clientName = clientBrand;
 
     const [goalsList, setGoalsList] = useState([]);
     const [latestBrief, setLatestBrief] = useState(null);
@@ -122,7 +123,7 @@ const Dashboard = () => {
                 setLatestBrief(null);
             }
         }, (err) => {
-            console.error("Error listening to client overall brief:", err);
+            console.error("Error listening to operational brief:", err);
         });
 
         return () => unsubscribe();
@@ -130,13 +131,18 @@ const Dashboard = () => {
 
     const activeFilteredCampaigns = campaignsList.filter(c => {
         if (c.status !== 'Active') return false;
-        if (!clientName) return false;
+        if (!clientName) return true;
         return (
             c.client?.toLowerCase() === clientName.toLowerCase() ||
-            clientName.toLowerCase().includes(c.client?.toLowerCase()) ||
-            c.client?.toLowerCase().includes(clientName.toLowerCase())
+            clientName.toLowerCase().includes(c.client?.toLowerCase() || '') ||
+            (c.client?.toLowerCase() || '').includes(clientName.toLowerCase())
         );
     });
+
+    const completedGoalsCount = goalsList.filter(g => g.status === 'Completed' || g.progress === 100).length;
+    const displayGoalCompletion = goalsList.length > 0
+        ? `${Math.round((completedGoalsCount / goalsList.length) * 100)}%`
+        : kpis.goalCompletion;
 
     return (
         <div className="space-y-6">
@@ -150,7 +156,7 @@ const Dashboard = () => {
                 <KPI title="Active Campaigns" value={activeFilteredCampaigns.length} trend="+12%" icon={TrendingUp} color="bg-[#1A1A1A] dark:bg-amber-500 dark:text-[#0B0F19] text-amber-500 dark:text-amber-400" />
                 <KPI title="Press Coverage" value={kpis.pressCoverage} trend="+5%" icon={Newspaper} color="bg-purple-500/20 text-purple-400" />
                 <KPI title="Budget Used" value={kpis.budgetUsed} trend="-2%" icon={PieChart} color="bg-rose-500/20 text-rose-450" />
-                <KPI title="Goal Completion" value={kpis.goalCompletion} trend="+8%" icon={Target} color="bg-emerald-500 dark:bg-emerald-500/90 text-emerald-400" />
+                <KPI title="Goal Completion" value={displayGoalCompletion} trend="+8%" icon={Target} color="bg-emerald-500 dark:bg-emerald-500/90 text-emerald-400" />
             </div>
 
             {/* Latest Operational Brief card */}

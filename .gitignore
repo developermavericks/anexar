@@ -10,6 +10,9 @@ lerna-debug.log*
 node_modules
 dist
 dist-ssr
+
+# Generated copy - regenerated from reach_lens/ by functions/scripts/sync-reach-lens.js
+functions/reach_lens/
 *.local
 .env
 .env.*

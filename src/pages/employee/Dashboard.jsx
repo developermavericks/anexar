@@ -59,8 +59,12 @@ export default function Dashboard() {
 
     // Dynamic client and onboarding states
     const [assignedClients, setAssignedClients] = useState(() => {
-        const saved = localStorage.getItem('anexar_assigned_clients');
-        return saved ? JSON.parse(saved) : ['FUJIFILM', 'Google', 'Spotify', 'Plum', 'Nike', 'Udaiti', 'Scapia', 'Musashi-D'];
+        try {
+            const saved = localStorage.getItem('anexar_assigned_clients');
+            const parsed = saved ? JSON.parse(saved) : [];
+            if (parsed && parsed.length > 0) return parsed;
+        } catch (e) {}
+        return ['FUJIFILM', 'Google', 'Spotify', 'Plum', 'Nike', 'Udaiti', 'Scapia', 'Musashi-D'];
     });
     const [selectedClient, setSelectedClient] = useState('FUJIFILM');
 
@@ -74,23 +78,31 @@ export default function Dashboard() {
 
             const emailLower = user.email.toLowerCase();
             const isDeveloperSatyam = emailLower.includes('satyam') || emailLower.includes('ss1084169') || emailLower.includes('test') || user.name?.toLowerCase().includes('satyam');
+            const isCoreUser = user.role?.toLowerCase() === 'core' || user.role?.toLowerCase() === 'manager';
             const isChetan = emailLower === 'chetan@themavericksindia.com' || user.name?.toLowerCase().includes('chetan');
-            const hasWholeAccess = isChetan || isDeveloperSatyam;
+            const hasWholeAccess = isChetan || isDeveloperSatyam || isCoreUser;
+
+            const DEFAULT_FALLBACK = ['FUJIFILM', 'Google', 'Spotify', 'Plum', 'Nike', 'Udaiti', 'Scapia', 'Musashi-D'];
 
             try {
-                // 1. Core, Manager, or Satyam (Developer) bypass - fetch all active clients
+                // 1. Core, Manager, or Developer bypass - fetch all active clients
                 if (hasWholeAccess) {
-                    const { data, error } = await supabase
-                        .from('clients')
-                        .select('name')
-                        .eq('is_active', true)
-                        .order('name', { ascending: true });
+                    try {
+                        const { data, error } = await supabase
+                            .from('clients')
+                            .select('name')
+                            .eq('is_active', true)
+                            .order('name', { ascending: true });
 
-                    if (error) throw error;
-                    if (data && data.length > 0) {
-                        setAssignedClients(data.map(c => c.name));
-                        return;
+                        if (!error && data && data.length > 0) {
+                            setAssignedClients(data.map(c => c.name));
+                            return;
+                        }
+                    } catch (e) {
+                        console.error("Supabase client fetch exception:", e);
                     }
+                    setAssignedClients(DEFAULT_FALLBACK);
+                    return;
                 }
 
                 // 2. Otherwise try loading user clients from Firestore
@@ -138,10 +150,10 @@ export default function Dashboard() {
                     }
                 }
 
-                setAssignedClients([]); // Empty list if no allocations mapped
+                setAssignedClients(DEFAULT_FALLBACK);
             } catch (err) {
                 console.error("Error fetching user clients:", err);
-                setAssignedClients([]);
+                setAssignedClients(DEFAULT_FALLBACK);
             }
         };
 
@@ -323,19 +335,18 @@ export default function Dashboard() {
                             Welcome back, <span className="bg-gradient-to-r from-amber-500 to-purple-500 bg-clip-text text-transparent">{user.name}</span>!
                         </h1>
                         <p className="text-sm text-slate-650 dark:text-slate-400 mt-2 font-medium max-w-xl">
-                            Here is the Mavericks organization console. Monitor campaign deliverables, adjust client-facing metrics, and publish updates in real-time.
+                            Monitor deliverables, adjust client metrics, and publish real-time updates.
                         </p>
                     </div>
                     
-                    <div className="flex items-center gap-3 bg-white/80 dark:bg-slate-950/80 backdrop-blur-sm p-4 rounded-2xl border border-slate-100 dark:border-slate-800 shadow-sm shrink-0">
-                        <div className="w-10 h-10 rounded-full bg-gradient-to-tr from-amber-500 to-purple-600 p-0.5">
-                            <div className="w-full h-full rounded-full bg-white dark:bg-slate-900 flex items-center justify-center font-bold text-sm">
-                                {user.avatar ? <img src={user.avatar} alt="avatar" referrerPolicy="no-referrer" className="w-full h-full rounded-full object-cover" /> : user.name.charAt(0)}
-                            </div>
-                        </div>
-                        <div>
-                            <p className="text-xs font-bold text-slate-800 dark:text-slate-200">{user.name}</p>
-                        </div>
+                    <div className="flex items-center gap-2.5 bg-emerald-500/10 dark:bg-emerald-500/15 backdrop-blur-sm px-4 py-2.5 rounded-full border border-emerald-500/20 shadow-sm shrink-0">
+                        <span className="relative flex h-2.5 w-2.5">
+                            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+                            <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-emerald-500"></span>
+                        </span>
+                        <span className="text-xs font-bold text-emerald-600 dark:text-emerald-400 tracking-wide uppercase">
+                            Real-Time Sync Active
+                        </span>
                     </div>
                 </div>
             </div>
@@ -395,10 +406,10 @@ export default function Dashboard() {
                             <div>
                                 <h3 className="text-md font-bold text-slate-900 dark:text-white flex items-center gap-2">
                                     <RefreshCw className="text-amber-500" size={18} />
-                                    Interactive Card Synchronization
+                                    Live KPI Sync
                                 </h3>
                                 <p className="text-2xs text-slate-450 dark:text-slate-555 mt-1 font-medium">
-                                    Alter key parameters below. Any adjustment triggers an instant real-time synchronization to the Client Portal Dashboard.
+                                    Adjust parameters to update the client portal in real time.
                                 </p>
                             </div>
 

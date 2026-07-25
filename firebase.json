@@ -2,6 +2,12 @@
   "firestore": {
     "rules": "firestore.rules"
   },
+  "functions": {
+    "source": "functions",
+    "predeploy": [
+      "npm --prefix \"$RESOURCE_DIR\" run sync-reach-lens"
+    ]
+  },
   "hosting": {
     "public": "dist",
     "ignore": [

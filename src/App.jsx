@@ -9,17 +9,18 @@ import ForgotPassword from './pages/ForgotPassword';
 import ProtectedRoute from './components/ProtectedRoute';
 
 // Client Dashboard imports
-import ClientLayout from './pages/client/ClientLayout';
-import ClientDashboard from './pages/client/Dashboard';
-import CampaignOverview from './pages/client/CampaignOverview';
-import PressTracker from './pages/client/PressTracker';
-import ThoughtLeadership from './pages/client/ThoughtLeadership';
-import EventsAwards from './pages/client/EventsAwards';
-import GoalsCommitment from './pages/client/GoalsCommitment';
-import Reports from './pages/client/Reports';
-import MeetTeam from './pages/client/MeetTeam';
-import Subscription from './pages/client/Subscription';
-import Settings from './pages/client/Settings';
+// Client portal is temporarily disabled - see the commented-out route below.
+// import ClientLayout from './pages/client/ClientLayout';
+// import ClientDashboard from './pages/client/Dashboard';
+// import CampaignOverview from './pages/client/CampaignOverview';
+// import PressTracker from './pages/client/PressTracker';
+// import ThoughtLeadership from './pages/client/ThoughtLeadership';
+// import EventsAwards from './pages/client/EventsAwards';
+// import GoalsCommitment from './pages/client/GoalsCommitment';
+// import Reports from './pages/client/Reports';
+// import MeetTeam from './pages/client/MeetTeam';
+// import Subscription from './pages/client/Subscription';
+// import Settings from './pages/client/Settings';
 
 // Team Dashboard imports
 import TeamLayout from './pages/employee/EmployeeLayout';
@@ -33,6 +34,20 @@ import JournalistSource from './pages/employee/JournalistSource';
 import SettingsTeam from './pages/employee/Settings';
 import MorningTracker from './pages/employee/MorningTracker';
 import CrisisPredictor from './pages/employee/CrisisPredictor';
+
+// Shown in place of the client portal while it's disabled (see route below)
+function ClientPortalUnavailable() {
+  return (
+    <div className="min-h-screen flex items-center justify-center bg-slate-50 dark:bg-[#0B0F19] text-center p-6">
+      <div>
+        <h1 className="text-xl font-bold text-slate-900 dark:text-white mb-2">Client Portal Not Available</h1>
+        <p className="text-sm text-slate-500 dark:text-slate-400">
+          The client portal is temporarily unavailable. Please check back later.
+        </p>
+      </div>
+    </div>
+  );
+}
 
 // Helper component to redirect logged in users according to their roles
 function RoleRedirect() {
@@ -69,7 +84,10 @@ function App() {
               }
             />
 
-            {/* Client Portal Routes */}
+            {/* Client Portal Routes - temporarily disabled, shows an unavailable
+                notice instead. Uncomment below (and the imports above) to restore. */}
+            <Route path="/client/*" element={<ClientPortalUnavailable />} />
+            {/*
             <Route
               path="/client"
               element={
@@ -89,6 +107,7 @@ function App() {
               <Route path="subscription" element={<Subscription />} />
               <Route path="settings" element={<Settings />} />
             </Route>
+            */}
 
             {/* Team Portal Routes */}
             <Route

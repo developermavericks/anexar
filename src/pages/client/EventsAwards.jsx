@@ -1,26 +1,25 @@
 import React, { useState, useEffect } from 'react';
-import { motion } from 'framer-motion';
-import { 
-    Calendar, 
-    MapPin, 
+import {
+    Calendar,
+    MapPin,
     Search,
     Database,
     ExternalLink,
     Download,
     TrendingUp,
     Bookmark,
-    Sparkles,
-    Trophy
+    Sparkles
 } from 'lucide-react';
+import { db } from '../../lib/firebaseClient';
+import { collection, onSnapshot, orderBy, query } from 'firebase/firestore';
 
-// Import the copied database of 723 events directly
-import defaultEvents from '../../data/events_data.json';
+const EVENTS_COLLECTION = 'events_awards';
 
 export default function EventsAwards() {
     // State management
-    const [events, setEvents] = useState(defaultEvents);
-    const [apiActive, setApiActive] = useState(false);
-    
+    const [events, setEvents] = useState([]);
+    const [isConnected, setIsConnected] = useState(false);
+
     // Filter controls
     const [activeTab, setActiveTab] = useState('all'); // 'all', 'Awards', 'Event'
     const [selectedSector, setSelectedSector] = useState('all');
@@ -33,75 +32,41 @@ export default function EventsAwards() {
     const [sectorsList, setSectorsList] = useState([]);
 
     // ----------------------------------------------------
-    // STATIC DATA INITIALIZATION
+    // FIRESTORE LIVE SYNC (READ-ONLY - the Team Portal owns writes/seeding)
     // ----------------------------------------------------
     useEffect(() => {
-        // Build dynamic filter values from initially loaded events
-        const uniqueSectors = Array.from(new Set(defaultEvents.map(e => e.sector))).filter(Boolean);
-        const uniqueCities = Array.from(new Set(defaultEvents.map(e => e.location))).filter(Boolean);
-        setSectorsList(uniqueSectors.sort());
-        setCitiesList(uniqueCities.sort());
-    }, []);
+        const q = query(collection(db, EVENTS_COLLECTION), orderBy('createdAt', 'desc'));
+        const unsubscribe = onSnapshot(q, (snapshot) => {
+            const list = [];
+            snapshot.forEach(docSnap => list.push({ docId: docSnap.id, ...docSnap.data() }));
+            setEvents(list);
+            setIsConnected(true);
 
-    // ----------------------------------------------------
-    // LIVE SERVER CHECK & SYNC (READ-ONLY)
-    // ----------------------------------------------------
-    const loadBackendData = async () => {
-        try {
-            const eventsRes = await fetch('http://localhost:5000/api/events');
-            if (eventsRes.ok) {
-                const eventsData = await eventsRes.json();
+            const uniqueSectors = Array.from(new Set(list.map(e => e.sector))).filter(Boolean);
+            const uniqueCities = Array.from(new Set(list.map(e => e.location))).filter(Boolean);
+            setSectorsList(uniqueSectors.sort());
+            setCitiesList(uniqueCities.sort());
+        }, (err) => {
+            console.error('Error listening to events_awards:', err);
+            setIsConnected(false);
+        });
 
-                // Merge live backend data with default static data, filtering duplicates by event_key
-                const merged = [...eventsData];
-                const keys = new Set(eventsData.map(e => e.event_key || (e.event_name + e.location)));
-                
-                defaultEvents.forEach(de => {
-                    const deKey = de.event_key || (de.event_name + de.location);
-                    if (!keys.has(deKey)) {
-                        merged.push(de);
-                    }
-                });
-
-                setEvents(merged);
-                setApiActive(true);
-
-                // Build sectors & cities lists from combined set
-                const uniqueSectors = Array.from(new Set(merged.map(e => e.sector))).filter(Boolean);
-                const uniqueCities = Array.from(new Set(merged.map(e => e.location))).filter(Boolean);
-                setSectorsList(uniqueSectors.sort());
-                setCitiesList(uniqueCities.sort());
-            }
-        } catch (e) {
-            setApiActive(false);
-        }
-    };
-
-    // Periodically sync with backend
-    useEffect(() => {
-        loadBackendData();
-        const apiCheck = setInterval(loadBackendData, 8000);
-        return () => clearInterval(apiCheck);
+        return () => unsubscribe();
     }, []);
 
     const handleExport = () => {
-        if (apiActive) {
-            window.location.href = 'http://localhost:5000/api/export';
-        } else {
-            // Simple CSV download for offline/standby mode
-            const headers = "Event Name,Category,Sector,Date,Location,Venue,Status,Confidence,Source\n";
-            const rows = events.slice(0, 50).map(e => 
-                `"${e.event_name || e.name}","${e.event_type || e.type || 'Event'}","${e.sector}","${e.date || 'TBD'}","${e.location || 'India'}","${e.venue || ''}","${e.status}","${e.confidence}%","${e.source_url || ''}"`
-            ).join("\n");
-            
-            const blob = new Blob([headers + rows], { type: 'text/csv;charset=utf-8;' });
-            const link = document.createElement("a");
-            link.href = URL.createObjectURL(blob);
-            link.setAttribute("download", "discoveries_export.csv");
-            document.body.appendChild(link);
-            link.click();
-            document.body.removeChild(link);
-        }
+        const headers = "Event Name,Category,Sector,Date,Location,Venue,Status,Confidence,Source\n";
+        const rows = events.map(e =>
+            `"${e.event_name || e.name}","${e.event_type || e.type || 'Event'}","${e.sector}","${e.date || 'TBD'}","${e.location || 'India'}","${e.venue || ''}","${e.status}","${e.confidence}%","${e.source_url || ''}"`
+        ).join("\n");
+
+        const blob = new Blob([headers + rows], { type: 'text/csv;charset=utf-8;' });
+        const link = document.createElement("a");
+        link.href = URL.createObjectURL(blob);
+        link.setAttribute("download", "discoveries_export.csv");
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
     };
 
     // ----------------------------------------------------
@@ -170,9 +135,9 @@ export default function EventsAwards() {
 
                 {/* Connection Status Badge */}
                 <div className="flex items-center gap-2 bg-slate-900/60 border border-slate-800 px-4 py-2 rounded-2xl">
-                    <div className={`h-1.5 w-1.5 rounded-full ${apiActive ? 'bg-emerald-400 animate-pulse' : 'bg-indigo-400 animate-pulse'}`} />
+                    <div className={`h-1.5 w-1.5 rounded-full ${isConnected ? 'bg-emerald-400 animate-pulse' : 'bg-indigo-400 animate-pulse'}`} />
                     <span className="text-[9px] font-extrabold uppercase tracking-widest text-slate-300">
-                        {apiActive ? 'Live Synced' : 'Database Ready'}
+                        {isConnected ? 'Live Synced' : 'Connecting...'}
                     </span>
                 </div>
             </div>
@@ -345,7 +310,7 @@ export default function EventsAwards() {
                                     if (e.status === 'CONCLUDED') statusBg = 'bg-slate-100 dark:bg-slate-800 text-slate-500 border border-slate-200/20';
 
                                     return (
-                                        <tr key={index} className="hover:bg-slate-50/50 dark:hover:bg-slate-800/10 transition-colors group">
+                                        <tr key={e.docId || index} className="hover:bg-slate-50/50 dark:hover:bg-slate-800/10 transition-colors group">
                                             {/* Name */}
                                             <td className="p-4 pl-6">
                                                 <div className="font-extrabold text-xs text-gray-800 dark:text-slate-200 group-hover:text-indigo-650 dark:group-hover:text-indigo-400 transition-colors leading-tight">

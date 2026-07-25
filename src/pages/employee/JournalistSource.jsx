@@ -18,7 +18,8 @@ import {
     Upload,
     FileSpreadsheet,
     AlertCircle,
-    CheckCircle2
+    CheckCircle2,
+    ChevronRight
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { db } from '../../lib/firebaseClient';
@@ -39,6 +40,12 @@ export default function JournalistSource() {
     const [isImporting, setIsImporting] = useState(false);
     const [notification, setNotification] = useState(null);
     const [visibleCount, setVisibleCount] = useState(12);
+
+    // AI recommendation panel state
+    const [recQuery, setRecQuery] = useState('');
+    const [recLoading, setRecLoading] = useState(false);
+    const [recResults, setRecResults] = useState(null);
+    const [recError, setRecError] = useState('');
     
     // Form state for manual add
     const [newJournalist, setNewJournalist] = useState({
@@ -112,6 +119,36 @@ export default function JournalistSource() {
     const triggerNotification = (message, type = 'success') => {
         setNotification({ message, type });
         setTimeout(() => setNotification(null), 4000);
+    };
+
+    const RECOMMEND_API_URL = import.meta.env.VITE_RECOMMEND_API_URL || '';
+
+    const handleGetRecommendations = async () => {
+        if (!RECOMMEND_API_URL) {
+            triggerNotification("Recommendations aren't configured yet. Set VITE_RECOMMEND_API_URL in .env.", 'error');
+            return;
+        }
+        if (!recQuery.trim()) return;
+
+        setRecLoading(true);
+        setRecError('');
+        setRecResults(null);
+
+        try {
+            const res = await fetch(RECOMMEND_API_URL, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ type: 'journalists', query: recQuery.trim() })
+            });
+            const data = await res.json().catch(() => ({}));
+            if (!res.ok) throw new Error(data.error || `Request failed (${res.status})`);
+            setRecResults(data.picks || []);
+        } catch (err) {
+            console.error('Error fetching journalist recommendations:', err);
+            setRecError(err.message || 'Failed to get recommendations.');
+        } finally {
+            setRecLoading(false);
+        }
     };
 
     const handleCopy = (text, field) => {
@@ -469,6 +506,81 @@ export default function JournalistSource() {
                         <span>Add Journalist</span>
                     </button>
                 </div>
+            </div>
+
+            {/* AI Recommendation Panel */}
+            <div className="bg-gradient-to-r from-indigo-500/5 to-purple-500/5 dark:from-indigo-500/10 dark:to-purple-500/10 border border-indigo-200/40 dark:border-indigo-800/40 rounded-2xl p-5 space-y-3">
+                <h3 className="text-sm font-extrabold text-slate-800 dark:text-slate-200 flex items-center gap-2">
+                    <Sparkles size={16} className="text-indigo-500" />
+                    Get Journalist Recommendations
+                </h3>
+                <p className="text-xs text-slate-500 dark:text-slate-400 -mt-1">
+                    Describe the story or pitch in plain language - the picks come from your real journalist directory, ranked with a reason for each.
+                </p>
+                <div className="flex flex-col sm:flex-row gap-2">
+                    <input
+                        type="text"
+                        value={recQuery}
+                        onChange={(e) => setRecQuery(e.target.value)}
+                        onKeyDown={(e) => e.key === 'Enter' && handleGetRecommendations()}
+                        placeholder="e.g. story about AI in healthcare diagnostics"
+                        className="flex-1 px-4 py-2.5 rounded-xl border border-indigo-200 dark:border-indigo-800/60 bg-white dark:bg-slate-900 text-sm font-semibold text-slate-800 dark:text-slate-100 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-indigo-500/40"
+                    />
+                    <button
+                        onClick={handleGetRecommendations}
+                        disabled={recLoading || !recQuery.trim()}
+                        className="flex items-center justify-center gap-1.5 px-5 py-2.5 rounded-xl text-white font-bold text-xs uppercase tracking-wider bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-500 hover:to-purple-500 disabled:opacity-50 transition-all cursor-pointer"
+                    >
+                        {recLoading ? (
+                            <>
+                                <span className="h-3.5 w-3.5 border-2 border-white/30 border-t-white rounded-full animate-spin"></span>
+                                Thinking...
+                            </>
+                        ) : (
+                            <>
+                                <Sparkles size={13} />
+                                Get Recommendations
+                            </>
+                        )}
+                    </button>
+                </div>
+
+                {recError && (
+                    <p className="text-xs font-bold text-rose-500">{recError}</p>
+                )}
+
+                {recResults && (
+                    recResults.length === 0 ? (
+                        <p className="text-xs font-semibold text-slate-500 dark:text-slate-400 pt-1">
+                            No strong matches found in the current directory for this request.
+                        </p>
+                    ) : (
+                        <div className="space-y-2 pt-2">
+                            {recResults.map((j, i) => (
+                                <button
+                                    key={j.docId || i}
+                                    type="button"
+                                    onClick={() => {
+                                        setSelectedId(j.docId || j.id);
+                                        setIsDetailModalOpen(true);
+                                    }}
+                                    className="w-full text-left bg-white dark:bg-slate-900 border border-slate-150 dark:border-slate-800 rounded-xl p-3.5 flex items-start gap-3 hover:border-indigo-400 dark:hover:border-indigo-500 hover:shadow-md hover:shadow-indigo-500/5 transition-all cursor-pointer group"
+                                >
+                                    <span className="shrink-0 h-6 w-6 rounded-full bg-gradient-to-br from-indigo-500 to-purple-500 text-white text-[10px] font-black flex items-center justify-center mt-0.5">
+                                        {i + 1}
+                                    </span>
+                                    <div className="sm:w-56 shrink-0">
+                                        <p className="text-xs font-extrabold text-slate-800 dark:text-slate-100 group-hover:text-indigo-600 dark:group-hover:text-indigo-400 transition-colors">{j.name}</p>
+                                        <p className="text-[10px] font-bold text-indigo-500 uppercase tracking-wide">{j.publication || j.role}</p>
+                                        {j.email && <p className="text-[10px] text-slate-400 mt-0.5">{j.email}</p>}
+                                    </div>
+                                    <p className="flex-1 text-xs text-slate-600 dark:text-slate-400 leading-relaxed">{j.reason}</p>
+                                    <ChevronRight size={16} className="shrink-0 text-slate-300 group-hover:text-indigo-500 transition-colors mt-0.5" />
+                                </button>
+                            ))}
+                        </div>
+                    )
+                )}
             </div>
 
             {/* Notification alert */}

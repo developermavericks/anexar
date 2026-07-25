@@ -1,0 +1,24 @@
+{
+  "name": "functions",
+  "description": "ReachLens v10 backend (Cloud Functions v2 HTTP endpoint)",
+  "main": "index.js",
+  "engines": {
+    "node": "20"
+  },
+  "scripts": {
+    "sync-reach-lens": "node scripts/sync-reach-lens.js"
+  },
+  "dependencies": {
+    "firebase-functions": "^6.0.0",
+    "firebase-admin": "^12.6.0",
+    "@sparticuz/chromium": "^131.0.1",
+    "puppeteer-core": "^23.11.1",
+    "puppeteer-extra": "^3.3.6",
+    "puppeteer-extra-plugin-stealth": "^2.11.2",
+    "user-agents": "^1.1.410",
+    "axios": "^1.7.9",
+    "cheerio": "^1.0.0",
+    "sentiment": "^5.0.2",
+    "https-proxy-agent": "^7.0.6"
+  }
+}

@@ -1,15 +1,86 @@
 import React, { useState, useEffect } from 'react';
-import { FileText, Download, Eye, Calendar, BarChart2, PieChart } from 'lucide-react';
+import { FileText, Download, Eye, Calendar, BarChart2, PieChart, FileSpreadsheet, ExternalLink, Link2 } from 'lucide-react';
 import { useUser } from '../../context/UserContext';
 import { db } from '../../lib/firebaseClient';
-import { collection, query, where, onSnapshot } from 'firebase/firestore';
+import { collection, query, where, onSnapshot, doc } from 'firebase/firestore';
+
+const DEFAULT_CLIENT_MASTER_LINKS = {
+    'Scapia': {
+        cumulativeSheetUrl: 'https://docs.google.com/spreadsheets/d/1AurFLe0YYeM81fYoMCJF_b70UjgGVe-A/edit?usp=drivesdk&ouid=111134406246031913275&rtpof=true&sd=true',
+        filteredDocUrl: 'https://docs.google.com/document/d/1PteVNfa7xF9szNX2eGcq3lMqI7B2lcBMs0GFGjaijm4/edit?usp=drivesdk',
+        masterDocUrl: 'https://docs.google.com/document/d/16XWEakARxprnrsf2fHgHm8GGqqFdN5hYwZH_gvjZm-Y/edit?usp=drivesdk'
+    },
+    'Wadhwani AI': {
+        cumulativeSheetUrl: 'https://docs.google.com/spreadsheets/d/1PQCIQM8yU-luDNmfT35pO5zk5jI4Ib0y/edit?usp=drivesdk&ouid=111134406246031913275&rtpof=true&sd=true',
+        filteredDocUrl: 'https://docs.google.com/document/d/1ZszkbDi7kFLIOMLYAmaUijctT8IddlY7NPCf68tANBg/edit?usp=drivesdk',
+        masterDocUrl: 'https://docs.google.com/document/d/1qQpENdja3Tg1O-ED4jzKuaHkq5wgZit1lbIGOdJBZ8o/edit?usp=drivesdk'
+    },
+    'Wadhwani': {
+        cumulativeSheetUrl: 'https://docs.google.com/spreadsheets/d/1PQCIQM8yU-luDNmfT35pO5zk5jI4Ib0y/edit?usp=drivesdk&ouid=111134406246031913275&rtpof=true&sd=true',
+        filteredDocUrl: 'https://docs.google.com/document/d/1ZszkbDi7kFLIOMLYAmaUijctT8IddlY7NPCf68tANBg/edit?usp=drivesdk',
+        masterDocUrl: 'https://docs.google.com/document/d/1qQpENdja3Tg1O-ED4jzKuaHkq5wgZit1lbIGOdJBZ8o/edit?usp=drivesdk'
+    },
+    'E3 Electric AI': {
+        cumulativeSheetUrl: 'https://docs.google.com/spreadsheets/d/16AbQMygKpWhYmvhmyFc7oxcz5WNsYacs/edit?usp=drivesdk&ouid=111134406246031913275&rtpof=true&sd=true',
+        filteredDocUrl: 'https://docs.google.com/document/d/1_VCUF7QaCtsqiS5nz191RVZ0ayt0Paves52OMo4EmOY/edit?usp=drivesdk',
+        masterDocUrl: 'https://docs.google.com/document/d/1RHG8y63xEVd-N4o5Kb0pThgXTpu4yfSzGvAlELu2788/edit?usp=drivesdk'
+    },
+    'E3 Electric.AI': {
+        cumulativeSheetUrl: 'https://docs.google.com/spreadsheets/d/16AbQMygKpWhYmvhmyFc7oxcz5WNsYacs/edit?usp=drivesdk&ouid=111134406246031913275&rtpof=true&sd=true',
+        filteredDocUrl: 'https://docs.google.com/document/d/1_VCUF7QaCtsqiS5nz191RVZ0ayt0Paves52OMo4EmOY/edit?usp=drivesdk',
+        masterDocUrl: 'https://docs.google.com/document/d/1RHG8y63xEVd-N4o5Kb0pThgXTpu4yfSzGvAlELu2788/edit?usp=drivesdk'
+    },
+    'Murf AI': {
+        cumulativeSheetUrl: '',
+        filteredDocUrl: 'https://docs.google.com/document/d/11o3qSpOeuPRwAHNdhHNqHTLLctMSPLTIDhwitajq9TA/edit?usp=drivesdk',
+        masterDocUrl: 'https://docs.google.com/document/d/1qCxg--XA89qV1luwtJA5K0GMg9NOGfQInW3B4wBwkTw/edit?usp=drivesdk'
+    },
+    'Murf-AI': {
+        cumulativeSheetUrl: '',
+        filteredDocUrl: 'https://docs.google.com/document/d/11o3qSpOeuPRwAHNdhHNqHTLLctMSPLTIDhwitajq9TA/edit?usp=drivesdk',
+        masterDocUrl: 'https://docs.google.com/document/d/1qCxg--XA89qV1luwtJA5K0GMg9NOGfQInW3B4wBwkTw/edit?usp=drivesdk'
+    }
+};
+
+const getGoogleExportUrl = (url, format = 'xlsx') => {
+    if (!url) return '#';
+    if (url.includes('/spreadsheets/d/')) {
+        const idMatch = url.match(/\/spreadsheets\/d\/([a-zA-Z0-9-_]+)/);
+        if (idMatch && idMatch[1]) {
+            return `https://docs.google.com/spreadsheets/d/${idMatch[1]}/export?format=${format}`;
+        }
+    }
+    if (url.includes('/document/d/')) {
+        const idMatch = url.match(/\/document\/d\/([a-zA-Z0-9-_]+)/);
+        if (idMatch && idMatch[1]) {
+            return `https://docs.google.com/document/d/${idMatch[1]}/export?format=${format === 'xlsx' ? 'docx' : format}`;
+        }
+    }
+    return url;
+};
 
 const Reports = () => {
     const { user } = useUser();
     const [dynamicReports, setDynamicReports] = useState([]);
     const [selectedTab, setSelectedTab] = useState('daily'); // 'daily', 'weekly', 'monthly', 'annual', 'outreach'
+    const [masterLinks, setMasterLinks] = useState(null);
 
-    const clientName = user?.clientBrand || '';
+    const clientName = user?.clientBrand || 'FUJIFILM';
+
+    useEffect(() => {
+        if (!clientName) return;
+
+        const docRef = doc(db, "client_master_links", clientName);
+        const unsubscribe = onSnapshot(docRef, (docSnap) => {
+            if (docSnap.exists()) {
+                setMasterLinks(docSnap.data());
+            } else {
+                setMasterLinks(null);
+            }
+        });
+
+        return () => unsubscribe();
+    }, [clientName]);
 
     useEffect(() => {
         if (!clientName) return;
@@ -26,7 +97,7 @@ const Reports = () => {
                 list.push({
                     id: docSnap.id,
                     title: data.fileName,
-                    date: `${data.month || ''} ${data.year || ''}`,
+                    date: data.reportDate ? data.reportDate : `${data.month || ''} ${data.year || ''}`,
                     type: data.type || 'Report',
                     icon: data.type === 'Daily Tracker' || data.type === 'Weekly Tracker' || data.type === 'Monthly Tracker' 
                            ? BarChart2 
@@ -53,6 +124,7 @@ const Reports = () => {
                         : 'bg-emerald-500/10',
                     size: data.fileSize || 'Unknown size',
                     uploadedBy: data.uploadedBy || 'Team Partner',
+                    fileData: data.fileData || null,
                     isDynamic: true
                 });
             });
@@ -78,14 +150,30 @@ const Reports = () => {
                      : selectedTab === 'annual' ? annualReportsList
                      : outreachList;
 
-    const handleDownload = (title) => {
-        console.log(`Downloading: ${title}`);
-        alert(`Downloading file: ${title}`);
+    const handleDownload = (report) => {
+        if (report?.fileData) {
+            const link = document.createElement('a');
+            link.href = report.fileData;
+            link.download = report.title || report.fileName || 'daily_report';
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+        } else {
+            console.log(`Downloading: ${report?.title || report}`);
+            alert(`Downloading file: ${report?.title || report}`);
+        }
     };
 
-    const handleView = (title) => {
-        console.log(`Viewing: ${title}`);
-        alert(`Opening ${title} in viewer.`);
+    const handleView = (report) => {
+        if (report?.fileData) {
+            const win = window.open();
+            if (win) {
+                win.document.write(`<iframe src="${report.fileData}" frameborder="0" style="border:0; top:0px; left:0px; bottom:0px; right:0px; width:100%; height:100%;" allowfullscreen></iframe>`);
+            }
+        } else {
+            console.log(`Viewing: ${report?.title || report}`);
+            alert(`Opening ${report?.title || report} in viewer.`);
+        }
     };
 
     return (
@@ -233,13 +321,13 @@ const Reports = () => {
 
                                 <div className="grid grid-cols-2 gap-3 mt-auto">
                                     <button
-                                        onClick={() => handleView(report.title)}
+                                        onClick={() => handleView(report)}
                                         className="flex items-center justify-center gap-2 py-2 bg-gray-100 dark:bg-[#374151] hover:bg-gray-200 text-gray-800 dark:text-gray-200 rounded-lg text-xs font-semibold transition-colors border border-gray-200/50 dark:border-gray-800/50 cursor-pointer"
                                     >
                                         <Eye size={14} /> View
                                     </button>
                                     <button
-                                        onClick={() => handleDownload(report.title)}
+                                        onClick={() => handleDownload(report)}
                                         className="flex items-center justify-center gap-2 py-2 bg-[#1A1A1A] dark:bg-amber-500 dark:text-[#0B0F19] hover:opacity-90 text-amber-500 dark:text-amber-400 border border-amber-500/30 hover:border-amber-500 rounded-lg text-xs font-semibold transition-colors cursor-pointer"
                                     >
                                         <Download size={14} /> Download
