@@ -399,3 +399,7 @@ First-time secret setup (once per project):
   already-scored article costs nothing.
 - The one hard external quota to watch is **Serper credits**, consumed only
   by `discoverEventsForSector` (2 queries per sector per run).
+
+
+
+  satyam kr. singh
