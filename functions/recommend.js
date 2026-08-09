@@ -16,7 +16,22 @@ function getDb() {
 }
 
 function buildJournalistText(j) {
-    return [j.name, j.role, j.publication, j.category, j.bio].filter(Boolean).join(' | ');
+    return [
+        j.name, 
+        j.role, 
+        j.publication, 
+        j.category, 
+        j.address, 
+        j.city, 
+        j.state, 
+        j.country, 
+        j.email, 
+        j.phone, 
+        j.twitter, 
+        j.linkedin, 
+        j.mediaTypes, 
+        j.bio
+    ].filter(Boolean).join(' | ');
 }
 
 function buildEventText(e) {
@@ -26,7 +41,8 @@ function buildEventText(e) {
 // Cheap keyword-overlap pre-filter so the LLM prompt stays small even as the
 // underlying collection grows daily - no embeddings/vector DB needed at this scale.
 function preFilter(records, textBuilder, query, topN) {
-    const queryWords = query.toLowerCase().split(/\W+/).filter(w => w.length >= 3);
+    // Preserve 2-letter words like 'AI', 'IT', 'TV', 'ET', 'PR'
+    const queryWords = query.toLowerCase().split(/\W+/).filter(w => w.length >= 2);
     const scored = records.map(r => {
         const text = textBuilder(r).toLowerCase();
         const score = queryWords.reduce((acc, w) => acc + (text.includes(w) ? 1 : 0), 0);
@@ -52,7 +68,9 @@ async function fetchCollection(collectionName) {
 function buildPrompt(type, query, candidates) {
     const listText = candidates.map((c, i) => {
         if (type === 'journalists') {
-            return `[${i}] name="${c.name || ''}" role="${c.role || ''}" publication="${c.publication || ''}" category="${c.category || ''}" bio="${(c.bio || '').slice(0, 200)}"`;
+            const locStr = [c.address, c.city, c.state, c.country].filter(Boolean).join(', ');
+            const socialsStr = [c.linkedin, c.twitter].filter(Boolean).join(', ');
+            return `[${i}] name="${c.name || ''}" role="${c.role || ''}" publication="${c.publication || ''}" category="${c.category || ''}" location="${locStr}" email="${c.email || ''}" phone="${c.phone || ''}" socials="${socialsStr}" media="${c.mediaTypes || ''}" bio="${(c.bio || '').slice(0, 200)}"`;
         }
         return `[${i}] name="${c.event_name || c.name || ''}" type="${c.event_type || c.type || ''}" sector="${c.sector || ''}" location="${c.location || c.venue || ''}" status="${c.status || ''}" deadline="${c.nomination_deadline || ''}"`;
     }).join('\n');

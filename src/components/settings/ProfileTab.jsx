@@ -9,9 +9,9 @@ const ProfileTab = () => {
         name: user.name,
         email: user.email,
         avatar: user.avatar,
-        phone: user.profile?.phone || '+1 (555) 000-0000',
-        designation: user.profile?.designation || 'CEO',
-        timezone: user.profile?.timezone || 'UTC',
+        phone: user.profile?.phone || '+91 93040 47238',
+        designation: user.profile?.designation || 'Management Trainee-Tech',
+        timezone: user.profile?.timezone || 'IST',
         language: user.profile?.language || 'en'
     });
     const [isSaving, setIsSaving] = useState(false);
@@ -134,10 +134,10 @@ const ProfileTab = () => {
                             onChange={(e) => setFormData({ ...formData, timezone: e.target.value })}
                             className="w-full bg-white dark:bg-[#111827] border border-[#EAE8E4] dark:border-white/10 text-gray-900 dark:text-white rounded-xl px-4 py-2.5 focus:outline-none focus:border-amber-500 focus:ring-1 focus:ring-amber-500 transition-all font-medium cursor-pointer"
                         >
+                            <option value="IST">IST (GMT+5:30)</option>
                             <option value="UTC">UTC (GMT+0)</option>
                             <option value="EST">EST (GMT-5)</option>
                             <option value="PST">PST (GMT-8)</option>
-                            <option value="IST">IST (GMT+5:30)</option>
                         </select>
                     </div>
                     <div>
@@ -147,9 +147,8 @@ const ProfileTab = () => {
                             onChange={(e) => setFormData({ ...formData, language: e.target.value })}
                             className="w-full bg-white dark:bg-[#111827] border border-[#EAE8E4] dark:border-white/10 text-gray-900 dark:text-white rounded-xl px-4 py-2.5 focus:outline-none focus:border-amber-500 focus:ring-1 focus:ring-amber-500 transition-all font-medium cursor-pointer"
                         >
-                            <option value="en">English (US)</option>
-                            <option value="es">Español</option>
-                            <option value="fr">Français</option>
+                            <option value="en">English</option>
+                            <option value="hi">Hindi</option>
                         </select>
                     </div>
                 </div>

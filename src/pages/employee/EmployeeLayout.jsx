@@ -18,7 +18,8 @@ import {
     Moon,
     ChevronLeft,
     ChevronRight,
-    ShieldAlert
+    ShieldAlert,
+    FileDown
 } from 'lucide-react';
 import { useUser } from '../../context/UserContext';
 import { useAuth } from '../../context/AuthContext';
@@ -243,6 +244,7 @@ const TeamLayout = () => {
         { icon: ShieldAlert, label: 'Crisis Tracker', to: '/team/crisis-tracker' },
         { icon: Clock, label: 'Time Allocation', to: '/team/time-allocation' },
         { icon: BrainCircuit, label: 'Analysis Board', to: '/team/analysis' },
+        { icon: FileDown, label: 'Editorial Scraper', to: '/team/article-pdf' },
     ];
 
     return (

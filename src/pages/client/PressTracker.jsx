@@ -27,7 +27,7 @@ const PressTracker = () => {
             });
             setPressList(list);
 
-            const customClient = list.find(pr => pr.client && pr.client.toLowerCase() !== 'visionary media');
+            const customClient = list.find(pr => pr.client && pr.client.toLowerCase() !== 'the mavericks communications llp');
             if (customClient) setSelectedClient(customClient.client);
         }, (err) => {
             console.error("Error listening to Firestore press_releases:", err);
@@ -49,10 +49,11 @@ const PressTracker = () => {
     const clientOptions = ['All', ...new Set(pressList.map(pr => pr.client || 'Spotify'))];
 
     const filteredPress = pressList.filter(pr => {
+        // Only keep trackers (excel) and reports (docx)
+        if (pr.type !== 'excel' && pr.type !== 'docx') return false;
+
         const term = searchTerm.toLowerCase();
-        const matchesSearch = pr.type === 'excel'
-            ? ((pr.client && pr.client.toLowerCase().includes(term)) || (pr.fileName && pr.fileName.toLowerCase().includes(term)))
-            : ((pr.client && pr.client.toLowerCase().includes(term)) || (pr.coverage && pr.coverage.toLowerCase().includes(term)));
+        const matchesSearch = (pr.client && pr.client.toLowerCase().includes(term)) || (pr.fileName && pr.fileName.toLowerCase().includes(term));
         
         const matchesClient = isClientRole
             ? (pr.client && (
@@ -112,12 +113,12 @@ const PressTracker = () => {
                     <div>
                         <h1 className="text-3xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-amber-500 to-amber-600 dark:from-amber-400 dark:to-amber-500 flex items-center gap-3">
                             <Newspaper className="text-amber-500 dark:text-amber-400 stroke-[2.5px]" size={28} />
-                            Media & Press Coverage
+                            Media Trackers & Reports
                         </h1>
                         <p className="text-sm text-slate-600 dark:text-slate-300 mt-2 max-w-xl font-medium">
                             {isClientRole 
-                                ? `Monitor published media wins, coverage trackers, and files secured for ${user.name}.`
-                                : `Monitor published media wins, press distribution, and campaign coverage.`}
+                                ? `Monitor campaign coverage trackers, outreach reports, and files secured for ${user.name}.`
+                                : `Monitor campaign coverage trackers, outreach reports, and files.`}
                         </p>
                     </div>
                 </div>
@@ -170,7 +171,7 @@ const PressTracker = () => {
                                 <div className="flex flex-wrap items-center gap-2">
                                     <span className="inline-flex items-center gap-1 px-3 py-1 bg-purple-500/10 text-purple-650 dark:text-purple-400 text-[10px] font-extrabold uppercase tracking-widest rounded-full">
                                         <User size={10} className="shrink-0" />
-                                        {pr.client || 'Visionary Media'}
+                                        {pr.client || 'The Mavericks Communications LLP'}
                                     </span>
                                     <span className="inline-flex items-center gap-1 px-3 py-1 bg-purple-500/10 text-purple-600 dark:text-purple-400 text-[10px] font-extrabold uppercase tracking-widest rounded-full">
                                         <Calendar size={10} className="shrink-0" />
@@ -231,10 +232,10 @@ const PressTracker = () => {
                 ) : (
                     <div className="col-span-full p-16 text-center text-slate-400 bg-white dark:bg-slate-950 border border-dashed border-slate-200 dark:border-slate-800 rounded-3xl shadow-lg">
                         <AlertCircle className="mx-auto text-slate-305 dark:text-slate-700 mb-3" size={40} />
-                        <p className="text-xs font-bold uppercase tracking-widest">No Coverage wins Found</p>
+                        <p className="text-xs font-bold uppercase tracking-widest">No Trackers or Reports Found</p>
                         <p className="text-[11px] text-slate-500 mt-1">
                             {isClientRole 
-                                ? `No media wins have been uploaded for ${user.name} yet.`
+                                ? `No media trackers or reports have been uploaded for ${user.name} yet.`
                                 : "Try adapting your search or filter requirements."}
                         </p>
                     </div>

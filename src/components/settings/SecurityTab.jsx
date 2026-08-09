@@ -46,10 +46,31 @@ const SecurityTab = () => {
         setTimeout(() => setShowToast(false), 3000);
     };
 
-    const mockSessions = [
-        { id: 1, device: 'MacBook Pro 16"', browser: 'Chrome', location: 'San Francisco, US', active: true, icon: Monitor },
-        { id: 2, device: 'iPhone 14 Pro', browser: 'Safari', location: 'San Jose, US', active: false, icon: Smartphone },
-        { id: 3, device: 'Windows PC', browser: 'Edge', location: 'New York, US', active: false, icon: Monitor }
+    const getSessionInfo = () => {
+        const ua = navigator.userAgent;
+        let browser = 'Chrome';
+        if (ua.includes('Firefox')) browser = 'Firefox';
+        else if (ua.includes('Edg')) browser = 'Edge';
+        else if (ua.includes('Safari') && !ua.includes('Chrome')) browser = 'Safari';
+
+        let device = 'Windows PC';
+        let icon = Monitor;
+        if (ua.includes('Macintosh')) {
+            device = 'MacBook';
+        } else if (ua.includes('iPhone')) {
+            device = 'iPhone';
+            icon = Smartphone;
+        } else if (ua.includes('Android')) {
+            device = 'Android Device';
+            icon = Smartphone;
+        }
+
+        return { device, browser, icon };
+    };
+
+    const currentSession = getSessionInfo();
+    const activeSessions = [
+        { id: 1, device: currentSession.device, browser: currentSession.browser, location: 'New Delhi, India', active: true, icon: currentSession.icon }
     ];
 
     return (
@@ -142,7 +163,7 @@ const SecurityTab = () => {
                     </div>
 
                     <div className="space-y-4">
-                        {mockSessions.map(session => (
+                        {activeSessions.map(session => (
                             <div key={session.id} className="flex items-center justify-between p-4 border border-[#EAE8E4] dark:border-white/10 rounded-xl bg-white dark:bg-[#111827]">
                                 <div className="flex items-center gap-4">
                                     <div className="p-2 bg-gray-50 dark:bg-[#1F2937] rounded-lg text-gray-500 dark:text-gray-400 dark:text-gray-500">

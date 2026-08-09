@@ -34,6 +34,7 @@ import JournalistSource from './pages/employee/JournalistSource';
 import SettingsTeam from './pages/employee/Settings';
 import MorningTracker from './pages/employee/MorningTracker';
 import CrisisPredictor from './pages/employee/CrisisPredictor';
+import ArticlePdfScraper from './pages/employee/ArticlePdfScraper';
 
 // Shown in place of the client portal while it's disabled (see route below)
 function ClientPortalUnavailable() {
@@ -127,6 +128,7 @@ function App() {
               <Route path="journalists" element={<JournalistSource />} />
               <Route path="morning-tracker" element={<MorningTracker />} />
               <Route path="crisis-tracker" element={<CrisisPredictor />} />
+              <Route path="article-pdf" element={<ArticlePdfScraper />} />
               <Route path="settings" element={<SettingsTeam />} />
             </Route>
 

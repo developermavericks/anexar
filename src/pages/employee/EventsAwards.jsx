@@ -12,7 +12,8 @@ import {
     Cpu,
     TrendingUp,
     Bookmark,
-    Sparkles
+    Sparkles,
+    ChevronRight
 } from 'lucide-react';
 import { db } from '../../lib/firebaseClient';
 import { collection, doc, onSnapshot, orderBy, query, writeBatch, runTransaction } from 'firebase/firestore';
@@ -82,6 +83,34 @@ export default function EventsAwards() {
         } finally {
             setRecLoading(false);
         }
+    };
+
+    const handleExportRecommendations = () => {
+        if (!recResults || recResults.length === 0) return;
+        const headers = "Rank,Event Name,Sector,Location,Venue,Date,Reason,Source Link\n";
+        const rows = recResults.map((ev, i) => {
+            const cleanNe = String(ev.event_name || ev.name || '').toLowerCase().replace(/[^a-z0-9]/g, '');
+            const localEv = events.find(e => {
+                const cleanName = String(e.event_name || e.name || '').toLowerCase().replace(/[^a-z0-9]/g, '');
+                return cleanName === cleanNe;
+            });
+            const name = ev.event_name || ev.name || '';
+            const sector = ev.sector || '';
+            const loc = localEv?.location || ev.location || 'India';
+            const venue = localEv?.venue || ev.venue || 'N/A';
+            const date = localEv?.date || ev.date || 'TBD';
+            const reason = (ev.reason || '').replace(/"/g, '""');
+            const link = localEv?.source_url || ev.source_url || '';
+            return `"${i + 1}","${name}","${sector}","${loc}","${venue}","${date}","${reason}","${link}"`;
+        }).join("\n");
+
+        const blob = new Blob([headers + rows], { type: 'text/csv;charset=utf-8;' });
+        const link = document.createElement("a");
+        link.href = URL.createObjectURL(blob);
+        link.setAttribute("download", "event_recommendations_export.csv");
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
     };
 
     // ----------------------------------------------------
@@ -391,34 +420,72 @@ export default function EventsAwards() {
                         </p>
                     ) : (
                         <div className="space-y-2 pt-2">
-                            {recResults.map((ev, i) => (
-                                <div key={ev.docId || i} className="bg-white dark:bg-slate-900 border border-slate-150 dark:border-slate-800 rounded-xl p-3.5 flex items-start gap-3 hover:border-indigo-400 dark:hover:border-indigo-500 hover:shadow-md hover:shadow-indigo-500/5 transition-all">
-                                    <span className="shrink-0 h-6 w-6 rounded-full bg-gradient-to-br from-indigo-500 to-purple-500 text-white text-[10px] font-black flex items-center justify-center mt-0.5">
-                                        {i + 1}
-                                    </span>
-                                    <div className="sm:w-56 shrink-0">
-                                        <p className="text-xs font-extrabold text-slate-800 dark:text-slate-100">{ev.event_name || ev.name}</p>
-                                        <p className="text-[10px] font-bold text-indigo-500 uppercase tracking-wide">{ev.sector} &middot; {ev.location || ev.venue}</p>
-                                        {ev.nomination_deadline && <p className="text-[10px] text-rose-500 font-bold mt-0.5">Deadline: {ev.nomination_deadline}</p>}
-                                    </div>
-                                    <p className="flex-1 text-xs text-slate-600 dark:text-slate-400 leading-relaxed">{ev.reason}</p>
-                                    {ev.source_url ? (
-                                        <a
-                                            href={ev.source_url}
-                                            target="_blank"
-                                            rel="noopener noreferrer"
-                                            className="shrink-0 flex items-center gap-1 text-[10px] font-bold text-indigo-600 dark:text-indigo-400 hover:text-indigo-700 dark:hover:text-indigo-300 uppercase tracking-wide bg-indigo-500/10 hover:bg-indigo-500/20 px-2.5 py-1.5 rounded-lg transition-all"
-                                        >
-                                            Visit Site <ExternalLink size={11} />
-                                        </a>
-                                    ) : (
-                                        <span className="shrink-0 text-[10px] font-bold text-slate-300 dark:text-slate-700 uppercase tracking-wide px-2.5 py-1.5">No link</span>
-                                    )}
-                                </div>
-                            ))}
+                            <div className="flex items-center justify-between pb-1">
+                                <span className="text-[10px] font-black text-indigo-500 uppercase tracking-widest">Recommended Matches ({recResults.length})</span>
+                                <button
+                                    onClick={handleExportRecommendations}
+                                    className="flex items-center gap-1 text-[9px] font-extrabold text-indigo-600 dark:text-indigo-400 hover:text-indigo-700 dark:hover:text-indigo-300 uppercase tracking-wider bg-indigo-500/10 hover:bg-indigo-500/20 px-2 py-1 rounded-md transition-all cursor-pointer"
+                                >
+                                    <Download size={10} /> Export Excel
+                                </button>
+                            </div>
+                            {recResults.map((ev, i) => {
+                                const cleanNe = String(ev.event_name || ev.name || '').toLowerCase().replace(/[^a-z0-9]/g, '');
+                                const localEv = events.find(e => {
+                                    const cleanName = String(e.event_name || e.name || '').toLowerCase().replace(/[^a-z0-9]/g, '');
+                                    return cleanName === cleanNe;
+                                });
+                                const finalName = localEv?.event_name || localEv?.name || ev.event_name || ev.name;
+                                const finalSector = localEv?.sector || ev.sector;
+                                const finalLoc = localEv?.location || ev.location || 'India';
+                                const finalVenue = localEv?.venue || ev.venue || 'N/A';
+                                const finalDeadline = localEv?.nomination_deadline || ev.nomination_deadline;
+                                const finalLink = localEv?.source_url || ev.source_url;
+
+                                return (
+                                    <button
+                                        key={ev.docId || i}
+                                        type="button"
+                                        onClick={() => {
+                                            setSearchKeyword(finalName);
+                                            setSelectedSector('all');
+                                            setActiveTab('all');
+                                            setSelectedStatus('all');
+                                            setSelectedCity('all');
+                                            document.getElementById('events-table-section')?.scrollIntoView({ behavior: 'smooth' });
+                                        }}
+                                        className="w-full text-left bg-white dark:bg-slate-900 border border-slate-150 dark:border-slate-800 rounded-xl p-3.5 flex items-start gap-3 hover:border-indigo-400 dark:hover:border-indigo-500 hover:shadow-md hover:shadow-indigo-500/5 transition-all cursor-pointer group"
+                                    >
+                                        <span className="shrink-0 h-6 w-6 rounded-full bg-gradient-to-br from-indigo-500 to-purple-500 text-white text-[10px] font-black flex items-center justify-center mt-0.5">
+                                            {i + 1}
+                                        </span>
+                                        <div className="sm:w-56 shrink-0">
+                                            <p className="text-xs font-extrabold text-slate-800 dark:text-slate-100 group-hover:text-indigo-600 dark:group-hover:text-indigo-400 transition-colors leading-tight">{finalName}</p>
+                                            <p className="text-[10px] font-bold text-indigo-500 uppercase tracking-wide mt-0.5">{finalSector} &middot; {finalLoc} {finalVenue !== 'N/A' && `(${finalVenue})`}</p>
+                                            {finalDeadline && <p className="text-[10px] text-rose-500 font-bold mt-0.5">Deadline: {finalDeadline}</p>}
+                                        </div>
+                                        <p className="flex-1 text-xs text-slate-600 dark:text-slate-400 leading-relaxed mt-0.5">{ev.reason}</p>
+                                        {finalLink ? (
+                                            <a
+                                                href={finalLink}
+                                                target="_blank"
+                                                rel="noopener noreferrer"
+                                                onClick={(e) => e.stopPropagation()}
+                                                className="shrink-0 flex items-center gap-1 text-[10px] font-bold text-indigo-600 dark:text-indigo-400 hover:text-indigo-700 dark:hover:text-indigo-300 uppercase tracking-wide bg-indigo-500/10 hover:bg-indigo-500/20 px-2.5 py-1.5 rounded-lg transition-all"
+                                            >
+                                                Visit Site <ExternalLink size={11} />
+                                            </a>
+                                        ) : (
+                                            <span className="shrink-0 text-[10px] font-bold text-slate-300 dark:text-slate-700 uppercase tracking-wide px-2.5 py-1.5">No link</span>
+                                        )}
+                                        <ChevronRight size={16} className="shrink-0 text-slate-300 group-hover:text-indigo-500 transition-colors mt-0.5" />
+                                    </button>
+                                );
+                            })}
                         </div>
                     )
                 )}
+
             </div>
 
             {/* Metrics cards grid */}
@@ -580,7 +647,7 @@ export default function EventsAwards() {
             </div>
 
             {/* Scraped Results Data Table */}
-            <div className="bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 rounded-2xl shadow-3xs overflow-hidden">
+            <div id="events-table-section" className="bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 rounded-2xl shadow-3xs overflow-hidden">
                 <div className="overflow-x-auto">
                     <table className="w-full border-collapse text-left">
                         <thead>

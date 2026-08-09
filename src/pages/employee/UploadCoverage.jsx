@@ -189,7 +189,7 @@ export default function UploadCoverage() {
 
 
     // Multi-tab layout states
-    const [activeTab, setActiveTab] = useState('press'); // 'press', 'reports'
+    const [activeTab, setActiveTab] = useState('reports'); // 'press', 'reports'
     
     // Reports tab form states
     const [reportType, setReportType] = useState('Daily Tracker');
@@ -1015,7 +1015,8 @@ export default function UploadCoverage() {
                     {/* UPLOAD FORM PANEL (Left Column - col-span-5) */}
                 <div className="lg:col-span-5 space-y-6">
                     {/* Tab Navigation */}
-                    <div className="grid grid-cols-2 gap-2 p-1.5 bg-slate-100 dark:bg-slate-900 rounded-2xl border border-slate-200/50 dark:border-slate-800/80">
+                    <div className="grid grid-cols-1 gap-2 p-1.5 bg-slate-100 dark:bg-slate-900 rounded-2xl border border-slate-200/50 dark:border-slate-800/80">
+                        {/* 
                         <button
                             type="button"
                             onClick={() => setActiveTab('press')}
@@ -1027,6 +1028,7 @@ export default function UploadCoverage() {
                         >
                             Press Releases
                         </button>
+                        */}
                         <button
                             type="button"
                             onClick={() => setActiveTab('reports')}

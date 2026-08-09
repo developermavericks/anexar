@@ -19,13 +19,91 @@ import {
     FileSpreadsheet,
     AlertCircle,
     CheckCircle2,
-    ChevronRight
+    ChevronRight,
+    Linkedin,
+    Twitter,
+    Edit2
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { db } from '../../lib/firebaseClient';
 import { collection, addDoc, doc, deleteDoc, query, onSnapshot, orderBy, writeBatch } from 'firebase/firestore';
 
 import INITIAL_JOURNALISTS from '../../data/journalists_extracted.json';
+
+const getCategoryString = (category) => {
+    if (!category) return '';
+    if (Array.isArray(category)) {
+        return category.map(v => typeof v === 'object' && v ? (v.beatName || v.categoryName || v.name || JSON.stringify(v)) : String(v)).filter(Boolean).join(', ');
+    }
+    if (typeof category === 'object') {
+        return category.beatName || category.categoryName || category.name || JSON.stringify(category);
+    }
+    return String(category);
+};
+
+const getLocationString = (address) => {
+    if (!address) return '';
+    if (Array.isArray(address)) {
+        return address.map(v => typeof v === 'object' && v ? (v.cityName || v.city || v.stateName || v.state || v.name || JSON.stringify(v)) : String(v)).filter(Boolean).join(', ');
+    }
+    if (typeof address === 'object') {
+        return address.cityName || address.city || address.stateName || address.state || address.name || JSON.stringify(address);
+    }
+    const strVal = String(address).trim();
+    if (strVal.toLowerCase().includes('[object object]')) {
+        return '';
+    }
+    return strVal;
+};
+
+const JournalistAvatar = ({ journalist, size = 'md', onClick }) => {
+    const [imgError, setImgError] = useState(false);
+    
+    const sizeClasses = size === 'lg' ? 'w-16 h-16 text-2xl rounded-2xl shadow-md' : 'w-11 h-11 text-md rounded-2xl shadow-sm';
+    
+    let grad = "from-indigo-500 to-purple-650";
+    const catStr = getCategoryString(journalist.category);
+    if (catStr) {
+        const catLower = catStr.toLowerCase();
+        if (catLower.includes("tech") || catLower.includes("start")) {
+            grad = "from-blue-500 to-indigo-600";
+        } else if (catLower.includes("market") || catLower.includes("finance") || catLower.includes("business") || catLower.includes("economy")) {
+            grad = "from-emerald-500 to-teal-600";
+        } else if (catLower.includes("politics") || catLower.includes("ethics") || catLower.includes("opinion")) {
+            grad = "from-rose-500 to-orange-500";
+        } else if (catLower.includes("general") || catLower.includes("news") || catLower.includes("current")) {
+            grad = "from-slate-500 to-slate-700";
+        }
+    }
+    
+    const initials = journalist.name ? journalist.name.charAt(0) : '?';
+    
+    // Skribe profile photo prefix hosted on Google Cloud Storage
+    const PHOTO_BASE_URL = 'https://storage.googleapis.com/skribe-media-prod/JournoImage/';
+    const imgSrc = journalist.photo ? `${PHOTO_BASE_URL}${journalist.photo}` : null;
+    
+    if (imgSrc && !imgError) {
+        return (
+            <div 
+                onClick={onClick}
+                className={`${sizeClasses} bg-slate-100 dark:bg-slate-800 flex items-center justify-center font-black shadow-sm shrink-0 overflow-hidden border border-slate-100 dark:border-slate-800 ${onClick ? 'cursor-pointer hover:scale-[1.05] active:scale-95 transition-all duration-200' : ''}`}
+            >
+                <img 
+                    src={imgSrc} 
+                    alt={journalist.name} 
+                    onError={() => setImgError(true)}
+                    className="w-full h-full object-cover"
+                />
+            </div>
+        );
+    }
+    
+    return (
+        <div className={`${sizeClasses} bg-gradient-to-br ${grad} text-white flex items-center justify-center font-black shrink-0`}>
+            {initials}
+        </div>
+    );
+};
 
 export default function JournalistSource() {
     const [journalists, setJournalists] = useState([]);
@@ -40,6 +118,9 @@ export default function JournalistSource() {
     const [isImporting, setIsImporting] = useState(false);
     const [notification, setNotification] = useState(null);
     const [visibleCount, setVisibleCount] = useState(12);
+    const [maximizedPhoto, setMaximizedPhoto] = useState(null);
+    const [isEditing, setIsEditing] = useState(false);
+    const [editData, setEditData] = useState({});
 
     // AI recommendation panel state
     const [recQuery, setRecQuery] = useState('');
@@ -56,6 +137,9 @@ export default function JournalistSource() {
         email: '',
         phone: '',
         address: '',
+        linkedin: '',
+        twitter: '',
+        photo: '',
         bio: ''
     });
 
@@ -174,6 +258,9 @@ export default function JournalistSource() {
                 email: newJournalist.email || '',
                 phone: newJournalist.phone || '',
                 address: newJournalist.address || '',
+                linkedin: newJournalist.linkedin || '',
+                twitter: newJournalist.twitter || '',
+                photo: newJournalist.photo || '',
                 bio: newJournalist.bio || '',
                 createdAt: new Date().toISOString()
             });
@@ -188,6 +275,9 @@ export default function JournalistSource() {
                 email: '',
                 phone: '',
                 address: '',
+                linkedin: '',
+                twitter: '',
+                photo: '',
                 bio: ''
             });
             triggerNotification(`${displayName} successfully added to cloud.`, 'success');
@@ -213,6 +303,33 @@ export default function JournalistSource() {
         }
     };
 
+    const handleSaveEdit = async () => {
+        const docId = selectedId || editData.id;
+        if (!docId) return;
+        
+        try {
+            const docRef = doc(db, "journalists", docId);
+            await updateDoc(docRef, {
+                name: (editData.name || '').trim(),
+                role: (editData.role || '').trim(),
+                publication: (editData.publication || '').trim(),
+                category: (editData.category || '').trim(),
+                email: (editData.email || '').trim(),
+                phone: (editData.phone || '').trim(),
+                address: (editData.address || '').trim(),
+                linkedin: (editData.linkedin || '').trim(),
+                twitter: (editData.twitter || '').trim(),
+                bio: (editData.bio || '').trim(),
+                updatedAt: new Date().toISOString()
+            });
+            triggerNotification('Journalist contact updated successfully.', 'success');
+            setIsEditing(false);
+        } catch (err) {
+            console.error("Error updating journalist contact:", err);
+            triggerNotification('Failed to update contact.', 'error');
+        }
+    };
+
     const uploadInBatches = async (records) => {
         const CHUNK_SIZE = 400;
         for (let i = 0; i < records.length; i += CHUNK_SIZE) {
@@ -228,6 +345,9 @@ export default function JournalistSource() {
                     email: record.email || '',
                     phone: record.phone || '',
                     address: record.address || '',
+                    linkedin: record.linkedin || '',
+                    twitter: record.twitter || '',
+                    photo: record.photo || '',
                     bio: record.bio || '',
                     createdAt: new Date().toISOString()
                 });
@@ -314,6 +434,9 @@ export default function JournalistSource() {
                             email: getVal('email', 4, 'contact@media.com'),
                             phone: getVal('phone', 5, '+1 (555) 000-0000'),
                             address: getVal('address', 6, 'Remote Office'),
+                            linkedin: getVal('linkedin', 8, ''),
+                            twitter: getVal('twitter', 9, ''),
+                            photo: getVal('photo', 10, ''),
                             bio: getVal('bio', 7, 'Imported from spreadsheet.')
                         });
                     }
@@ -365,6 +488,9 @@ export default function JournalistSource() {
                 email: getVal('email', cols[3] || 'imported@email.com'),
                 phone: getVal('phone', cols[4] || '+1 (555) 000-0000'),
                 address: getVal('address', cols[5] || 'Remote Office'),
+                linkedin: getVal('linkedin', ''),
+                twitter: getVal('twitter', ''),
+                photo: getVal('photo', ''),
                 bio: getVal('bio', cols[6] || 'Imported via CSV database spreadsheet.')
             });
         }
@@ -434,23 +560,35 @@ export default function JournalistSource() {
 
     // Filter logic
     const filteredJournalists = journalists.filter(j => {
-        const nameVal = (j.name || '').toLowerCase();
-        const pubVal = (j.publication || '').toLowerCase();
-        const roleVal = (j.role || '').toLowerCase();
-        const bioVal = (j.bio || '').toLowerCase();
+        const nameVal = String(j.name || '').toLowerCase();
+        const pubVal = String(j.publication || '').toLowerCase();
+        const roleVal = String(j.role || '').toLowerCase();
+        const bioVal = String(j.bio || '').toLowerCase();
+        const catVal = getCategoryString(j.category).toLowerCase();
         const searchLower = searchQuery.toLowerCase();
         
         const matchesSearch = nameVal.includes(searchLower) ||
                             pubVal.includes(searchLower) ||
                             roleVal.includes(searchLower) ||
-                            bioVal.includes(searchLower);
-        const matchesCategory = selectedCategoryFilter === 'All' || j.category === selectedCategoryFilter;
+                            bioVal.includes(searchLower) ||
+                            catVal.includes(searchLower);
+                            
+        let matchesCategory = selectedCategoryFilter === 'All';
+        if (!matchesCategory) {
+            const catStr = getCategoryString(j.category);
+            matchesCategory = catStr.split(', ').some(cat => cat.trim() === selectedCategoryFilter);
+        }
         return matchesSearch && matchesCategory;
     });
 
     const selectedJournalist = journalists.find(j => j.id === selectedId) || filteredJournalists[0] || null;
 
-    const categories = ['All', ...Array.from(new Set(journalists.map(j => j.category)))];
+    const categories = ['All', ...Array.from(new Set(
+        journalists.flatMap(j => {
+            const catStr = getCategoryString(j.category);
+            return catStr ? catStr.split(', ').map(c => c.trim()) : [];
+        })
+    ))];
 
     return (
         <div className="space-y-6 max-w-6xl mx-auto px-4 py-6 text-slate-900 dark:text-slate-100 animate-fade-in">
@@ -463,6 +601,14 @@ export default function JournalistSource() {
                     <p className="text-gray-550 dark:text-gray-400 mt-2 font-medium">
                         Search, import, and manage media databases for your outreach campaigns.
                     </p>
+                    <div className="flex flex-wrap items-center gap-3 mt-3.5 text-2xs font-extrabold uppercase tracking-wide text-slate-500 dark:text-slate-400">
+                        <span className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-slate-100 dark:bg-slate-800 rounded-xl">
+                            Total Directory Size: <strong className="text-indigo-600 dark:text-indigo-400 font-black text-xs">{journalists.length}</strong>
+                        </span>
+                        <span className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-slate-100 dark:bg-slate-800 rounded-xl">
+                            Profiles with Photos (DP): <strong className="text-purple-600 dark:text-purple-400 font-black text-xs">{journalists.filter(j => j.photo).length}</strong>
+                        </span>
+                    </div>
                 </div>
                 
                 <div className="flex flex-wrap items-center gap-3">
@@ -649,7 +795,7 @@ export default function JournalistSource() {
                         {filteredJournalists.slice(0, visibleCount).map((j) => {
                             // Define gradient based on category
                             let grad = "from-indigo-500 to-purple-600";
-                            const catLower = (j.category || "").toLowerCase();
+                            const catLower = getCategoryString(j.category).toLowerCase();
                             if (catLower.includes("tech") || catLower.includes("start")) {
                                 grad = "from-blue-500 to-indigo-600";
                             } else if (catLower.includes("market") || catLower.includes("finance") || catLower.includes("business") || catLower.includes("economy")) {
@@ -683,9 +829,7 @@ export default function JournalistSource() {
 
                                     <div>
                                         <div className="flex items-center gap-3.5 mb-5">
-                                            <div className={`w-11 h-11 rounded-2xl bg-gradient-to-br ${grad} text-white flex items-center justify-center font-black text-md shadow-sm shrink-0`}>
-                                                {j.name ? j.name.charAt(0) : '?'}
-                                            </div>
+                                            <JournalistAvatar journalist={j} />
                                             <div className="min-w-0">
                                                 <h3 className="font-bold text-slate-900 dark:text-white truncate text-sm leading-snug group-hover:text-indigo-600 dark:group-hover:text-indigo-400 transition-colors">
                                                     {j.name}
@@ -703,13 +847,13 @@ export default function JournalistSource() {
                                             </div>
                                             <div className="flex items-center gap-2 min-w-0">
                                                 <Tag size={13} className="text-purple-500 shrink-0" />
-                                                <span className="truncate text-[10px] py-0.5 px-2 bg-slate-100 dark:bg-slate-800 rounded-lg">{j.category}</span>
+                                                <span className="truncate text-[10px] py-0.5 px-2 bg-slate-100 dark:bg-slate-800 rounded-lg">{getCategoryString(j.category)}</span>
                                             </div>
                                         </div>
                                     </div>
 
                                     <div className="pt-4 border-t border-slate-50 dark:border-slate-850 flex justify-between items-center text-3xs text-slate-400">
-                                        <span className="font-bold uppercase tracking-wider">{j.address || 'Remote Bureau'}</span>
+                                        <span className="font-bold uppercase tracking-wider">{getLocationString(j.address) || 'Remote Bureau'}</span>
                                         <span className="text-indigo-600 dark:text-indigo-400 font-bold group-hover:underline flex items-center gap-0.5">
                                             View Details &rarr;
                                         </span>
@@ -739,7 +883,7 @@ export default function JournalistSource() {
                     {/* Backdrop */}
                     <div 
                         className="fixed inset-0 bg-black/60 backdrop-blur-sm transition-opacity" 
-                        onClick={() => setIsDetailModalOpen(false)}
+                        onClick={() => { setIsDetailModalOpen(false); setIsEditing(false); }}
                     />
                     
                     {/* Modal Content */}
@@ -748,161 +892,380 @@ export default function JournalistSource() {
                         <div className="absolute -right-24 -top-24 h-72 w-72 rounded-full bg-gradient-to-br from-indigo-500/10 to-purple-500/10 blur-3xl pointer-events-none" />
                         
                         <button
-                            onClick={() => setIsDetailModalOpen(false)}
+                            onClick={() => { setIsDetailModalOpen(false); setIsEditing(false); }}
                             className="absolute right-4 top-4 p-2 text-gray-400 hover:text-gray-600 dark:hover:text-white rounded-xl hover:bg-gray-100 dark:hover:bg-gray-800 transition-all cursor-pointer z-10"
                         >
                             <X className="h-5 w-5" />
                         </button>
 
-                        {/* Profile Header */}
-                        <div className="relative flex flex-col sm:flex-row items-start sm:items-center gap-5 border-b border-slate-100 dark:border-slate-800 pb-6 mb-6">
-                            <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-indigo-500 to-purple-650 flex items-center justify-center text-white font-extrabold text-2xl shadow-md shrink-0">
-                                {selectedJournalist.name.charAt(0)}
-                            </div>
-                            <div className="space-y-1">
-                                <h2 className="text-2xl font-bold text-gray-900 dark:text-white">
-                                    {selectedJournalist.name}
-                                </h2>
-                                <div className="flex flex-wrap items-center gap-2">
-                                    <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-semibold bg-indigo-50 dark:bg-indigo-950/40 text-indigo-650 dark:text-indigo-405">
-                                        <Building2 className="h-3.5 w-3.5" />
-                                        {selectedJournalist.publication}
-                                    </span>
-                                    <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-semibold bg-purple-50 dark:bg-purple-950/40 text-purple-600 dark:text-purple-400">
-                                        <Tag className="h-3.5 w-3.5" />
-                                        {selectedJournalist.category}
-                                    </span>
-                                </div>
-                                <p className="text-sm font-semibold text-gray-500 dark:text-gray-400 pt-0.5">
-                                    {selectedJournalist.role}
-                                </p>
-                            </div>
-                        </div>
-
-                        {/* Contact Details Grid */}
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 relative z-10 mb-6">
-                            {/* Left Side: Details Card Block */}
-                            <div className="space-y-5 bg-white/40 dark:bg-slate-850/40 rounded-2xl p-5 border border-slate-100/50 dark:border-slate-800/50">
-                                <h3 className="font-bold text-xs text-gray-900 dark:text-white uppercase tracking-wider">
-                                    Contact Information
-                                </h3>
-                                
-                                {/* Email */}
-                                <div className="flex items-center justify-between group/row">
-                                    <div className="flex items-center gap-3 min-w-0">
-                                        <div className="p-2 rounded-lg bg-indigo-50 dark:bg-indigo-950/30 text-indigo-600 dark:text-indigo-400 shrink-0">
-                                            <Mail className="h-4.5 w-4.5" />
+                        {isEditing ? (
+                            <>
+                                {/* Profile Header (Edit Mode) */}
+                                <div className="relative flex flex-col sm:flex-row items-start sm:items-center gap-5 border-b border-slate-100 dark:border-slate-800 pb-6 mb-6">
+                                    <JournalistAvatar journalist={selectedJournalist} size="lg" />
+                                    <div className="space-y-2 w-full">
+                                        <div>
+                                            <label className="block text-[9px] text-gray-450 uppercase font-bold mb-1">Journalist Name</label>
+                                            <input 
+                                                type="text" 
+                                                value={editData.name || ''} 
+                                                onChange={(e) => setEditData({...editData, name: e.target.value})} 
+                                                className="w-full max-w-md px-3.5 py-2 rounded-xl border border-gray-200 dark:border-gray-800 bg-white dark:bg-slate-950 font-bold text-sm text-slate-800 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-indigo-500/50" 
+                                            />
                                         </div>
-                                        <div className="min-w-0">
-                                            <p className="text-[9px] text-gray-450 uppercase font-bold">Email Address</p>
-                                            <p className="text-xs font-bold text-gray-800 dark:text-gray-205 truncate">
-                                                {selectedJournalist.email || 'N/A'}
-                                            </p>
+                                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                                            <div>
+                                                <label className="block text-[9px] text-gray-455 uppercase font-bold mb-1">Role / Title</label>
+                                                <input 
+                                                    type="text" 
+                                                    value={editData.role || ''} 
+                                                    onChange={(e) => setEditData({...editData, role: e.target.value})} 
+                                                    className="w-full px-3.5 py-2 rounded-xl border border-gray-200 dark:border-gray-800 bg-white dark:bg-slate-950 font-bold text-xs text-slate-800 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-indigo-500/50" 
+                                                />
+                                            </div>
+                                            <div>
+                                                <label className="block text-[9px] text-gray-455 uppercase font-bold mb-1">Outlet / Publication</label>
+                                                <input 
+                                                    type="text" 
+                                                    value={editData.publication || ''} 
+                                                    onChange={(e) => setEditData({...editData, publication: e.target.value})} 
+                                                    className="w-full px-3.5 py-2 rounded-xl border border-gray-200 dark:border-gray-800 bg-white dark:bg-slate-950 font-bold text-xs text-slate-800 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-indigo-500/50" 
+                                                />
+                                            </div>
                                         </div>
                                     </div>
-                                    {selectedJournalist.email && (
-                                        <button
-                                            onClick={() => handleCopy(selectedJournalist.email, 'email')}
-                                            className="p-1.5 rounded-lg text-gray-400 hover:text-indigo-600 hover:bg-indigo-50 dark:hover:bg-indigo-950/30 transition-all duration-200 cursor-pointer shrink-0"
-                                            title="Copy Email"
-                                        >
-                                            {copiedField === 'email' ? <Check className="h-4 w-4 text-green-500" /> : <Copy className="h-4 w-4" />}
-                                        </button>
-                                    )}
                                 </div>
 
-                                {/* Phone */}
-                                <div className="flex items-center justify-between group/row">
-                                    <div className="flex items-center gap-3 min-w-0">
-                                        <div className="p-2 rounded-lg bg-indigo-50 dark:bg-indigo-950/30 text-indigo-600 dark:text-indigo-400 shrink-0">
-                                            <Phone className="h-4.5 w-4.5" />
+                                {/* Contact Details Grid (Edit Mode) */}
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-6 relative z-10 mb-6">
+                                    <div className="space-y-4 bg-white/40 dark:bg-slate-850/40 rounded-2xl p-5 border border-slate-100/50 dark:border-slate-800/50">
+                                        <h3 className="font-bold text-xs text-gray-900 dark:text-white uppercase tracking-wider">
+                                            Contact Information
+                                        </h3>
+                                        
+                                        <div>
+                                            <label className="block text-[9px] text-gray-450 uppercase font-bold mb-1">Email Address</label>
+                                            <input 
+                                                type="email" 
+                                                value={editData.email || ''} 
+                                                onChange={(e) => setEditData({...editData, email: e.target.value})} 
+                                                className="w-full px-3.5 py-2 rounded-xl border border-gray-200 dark:border-gray-800 bg-white dark:bg-slate-950 font-bold text-xs text-slate-800 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-indigo-500/50" 
+                                            />
                                         </div>
-                                        <div className="min-w-0">
-                                            <p className="text-[9px] text-gray-455 uppercase font-bold">Phone Number</p>
-                                            <p className="text-xs font-bold text-gray-800 dark:text-gray-205 truncate">
-                                                {selectedJournalist.phone || 'N/A'}
-                                            </p>
-                                        </div>
-                                    </div>
-                                    {selectedJournalist.phone && (
-                                        <button
-                                            onClick={() => handleCopy(selectedJournalist.phone, 'phone')}
-                                            className="p-1.5 rounded-lg text-gray-400 hover:text-indigo-600 hover:bg-indigo-50 dark:hover:bg-indigo-950/30 transition-all duration-200 cursor-pointer shrink-0"
-                                            title="Copy Phone"
-                                        >
-                                            {copiedField === 'phone' ? <Check className="h-4 w-4 text-green-500" /> : <Copy className="h-4 w-4" />}
-                                        </button>
-                                    )}
-                                </div>
 
-                                {/* Address */}
-                                <div className="flex items-center justify-between group/row">
-                                    <div className="flex items-center gap-3 min-w-0">
-                                        <div className="p-2 rounded-lg bg-indigo-50 dark:bg-indigo-950/30 text-indigo-600 dark:text-indigo-400 shrink-0">
-                                            <MapPin className="h-4.5 w-4.5" />
+                                        <div>
+                                            <label className="block text-[9px] text-gray-455 uppercase font-bold mb-1">Phone Number</label>
+                                            <input 
+                                                type="text" 
+                                                value={editData.phone || ''} 
+                                                onChange={(e) => setEditData({...editData, phone: e.target.value})} 
+                                                className="w-full px-3.5 py-2 rounded-xl border border-gray-200 dark:border-gray-800 bg-white dark:bg-slate-950 font-bold text-xs text-slate-800 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-indigo-500/50" 
+                                            />
                                         </div>
-                                        <div className="min-w-0">
-                                            <p className="text-[9px] text-gray-455 uppercase font-bold">Location / Address</p>
-                                            <p className="text-xs font-bold text-gray-800 dark:text-gray-205 truncate">
-                                                {selectedJournalist.address || 'N/A'}
-                                            </p>
+
+                                        <div>
+                                            <label className="block text-[9px] text-gray-455 uppercase font-bold mb-1">Location / Address</label>
+                                            <input 
+                                                type="text" 
+                                                value={editData.address || ''} 
+                                                onChange={(e) => setEditData({...editData, address: e.target.value})} 
+                                                className="w-full px-3.5 py-2 rounded-xl border border-gray-200 dark:border-gray-800 bg-white dark:bg-slate-950 font-bold text-xs text-slate-800 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-indigo-500/50" 
+                                            />
                                         </div>
                                     </div>
-                                    {selectedJournalist.address && (
-                                        <button
-                                            onClick={() => handleCopy(selectedJournalist.address, 'address')}
-                                            className="p-1.5 rounded-lg text-gray-400 hover:text-indigo-600 hover:bg-indigo-50 dark:hover:bg-indigo-950/30 transition-all duration-200 cursor-pointer shrink-0"
-                                            title="Copy Address"
-                                        >
-                                            {copiedField === 'address' ? <Check className="h-4 w-4 text-green-500" /> : <Copy className="h-4 w-4" />}
-                                        </button>
-                                    )}
-                                </div>
-                            </div>
 
-                            {/* Right Side: Brief / Bio & Pitch actions */}
-                            <div className="flex flex-col justify-between space-y-5 bg-white/40 dark:bg-slate-850/40 rounded-2xl p-5 border border-slate-100/50 dark:border-slate-800/50">
-                                <div className="space-y-3">
-                                    <h3 className="font-bold text-xs text-gray-900 dark:text-white uppercase tracking-wider flex items-center gap-1.5">
-                                        <Sparkles className="h-4 w-4 text-indigo-500" />
-                                        Outreach Insights
-                                    </h3>
-                                    <p className="text-xs text-gray-650 dark:text-slate-350 leading-relaxed font-semibold">
-                                        {selectedJournalist.bio || "No custom bio or pitching insight available for this contact."}
-                                    </p>
+                                    {/* Right Side: Bio & Pitch (Edit Mode) */}
+                                    <div className="space-y-4 bg-white/40 dark:bg-slate-850/40 rounded-2xl p-5 border border-slate-100/50 dark:border-slate-800/50">
+                                        <h3 className="font-bold text-xs text-gray-900 dark:text-white uppercase tracking-wider">
+                                            Socials & Category
+                                        </h3>
+                                        <div className="grid grid-cols-2 gap-3">
+                                            <div>
+                                                <label className="block text-[9px] text-gray-455 uppercase font-bold mb-1">Category / Beat</label>
+                                                <input 
+                                                    type="text" 
+                                                    value={editData.category || ''} 
+                                                    onChange={(e) => setEditData({...editData, category: e.target.value})} 
+                                                    className="w-full px-3.5 py-2 rounded-xl border border-gray-200 dark:border-gray-800 bg-white dark:bg-slate-950 font-bold text-xs text-slate-800 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-indigo-500/50" 
+                                                />
+                                            </div>
+                                            <div>
+                                                <label className="block text-[9px] text-gray-455 uppercase font-bold mb-1">Twitter Handle</label>
+                                                <input 
+                                                    type="text" 
+                                                    value={editData.twitter || ''} 
+                                                    onChange={(e) => setEditData({...editData, twitter: e.target.value})} 
+                                                    className="w-full px-3.5 py-2 rounded-xl border border-gray-200 dark:border-gray-800 bg-white dark:bg-slate-950 font-bold text-xs text-slate-800 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-indigo-500/50" 
+                                                />
+                                            </div>
+                                        </div>
+
+                                        <div>
+                                            <label className="block text-[9px] text-gray-455 uppercase font-bold mb-1">LinkedIn Profile Link</label>
+                                            <input 
+                                                type="text" 
+                                                value={editData.linkedin || ''} 
+                                                onChange={(e) => setEditData({...editData, linkedin: e.target.value})} 
+                                                className="w-full px-3.5 py-2 rounded-xl border border-gray-200 dark:border-gray-800 bg-white dark:bg-slate-950 font-bold text-xs text-slate-800 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-indigo-500/50" 
+                                            />
+                                        </div>
+
+                                        <div>
+                                            <label className="block text-[9px] text-gray-455 uppercase font-bold mb-1">Outreach Insights / Bio</label>
+                                            <textarea 
+                                                value={editData.bio || ''} 
+                                                onChange={(e) => setEditData({...editData, bio: e.target.value})} 
+                                                className="w-full p-3 rounded-xl border border-gray-200 dark:border-gray-800 bg-white dark:bg-slate-950 font-bold text-xs text-slate-800 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-indigo-500/50 resize-none" 
+                                                rows="3"
+                                            />
+                                        </div>
+                                    </div>
                                 </div>
 
-                                {/* Action button */}
-                                {selectedJournalist.email && (
-                                    <a
-                                        href={`mailto:${selectedJournalist.email}?subject=Exclusive pitch from Anexar`}
-                                        className="inline-flex items-center justify-center gap-2 px-4 py-3 rounded-xl text-indigo-600 dark:text-indigo-400 font-bold border border-indigo-200 dark:border-indigo-800/60 bg-indigo-50/50 hover:bg-indigo-50 dark:bg-indigo-950/20 dark:hover:bg-indigo-950/40 hover:-translate-y-0.5 transition-all duration-200 text-xs tracking-wider uppercase cursor-pointer"
+                                {/* Modal Footer Controls (Edit Mode) */}
+                                <div className="pt-4 border-t border-slate-100 dark:border-slate-800 flex justify-between gap-3">
+                                    <button
+                                        onClick={() => setIsEditing(false)}
+                                        className="px-6 py-3 border border-slate-200 dark:border-slate-800 rounded-xl font-bold text-xs tracking-wider uppercase text-slate-700 dark:text-slate-350 hover:bg-slate-50 dark:hover:bg-slate-850 transition-all cursor-pointer text-center"
                                     >
-                                        <Mail className="h-4 w-4" />
-                                        <span>Draft Pitch Email</span>
-                                    </a>
-                                )}
-                            </div>
-                        </div>
+                                        Cancel
+                                    </button>
+                                    <button
+                                        onClick={handleSaveEdit}
+                                        className="px-6 py-3 text-white font-bold text-xs tracking-wider uppercase rounded-xl bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-500 hover:to-purple-500 shadow-md transition-all cursor-pointer text-center"
+                                    >
+                                        Save Changes
+                                    </button>
+                                </div>
+                            </>
+                        ) : (
+                            <>
+                                {/* Profile Header (View Mode) */}
+                                <div className="relative flex flex-col sm:flex-row items-start sm:items-center gap-5 border-b border-slate-100 dark:border-slate-800 pb-6 mb-6">
+                                    <JournalistAvatar 
+                                        journalist={selectedJournalist} 
+                                        size="lg" 
+                                        onClick={() => {
+                                            if (selectedJournalist.photo) {
+                                                const PHOTO_BASE_URL = 'https://storage.googleapis.com/skribe-media-prod/JournoImage/';
+                                                setMaximizedPhoto(`${PHOTO_BASE_URL}${selectedJournalist.photo}`);
+                                            }
+                                        }}
+                                    />
+                                    <div className="space-y-1">
+                                        <h2 className="text-2xl font-bold text-gray-900 dark:text-white">
+                                            {selectedJournalist.name}
+                                        </h2>
+                                        <div className="flex flex-wrap items-center gap-2">
+                                            <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-semibold bg-indigo-50 dark:bg-indigo-950/40 text-indigo-650 dark:text-indigo-405">
+                                                <Building2 className="h-3.5 w-3.5" />
+                                                {selectedJournalist.publication}
+                                            </span>
+                                            <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-semibold bg-purple-50 dark:bg-purple-950/40 text-purple-600 dark:text-purple-400">
+                                                <Tag className="h-3.5 w-3.5" />
+                                                {getCategoryString(selectedJournalist.category)}
+                                            </span>
+                                        </div>
+                                        <p className="text-sm font-semibold text-gray-500 dark:text-gray-400 pt-0.5">
+                                            {selectedJournalist.role}
+                                        </p>
+                                    </div>
+                                </div>
 
-                        {/* Modal Footer Controls */}
-                        <div className="pt-4 border-t border-slate-100 dark:border-slate-800 flex justify-between gap-3">
-                            <button
-                                onClick={() => {
-                                    handleDeleteJournalist(selectedJournalist.id);
-                                }}
-                                className="px-4.5 py-3 border border-red-200 dark:border-red-950/50 rounded-xl font-bold text-xs tracking-wider uppercase text-red-500 hover:bg-red-50 dark:hover:bg-red-950/20 transition-all cursor-pointer flex items-center gap-1.5"
-                            >
-                                <Trash2 size={14} />
-                                <span>Delete Contact</span>
-                            </button>
-                            <button
-                                onClick={() => setIsDetailModalOpen(false)}
-                                className="px-6 py-3 text-white font-bold text-xs tracking-wider uppercase rounded-xl bg-slate-900 hover:bg-slate-850 dark:bg-slate-800 dark:hover:bg-slate-750 shadow-md transition-all cursor-pointer text-center"
-                            >
-                                Close Profile
-                            </button>
-                        </div>
+                                {/* Contact Details Grid (View Mode) */}
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-6 relative z-10 mb-6">
+                                    {/* Left Side: Details Card Block */}
+                                    <div className="space-y-5 bg-white/40 dark:bg-slate-850/40 rounded-2xl p-5 border border-slate-100/50 dark:border-slate-800/50">
+                                        <h3 className="font-bold text-xs text-gray-900 dark:text-white uppercase tracking-wider">
+                                            Contact Information
+                                        </h3>
+                                        
+                                        {/* Email */}
+                                        <div className="flex items-center justify-between group/row">
+                                            <div className="flex items-center gap-3 min-w-0">
+                                                <div className="p-2 rounded-lg bg-indigo-50 dark:bg-indigo-950/30 text-indigo-600 dark:text-indigo-400 shrink-0">
+                                                    <Mail className="h-4.5 w-4.5" />
+                                                </div>
+                                                <div className="min-w-0">
+                                                    <p className="text-[9px] text-gray-450 uppercase font-bold">Email Address</p>
+                                                    <p className="text-xs font-bold text-gray-800 dark:text-gray-205 truncate">
+                                                        {selectedJournalist.email || 'N/A'}
+                                                    </p>
+                                                </div>
+                                            </div>
+                                            {selectedJournalist.email && (
+                                                <button
+                                                    onClick={() => handleCopy(selectedJournalist.email, 'email')}
+                                                    className="p-1.5 rounded-lg text-gray-400 hover:text-indigo-600 hover:bg-indigo-50 dark:hover:bg-indigo-950/30 transition-all duration-200 cursor-pointer shrink-0"
+                                                    title="Copy Email"
+                                                >
+                                                    {copiedField === 'email' ? <Check className="h-4 w-4 text-green-500" /> : <Copy className="h-4 w-4" />}
+                                                </button>
+                                            )}
+                                        </div>
+
+                                        {/* Phone */}
+                                        <div className="flex items-center justify-between group/row">
+                                            <div className="flex items-center gap-3 min-w-0">
+                                                <div className="p-2 rounded-lg bg-indigo-50 dark:bg-indigo-950/30 text-indigo-600 dark:text-indigo-400 shrink-0">
+                                                    <Phone className="h-4.5 w-4.5" />
+                                                </div>
+                                                <div className="min-w-0">
+                                                    <p className="text-[9px] text-gray-450 uppercase font-bold">Phone Number</p>
+                                                    <p className="text-xs font-bold text-gray-800 dark:text-gray-205 truncate">
+                                                        {selectedJournalist.phone || 'N/A'}
+                                                    </p>
+                                                </div>
+                                            </div>
+                                            {selectedJournalist.phone && (
+                                                <button
+                                                    onClick={() => handleCopy(selectedJournalist.phone, 'phone')}
+                                                    className="p-1.5 rounded-lg text-gray-400 hover:text-indigo-600 hover:bg-indigo-50 dark:hover:bg-indigo-950/30 transition-all duration-200 cursor-pointer shrink-0"
+                                                    title="Copy Phone"
+                                                >
+                                                    {copiedField === 'phone' ? <Check className="h-4 w-4 text-green-500" /> : <Copy className="h-4 w-4" />}
+                                                </button>
+                                            )}
+                                        </div>
+
+                                        {/* Address */}
+                                        <div className="flex items-center justify-between group/row">
+                                            <div className="flex items-center gap-3 min-w-0">
+                                                <div className="p-2 rounded-lg bg-indigo-50 dark:bg-indigo-950/30 text-indigo-650 dark:text-indigo-400 shrink-0">
+                                                    <MapPin className="h-4.5 w-4.5" />
+                                                </div>
+                                                <div className="min-w-0">
+                                                    <p className="text-[9px] text-gray-455 uppercase font-bold">Location / Address</p>
+                                                    <p className="text-xs font-bold text-gray-800 dark:text-gray-205 truncate">
+                                                        {getLocationString(selectedJournalist.address) || 'N/A'}
+                                                    </p>
+                                                </div>
+                                            </div>
+                                            {selectedJournalist.address && (
+                                                <button
+                                                    onClick={() => handleCopy(getLocationString(selectedJournalist.address), 'address')}
+                                                    className="p-1.5 rounded-lg text-gray-400 hover:text-indigo-600 hover:bg-indigo-50 dark:hover:bg-indigo-950/30 transition-all duration-200 cursor-pointer shrink-0"
+                                                    title="Copy Address"
+                                                >
+                                                    {copiedField === 'address' ? <Check className="h-4 w-4 text-green-500" /> : <Copy className="h-4 w-4" />}
+                                                </button>
+                                            )}
+                                        </div>
+
+                                        {/* LinkedIn */}
+                                        {selectedJournalist.linkedin && (
+                                            <div className="flex items-center justify-between group/row">
+                                                <div className="flex items-center gap-3 min-w-0">
+                                                    <div className="p-2 rounded-lg bg-indigo-50 dark:bg-indigo-950/30 text-indigo-600 dark:text-indigo-400 shrink-0">
+                                                        <Linkedin className="h-4.5 w-4.5" />
+                                                    </div>
+                                                    <div className="min-w-0">
+                                                        <p className="text-[9px] text-gray-455 uppercase font-bold">LinkedIn</p>
+                                                        <a 
+                                                            href={selectedJournalist.linkedin} 
+                                                            target="_blank" 
+                                                            rel="noopener noreferrer" 
+                                                            className="text-xs font-bold text-indigo-600 dark:text-indigo-400 hover:underline truncate block"
+                                                        >
+                                                            View Profile
+                                                        </a>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        )}
+
+                                        {/* Twitter */}
+                                        {selectedJournalist.twitter && (
+                                            <div className="flex items-center justify-between group/row">
+                                                <div className="flex items-center gap-3 min-w-0">
+                                                    <div className="p-2 rounded-lg bg-indigo-50 dark:bg-indigo-950/30 text-indigo-600 dark:text-indigo-400 shrink-0">
+                                                        <Twitter className="h-4.5 w-4.5" />
+                                                    </div>
+                                                    <div className="min-w-0">
+                                                        <p className="text-[9px] text-gray-455 uppercase font-bold">Twitter</p>
+                                                        <a 
+                                                            href={selectedJournalist.twitter.startsWith('http') ? selectedJournalist.twitter : `https://twitter.com/${selectedJournalist.twitter.replace('@', '')}`} 
+                                                            target="_blank" 
+                                                            rel="noopener noreferrer" 
+                                                            className="text-xs font-bold text-indigo-600 dark:text-indigo-400 hover:underline truncate block"
+                                                        >
+                                                            {selectedJournalist.twitter}
+                                                        </a>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        )}
+                                    </div>
+
+                                    {/* Right Side: Brief / Bio & Pitch actions */}
+                                    <div className="flex flex-col justify-between space-y-5 bg-white/40 dark:bg-slate-850/40 rounded-2xl p-5 border border-slate-100/50 dark:border-slate-800/50">
+                                        <div className="space-y-3">
+                                            <h3 className="font-bold text-xs text-gray-900 dark:text-white uppercase tracking-wider flex items-center gap-1.5">
+                                                <Sparkles className="h-4 w-4 text-indigo-500" />
+                                                Outreach Insights
+                                            </h3>
+                                            <p className="text-xs text-gray-650 dark:text-slate-350 leading-relaxed font-semibold">
+                                                {selectedJournalist.bio || "No custom bio or pitching insight available for this contact."}
+                                            </p>
+                                        </div>
+
+                                        {/* Action button */}
+                                        {selectedJournalist.email && (
+                                            <a
+                                                href={`mailto:${selectedJournalist.email}?subject=Exclusive pitch from Anexar`}
+                                                className="inline-flex items-center justify-center gap-2 px-4 py-3 rounded-xl text-indigo-600 dark:text-indigo-400 font-bold border border-indigo-200 dark:border-indigo-800/60 bg-indigo-50/50 hover:bg-indigo-50 dark:bg-indigo-950/20 dark:hover:bg-indigo-950/40 hover:-translate-y-0.5 transition-all duration-200 text-xs tracking-wider uppercase cursor-pointer"
+                                            >
+                                                <Mail className="h-4 w-4" />
+                                                <span>Draft Pitch Email</span>
+                                            </a>
+                                        )}
+                                    </div>
+                                </div>
+
+                                {/* Modal Footer Controls */}
+                                <div className="pt-4 border-t border-slate-100 dark:border-slate-800 flex justify-between gap-3">
+                                    <div className="flex gap-2">
+                                        <button
+                                            onClick={() => {
+                                                handleDeleteJournalist(selectedJournalist.id);
+                                            }}
+                                            className="px-4.5 py-3 border border-red-200 dark:border-red-950/50 rounded-xl font-bold text-xs tracking-wider uppercase text-red-500 hover:bg-red-50 dark:hover:bg-red-950/20 transition-all cursor-pointer flex items-center gap-1.5"
+                                        >
+                                            <Trash2 size={14} />
+                                            <span>Delete</span>
+                                        </button>
+                                        <button
+                                            onClick={() => {
+                                                setEditData({ 
+                                                    ...selectedJournalist,
+                                                    name: String(selectedJournalist.name || ''),
+                                                    role: String(selectedJournalist.role || ''),
+                                                    publication: String(selectedJournalist.publication || ''),
+                                                    category: getCategoryString(selectedJournalist.category),
+                                                    email: String(selectedJournalist.email || ''),
+                                                    phone: String(selectedJournalist.phone || ''),
+                                                    address: getLocationString(selectedJournalist.address),
+                                                    linkedin: String(selectedJournalist.linkedin || ''),
+                                                    twitter: String(selectedJournalist.twitter || ''),
+                                                    bio: String(selectedJournalist.bio || '')
+                                                });
+                                                setIsEditing(true);
+                                            }}
+                                            className="px-4.5 py-3 border border-slate-200 dark:border-slate-800 rounded-xl font-bold text-xs tracking-wider uppercase text-slate-700 dark:text-slate-350 hover:bg-slate-50 dark:hover:bg-slate-850 transition-all cursor-pointer flex items-center gap-1.5"
+                                        >
+                                            <Edit2 size={14} />
+                                            <span>Edit Info</span>
+                                        </button>
+                                    </div>
+                                    <button
+                                        onClick={() => { setIsDetailModalOpen(false); setIsEditing(false); }}
+                                        className="px-6 py-3 text-white font-bold text-xs tracking-wider uppercase rounded-xl bg-slate-900 hover:bg-slate-850 dark:bg-slate-800 dark:hover:bg-slate-750 shadow-md transition-all cursor-pointer text-center"
+                                    >
+                                        Close Profile
+                                    </button>
+                                </div>
+                            </>
+                        )}
                     </div>
                 </div>
             )}
@@ -984,37 +1347,73 @@ export default function JournalistSource() {
                                 </div>
                             </div>
 
-                            <div>
-                                <label className="block text-3xs font-extrabold uppercase tracking-wider text-gray-455 mb-1">Email Address</label>
-                                <input
-                                    type="email"
-                                    value={newJournalist.email}
-                                    onChange={(e) => setNewJournalist({ ...newJournalist, email: e.target.value })}
-                                    placeholder="e.g. liam.foster@outlet.com"
-                                    className="w-full px-4 py-2.5 rounded-xl border border-gray-200 dark:border-gray-700 bg-white/50 dark:bg-gray-800/50 text-gray-900 dark:text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-indigo-500/50 text-sm transition-all"
-                                />
+                             <div className="grid grid-cols-2 gap-4">
+                                <div>
+                                    <label className="block text-3xs font-extrabold uppercase tracking-wider text-gray-455 mb-1">Email Address</label>
+                                    <input
+                                        type="email"
+                                        value={newJournalist.email}
+                                        onChange={(e) => setNewJournalist({ ...newJournalist, email: e.target.value })}
+                                        placeholder="e.g. liam.foster@outlet.com"
+                                        className="w-full px-4 py-2.5 rounded-xl border border-gray-200 dark:border-gray-700 bg-white/50 dark:bg-gray-800/50 text-gray-900 dark:text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-indigo-500/50 text-sm transition-all"
+                                    />
+                                </div>
+                                <div>
+                                    <label className="block text-3xs font-extrabold uppercase tracking-wider text-gray-455 mb-1">Phone Number</label>
+                                    <input
+                                        type="text"
+                                        value={newJournalist.phone}
+                                        onChange={(e) => setNewJournalist({ ...newJournalist, phone: e.target.value })}
+                                        placeholder="e.g. +1 (555) 901-2345"
+                                        className="w-full px-4 py-2.5 rounded-xl border border-gray-200 dark:border-gray-700 bg-white/50 dark:bg-gray-800/50 text-gray-900 dark:text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-indigo-500/50 text-sm transition-all"
+                                    />
+                                </div>
                             </div>
 
-                            <div>
-                                <label className="block text-3xs font-extrabold uppercase tracking-wider text-gray-455 mb-1">Phone Number</label>
-                                <input
-                                    type="text"
-                                    value={newJournalist.phone}
-                                    onChange={(e) => setNewJournalist({ ...newJournalist, phone: e.target.value })}
-                                    placeholder="e.g. +1 (555) 901-2345"
-                                    className="w-full px-4 py-2.5 rounded-xl border border-gray-200 dark:border-gray-700 bg-white/50 dark:bg-gray-800/50 text-gray-900 dark:text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-indigo-500/50 text-sm transition-all"
-                                />
+                            <div className="grid grid-cols-2 gap-4">
+                                <div>
+                                    <label className="block text-3xs font-extrabold uppercase tracking-wider text-gray-455 mb-1">Address / Location</label>
+                                    <input
+                                        type="text"
+                                        value={newJournalist.address}
+                                        onChange={(e) => setNewJournalist({ ...newJournalist, address: e.target.value })}
+                                        placeholder="e.g. Austin Bureau, TX"
+                                        className="w-full px-4 py-2.5 rounded-xl border border-gray-200 dark:border-gray-700 bg-white/50 dark:bg-gray-800/50 text-gray-900 dark:text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-indigo-500/50 text-sm transition-all"
+                                    />
+                                </div>
+                                <div>
+                                    <label className="block text-3xs font-extrabold uppercase tracking-wider text-gray-455 mb-1">Photo Filename / URL</label>
+                                    <input
+                                        type="text"
+                                        value={newJournalist.photo}
+                                        onChange={(e) => setNewJournalist({ ...newJournalist, photo: e.target.value })}
+                                        placeholder="e.g. profile.jpg"
+                                        className="w-full px-4 py-2.5 rounded-xl border border-gray-200 dark:border-gray-700 bg-white/50 dark:bg-gray-800/50 text-gray-900 dark:text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-indigo-500/50 text-sm transition-all"
+                                    />
+                                </div>
                             </div>
 
-                            <div>
-                                <label className="block text-3xs font-extrabold uppercase tracking-wider text-gray-455 mb-1">Address / Location</label>
-                                <input
-                                    type="text"
-                                    value={newJournalist.address}
-                                    onChange={(e) => setNewJournalist({ ...newJournalist, address: e.target.value })}
-                                    placeholder="e.g. Austin Bureau, Austin, TX"
-                                    className="w-full px-4 py-2.5 rounded-xl border border-gray-200 dark:border-gray-700 bg-white/50 dark:bg-gray-800/50 text-gray-900 dark:text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-indigo-500/50 text-sm transition-all"
-                                />
+                            <div className="grid grid-cols-2 gap-4">
+                                <div>
+                                    <label className="block text-3xs font-extrabold uppercase tracking-wider text-gray-455 mb-1">LinkedIn Profile URL</label>
+                                    <input
+                                        type="text"
+                                        value={newJournalist.linkedin}
+                                        onChange={(e) => setNewJournalist({ ...newJournalist, linkedin: e.target.value })}
+                                        placeholder="https://linkedin.com/in/..."
+                                        className="w-full px-4 py-2.5 rounded-xl border border-gray-200 dark:border-gray-700 bg-white/50 dark:bg-gray-800/50 text-gray-900 dark:text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-indigo-500/50 text-sm transition-all"
+                                    />
+                                </div>
+                                <div>
+                                    <label className="block text-3xs font-extrabold uppercase tracking-wider text-gray-455 mb-1">Twitter Handle / URL</label>
+                                    <input
+                                        type="text"
+                                        value={newJournalist.twitter}
+                                        onChange={(e) => setNewJournalist({ ...newJournalist, twitter: e.target.value })}
+                                        placeholder="@twitterhandle"
+                                        className="w-full px-4 py-2.5 rounded-xl border border-gray-200 dark:border-gray-700 bg-white/50 dark:bg-gray-800/50 text-gray-900 dark:text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-indigo-500/50 text-sm transition-all"
+                                    />
+                                </div>
                             </div>
 
                             <div>
@@ -1044,6 +1443,29 @@ export default function JournalistSource() {
                                 </button>
                             </div>
                         </form>
+                    </div>
+                </div>
+            )}
+
+            {/* Maximized Photo Modal */}
+            {maximizedPhoto && (
+                <div className="fixed inset-0 z-50 flex items-center justify-center p-4 animate-in fade-in duration-200">
+                    <div 
+                        className="fixed inset-0 bg-black/80 backdrop-blur-md transition-opacity cursor-zoom-out" 
+                        onClick={() => setMaximizedPhoto(null)}
+                    />
+                    <div className="relative max-w-xs w-full bg-slate-900 border border-slate-800 rounded-3xl overflow-hidden shadow-2xl p-2 z-10 flex flex-col items-center animate-in zoom-in-95 duration-200">
+                        <button
+                            onClick={() => setMaximizedPhoto(null)}
+                            className="absolute right-4 top-4 p-2 text-white/70 hover:text-white rounded-xl hover:bg-white/10 transition-all cursor-pointer z-10"
+                        >
+                            <X className="h-5 w-5" />
+                        </button>
+                        <img 
+                            src={maximizedPhoto} 
+                            alt="Maximized profile"
+                            className="w-full h-auto object-contain rounded-2xl"
+                        />
                     </div>
                 </div>
             )}

@@ -67,7 +67,7 @@ function buildExtractionPrompt(sector, organicResults) {
         listText,
         '',
         'Respond ONLY with JSON in this exact shape, no other text:',
-        '{"events": [{"index": <number from list>, "event_name": "...", "event_type": "Awards" or "Event", "status": "NOMINATIONS_OPEN" or "UPCOMING" or "CONCLUDED", "nomination_deadline": "" or "<date as stated>", "confidence": <0-100 integer, how clearly this is a real, current award/event>}]}',
+        '{"events": [{"index": <number from list>, "event_name": "...", "event_type": "Awards" or "Event", "status": "NOMINATIONS_OPEN" or "UPCOMING" or "CONCLUDED", "event_date": "" or "<DD/MM/YYYY date if present in text, else empty>", "nomination_deadline": "" or "<date as stated>", "confidence": <0-100 integer, how clearly this is a real, current award/event>}]}',
         'Omit any result that is not a genuine award/event listing.'
     ].join('\n');
 }
@@ -163,7 +163,7 @@ exports.discoverEventsForSector = onRequest(
                     source_url: source.link,
                     source_title: source.title || '',
                     event_key: key,
-                    date: '',
+                    date: c.event_date || '',
                     venue: '',
                     organizer: '',
                     scraped_at: new Date().toISOString(),

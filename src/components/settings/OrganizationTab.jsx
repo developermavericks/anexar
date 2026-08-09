@@ -8,14 +8,11 @@ const OrganizationTab = () => {
 
     // Fallback if organization isn't in context yet
     const initialOrg = user.organization || {
-        companyName: 'Visionary Media Pvt Ltd',
-        industry: 'Fintech',
-        website: 'https://visionary.media',
+        companyName: 'The Mavericks Communications LLP',
+        industry: 'PR and Communications',
+        website: 'https://themavericksindia.com',
         companySize: '51-200',
-        headquarters: 'San Francisco, CA',
-        taxId: 'US-9988776655',
-        primaryContact: user.name,
-        secondaryContact: 'Jane Doe',
+        headquarters: 'New Delhi, India',
         logo: null
     };
 
@@ -164,16 +161,12 @@ const OrganizationTab = () => {
                     </div>
                     <div>
                         <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Industry</label>
-                        <select
+                        <input
+                            type="text"
                             value={formData.industry}
                             onChange={(e) => setFormData({ ...formData, industry: e.target.value })}
-                            className="w-full bg-white dark:bg-[#111827] border border-[#EAE8E4] dark:border-white/10 text-gray-900 dark:text-white rounded-xl px-4 py-2.5 focus:outline-none focus:border-amber-500 focus:ring-1 focus:ring-amber-500 transition-all font-medium cursor-pointer"
-                        >
-                            <option value="Fintech">Fintech</option>
-                            <option value="Healthcare">Healthcare</option>
-                            <option value="SaaS">B2B SaaS</option>
-                            <option value="E-commerce">E-commerce</option>
-                        </select>
+                            className="w-full bg-[#FDFBF7] dark:bg-[#0B0F19] border border-[#EAE8E4] dark:border-white/10 text-gray-900 dark:text-white rounded-xl px-4 py-2.5 focus:outline-none focus:border-amber-500 focus:ring-1 focus:ring-amber-500 transition-all font-medium"
+                        />
                     </div>
                     <div>
                         <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Website URL</label>
@@ -204,34 +197,6 @@ const OrganizationTab = () => {
                             type="text"
                             value={formData.headquarters}
                             onChange={(e) => setFormData({ ...formData, headquarters: e.target.value })}
-                            className="w-full bg-[#FDFBF7] dark:bg-[#0B0F19] border border-[#EAE8E4] dark:border-white/10 text-gray-900 dark:text-white rounded-xl px-4 py-2.5 focus:outline-none focus:border-amber-500 focus:ring-1 focus:ring-amber-500 transition-all font-medium"
-                        />
-                    </div>
-                    <div>
-                        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">GST / Tax ID</label>
-                        <input
-                            type="text"
-                            value={formData.taxId}
-                            onChange={(e) => setFormData({ ...formData, taxId: e.target.value })}
-                            className="w-full bg-[#FDFBF7] dark:bg-[#0B0F19] border border-[#EAE8E4] dark:border-white/10 text-gray-900 dark:text-white rounded-xl px-4 py-2.5 focus:outline-none focus:border-amber-500 focus:ring-1 focus:ring-amber-500 transition-all font-medium"
-                        />
-                    </div>
-                    <div></div> {/* Empty spacer */}
-                    <div>
-                        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Primary Contact</label>
-                        <input
-                            type="text"
-                            value={formData.primaryContact}
-                            onChange={(e) => setFormData({ ...formData, primaryContact: e.target.value })}
-                            className="w-full bg-[#FDFBF7] dark:bg-[#0B0F19] border border-[#EAE8E4] dark:border-white/10 text-gray-900 dark:text-white rounded-xl px-4 py-2.5 focus:outline-none focus:border-amber-500 focus:ring-1 focus:ring-amber-500 transition-all font-medium"
-                        />
-                    </div>
-                    <div>
-                        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Secondary Contact</label>
-                        <input
-                            type="text"
-                            value={formData.secondaryContact}
-                            onChange={(e) => setFormData({ ...formData, secondaryContact: e.target.value })}
                             className="w-full bg-[#FDFBF7] dark:bg-[#0B0F19] border border-[#EAE8E4] dark:border-white/10 text-gray-900 dark:text-white rounded-xl px-4 py-2.5 focus:outline-none focus:border-amber-500 focus:ring-1 focus:ring-amber-500 transition-all font-medium"
                         />
                     </div>

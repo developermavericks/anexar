@@ -3,22 +3,12 @@ import {
     User,
     Building2,
     Bell,
-    Shield,
-    CreditCard,
-    Blocks,
-    Sliders,
-    HelpCircle,
-    AlertOctagon
+    Shield
 } from 'lucide-react';
 import ProfileTab from '../../components/settings/ProfileTab';
 import OrganizationTab from '../../components/settings/OrganizationTab';
 import NotificationTab from '../../components/settings/NotificationTab';
 import SecurityTab from '../../components/settings/SecurityTab';
-import BillingTab from '../../components/settings/BillingTab';
-import IntegrationTab from '../../components/settings/IntegrationTab';
-import PreferencesTab from '../../components/settings/PreferencesTab';
-import HelpSupportTab from '../../components/settings/HelpSupportTab';
-import DangerZoneTab from '../../components/settings/DangerZoneTab';
 
 const Settings = () => {
     const [activeTab, setActiveTab] = useState('profile');
@@ -27,12 +17,7 @@ const Settings = () => {
         { id: 'profile', label: 'Profile', icon: User },
         { id: 'organization', label: 'Organization', icon: Building2 },
         { id: 'notifications', label: 'Notifications', icon: Bell },
-        { id: 'security', label: 'Security', icon: Shield },
-        { id: 'billing', label: 'Billing & Invoices', icon: CreditCard },
-        { id: 'integrations', label: 'Integrations', icon: Blocks },
-        { id: 'preferences', label: 'Preferences', icon: Sliders },
-        { id: 'help', label: 'Help & Support', icon: HelpCircle },
-        { id: 'danger', label: 'Danger Zone', icon: AlertOctagon, isDanger: true }
+        { id: 'security', label: 'Security', icon: Shield }
     ];
 
     const renderTabContent = () => {
@@ -41,11 +26,6 @@ const Settings = () => {
             case 'organization': return <OrganizationTab />;
             case 'notifications': return <NotificationTab />;
             case 'security': return <SecurityTab />;
-            case 'billing': return <BillingTab />;
-            case 'integrations': return <IntegrationTab />;
-            case 'preferences': return <PreferencesTab />;
-            case 'help': return <HelpSupportTab />;
-            case 'danger': return <DangerZoneTab />;
             default: return <ProfileTab />;
         }
     };

@@ -14,52 +14,74 @@ export const UserProvider = ({ children }) => {
         return savedTheme ? savedTheme : 'light';
     };
 
-    const [user, setUserState] = useState(() => ({
-        name: authUser?.name || "Visionary Media",
-        email: authUser?.email || "client@email.com",
-        role: authUser?.role?.toLowerCase() || "client",
-        clientBrand: "FUJIFILM",
-        plan: (authUser?.email ? localStorage.getItem('user_plan_' + authUser.email.toLowerCase()) : null) || "basic",
-        avatar: authUser?.picture || null,
-        theme: getInitialTheme(),
-        profile: {
-            phone: '+1 (555) 000-0000',
-            designation: ['employee', 'team', 'core', 'manager'].includes(authUser?.role?.toLowerCase()) ? 'Manager' : 'CEO',
-            timezone: 'UTC',
+    const [user, setUserState] = useState(() => {
+        const email = authUser?.email || "client@email.com";
+        const role = authUser?.role?.toLowerCase() || "client";
+        const title = authUser?.title;
+
+        let savedProfile = null;
+        try {
+            const stored = localStorage.getItem('user_profile_' + email.toLowerCase());
+            if (stored) {
+                savedProfile = JSON.parse(stored);
+            }
+        } catch (e) {}
+
+        const profile = savedProfile || {
+            phone: '+91 93040 47238',
+            designation: title || (['employee', 'team', 'core', 'manager'].includes(role) ? 'Management Trainee-Tech' : 'CEO'),
+            timezone: 'IST',
             language: 'en'
-        },
-        organization: {
-            companyName: ['employee', 'team', 'core', 'manager'].includes(authUser?.role?.toLowerCase()) ? 'Anexar Corp' : (authUser?.name || "Visionary Media Pvt Ltd"),
-            industry: "Fintech",
-            website: "https://visionary.media",
-            companySize: "51-200",
-            headquarters: "San Francisco, CA",
-            taxId: "US-9988776655",
-            primaryContact: authUser?.name || "Visionary Media",
-            secondaryContact: "Jane Doe",
-            logo: null
-        },
-        notifications: {
-            email: { campaign: true, press: true, events: false, performance: true, crisis: false },
-            app: { completion: true, goals: true, budget: false, team: true }
-        },
-        security: {
-            twoFactor: false
-        },
-        integrations: {
-            googleAnalytics: true,
-            slack: true,
-            hubspot: false,
-            mailchimp: false,
-            googleCalendar: true
-        }
-    }));
+        };
+
+        return {
+            name: authUser?.name || "The Mavericks",
+            email: email,
+            role: role,
+            clientBrand: "FUJIFILM",
+            plan: (authUser?.email ? localStorage.getItem('user_plan_' + authUser.email.toLowerCase()) : null) || "basic",
+            avatar: authUser?.picture || null,
+            theme: getInitialTheme(),
+            profile: profile,
+            organization: {
+                companyName: 'The Mavericks Communications LLP',
+                industry: "PR and Communications",
+                website: "https://themavericksindia.com",
+                companySize: "51-200",
+                headquarters: "New Delhi, India",
+                logo: null
+            },
+            notifications: {
+                email: { campaign: true, press: true, events: false, performance: true, crisis: false },
+                app: { completion: true, goals: true, budget: false, team: true }
+            },
+            security: {
+                twoFactor: false
+            },
+            integrations: {
+                googleAnalytics: true,
+                slack: true,
+                hubspot: false,
+                mailchimp: false,
+                googleCalendar: true
+            }
+        };
+    });
 
     // Update state when auth user changes (e.g. login/logout)
     React.useEffect(() => {
         if (authUser) {
             const email = authUser.email;
             const userPlan = (email ? localStorage.getItem('user_plan_' + email.toLowerCase()) : null) || "basic";
+
+            let savedProfile = null;
+            try {
+                const stored = localStorage.getItem('user_profile_' + email.toLowerCase());
+                if (stored) {
+                    savedProfile = JSON.parse(stored);
+                }
+            } catch (e) {}
+
             setUserState(prev => ({
                 ...prev,
                 name: authUser.name,
@@ -67,14 +89,16 @@ export const UserProvider = ({ children }) => {
                 role: authUser.role?.toLowerCase() || 'client',
                 plan: userPlan,
                 avatar: authUser.picture || null,
-                profile: {
-                    ...prev.profile,
-                    designation: ['employee', 'team', 'core', 'manager'].includes(authUser.role?.toLowerCase()) ? 'Manager' : 'CEO',
+                profile: savedProfile || {
+                    phone: prev.profile?.phone || '+91 93040 47238',
+                    designation: authUser.title || (['employee', 'team', 'core', 'manager'].includes(authUser.role?.toLowerCase()) ? 'Management Trainee-Tech' : 'CEO'),
+                    timezone: prev.profile?.timezone || 'IST',
+                    language: prev.profile?.language || 'en'
                 },
                 organization: {
                     ...prev.organization,
                     primaryContact: authUser.name,
-                    companyName: ['employee', 'team', 'core', 'manager'].includes(authUser.role?.toLowerCase()) ? 'Anexar Corp' : (authUser.name || "Visionary Media Pvt Ltd"),
+                    companyName: 'The Mavericks Communications LLP',
                 }
             }));
         }
@@ -142,6 +166,12 @@ export const UserProvider = ({ children }) => {
             localStorage.setItem('user_plan', user.plan);
         }
     }, [user.email, user.plan]);
+
+    React.useEffect(() => {
+        if (user.email && user.profile) {
+            localStorage.setItem('user_profile_' + user.email.toLowerCase(), JSON.stringify(user.profile));
+        }
+    }, [user.email, user.profile]);
 
     const setUser = (updater) => {
         setUserState(prev => {

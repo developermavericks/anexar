@@ -27,7 +27,9 @@ import {
 
 export default function Clients() {
     const { user } = useAuth();
-    const isCoreUser = user?.role?.toLowerCase() === 'core';
+    const userRole = user?.role?.toLowerCase();
+    const isManagerOrCore = userRole === 'core' || userRole === 'manager' || user?.email?.toLowerCase().includes('satyam') || user?.email?.toLowerCase().includes('ss1084169') || user?.email?.toLowerCase().includes('google') || user?.email?.toLowerCase().includes('admin');
+    const isCoreUser = isManagerOrCore;
     const [assignedClients, setAssignedClients] = useState(() => {
         try {
             const saved = localStorage.getItem('anexar_assigned_clients');
@@ -599,72 +601,85 @@ export default function Clients() {
                                                     </div>
                                                 </div>
 
-                                                {/* Middle section: Qty controls */}
-                                                <div className="flex flex-wrap items-center gap-4 sm:gap-6">
-                                                    {/* Achieved counter */}
-                                                    <div className="flex flex-col gap-1">
-                                                        <span className="text-[10px] font-bold text-slate-455 uppercase">Achieved</span>
-                                                        <div className="flex items-center gap-1 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl p-1">
+                                                {/* Middle & Right section: Conditional Controls */}
+                                                {isManagerOrCore ? (
+                                                    <>
+                                                        <div className="flex flex-wrap items-center gap-4 sm:gap-6">
+                                                            {/* Achieved counter */}
+                                                            <div className="flex flex-col gap-1">
+                                                                <span className="text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase">Achieved</span>
+                                                                <div className="flex items-center gap-1 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl p-1">
+                                                                    <button
+                                                                        onClick={() => handleUpdateGoalField(goal.docId, goal, 'achieved', Math.max(0, (parseFloat(goal.achieved) || 0) - 1))}
+                                                                        className="w-7 h-7 flex items-center justify-center bg-slate-100 hover:bg-slate-200 dark:bg-slate-850 dark:hover:bg-slate-800 text-slate-655 dark:text-slate-455 rounded-lg text-xs font-black transition-colors cursor-pointer border border-slate-200/20"
+                                                                    >
+                                                                        -
+                                                                    </button>
+                                                                    <input
+                                                                        type="number"
+                                                                        min="0"
+                                                                        value={goal.achieved}
+                                                                        onChange={(e) => handleUpdateGoalField(goal.docId, goal, 'achieved', parseFloat(e.target.value) || 0)}
+                                                                        className="w-10 text-center text-xs font-bold bg-transparent border-none focus:outline-none dark:text-white"
+                                                                    />
+                                                                    <button
+                                                                        onClick={() => handleUpdateGoalField(goal.docId, goal, 'achieved', (parseFloat(goal.achieved) || 0) + 1)}
+                                                                        className="w-7 h-7 flex items-center justify-center bg-slate-100 hover:bg-slate-200 dark:bg-slate-850 dark:hover:bg-slate-800 text-slate-655 dark:text-slate-455 rounded-lg text-xs font-black transition-colors cursor-pointer border border-slate-200/20"
+                                                                    >
+                                                                        +
+                                                                    </button>
+                                                                </div>
+                                                            </div>
+
+                                                            {/* Target input */}
+                                                            <div className="flex flex-col gap-1">
+                                                                <span className="text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase">Target</span>
+                                                                <input
+                                                                    type="number"
+                                                                    min="1"
+                                                                    value={goal.target}
+                                                                    onChange={(e) => handleUpdateGoalField(goal.docId, goal, 'target', parseFloat(e.target.value) || 0)}
+                                                                    className="w-16 h-9 px-2 text-center text-xs font-bold bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-850 rounded-xl focus:outline-none focus:border-amber-500 dark:text-white"
+                                                                />
+                                                            </div>
+
+                                                            {/* Status dropdown */}
+                                                            <div className="flex flex-col gap-1">
+                                                                <span className="text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase">Status</span>
+                                                                <select
+                                                                    value={goal.status}
+                                                                    onChange={(e) => handleUpdateGoalField(goal.docId, goal, 'status', e.target.value)}
+                                                                    className="h-9 px-3 text-xs font-bold bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl focus:outline-none focus:border-amber-500 cursor-pointer dark:text-white"
+                                                                >
+                                                                    <option value="Pending">Pending</option>
+                                                                    <option value="On Track">On Track</option>
+                                                                    <option value="Completed">Completed</option>
+                                                                    <option value="At Risk">At Risk</option>
+                                                                </select>
+                                                            </div>
+                                                        </div>
+
+                                                        {/* Right section: Delete */}
+                                                        <div className="flex md:flex-col justify-end items-center shrink-0 border-t md:border-t-0 md:border-l border-slate-200/60 dark:border-slate-800 pt-3 md:pt-0 md:pl-4">
                                                             <button
-                                                                onClick={() => handleUpdateGoalField(goal.docId, goal, 'achieved', Math.max(0, (parseFloat(goal.achieved) || 0) - 1))}
-                                                                className="w-7 h-7 flex items-center justify-center bg-slate-100 hover:bg-slate-200 dark:bg-slate-850 dark:hover:bg-slate-800 text-slate-655 dark:text-slate-455 rounded-lg text-xs font-black transition-colors cursor-pointer border border-slate-200/20"
+                                                                onClick={() => handleDeleteGoal(goal.docId)}
+                                                                className="text-red-500 hover:text-red-655 p-2 rounded-lg hover:bg-red-50 dark:hover:bg-red-500/10 cursor-pointer transition-colors"
+                                                                title="Delete Goal"
                                                             >
-                                                                -
-                                                            </button>
-                                                            <input
-                                                                type="number"
-                                                                min="0"
-                                                                value={goal.achieved}
-                                                                onChange={(e) => handleUpdateGoalField(goal.docId, goal, 'achieved', parseFloat(e.target.value) || 0)}
-                                                                className="w-10 text-center text-xs font-bold bg-transparent border-none focus:outline-none dark:text-white"
-                                                            />
-                                                            <button
-                                                                onClick={() => handleUpdateGoalField(goal.docId, goal, 'achieved', (parseFloat(goal.achieved) || 0) + 1)}
-                                                                className="w-7 h-7 flex items-center justify-center bg-slate-100 hover:bg-slate-200 dark:bg-slate-850 dark:hover:bg-slate-800 text-slate-655 dark:text-slate-455 rounded-lg text-xs font-black transition-colors cursor-pointer border border-slate-200/20"
-                                                            >
-                                                                +
+                                                                <Trash2 size={16} />
                                                             </button>
                                                         </div>
+                                                    </>
+                                                ) : (
+                                                    <div className="flex items-center gap-6 pr-4">
+                                                        <div className="flex flex-col">
+                                                            <span className="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider">Progress Metrics</span>
+                                                            <span className="text-sm font-extrabold text-slate-800 dark:text-slate-200 mt-1">
+                                                                {goal.achieved} <span className="text-slate-400 dark:text-slate-500 font-normal">/ {goal.target} achieved</span>
+                                                            </span>
+                                                        </div>
                                                     </div>
-
-                                                    {/* Target input */}
-                                                    <div className="flex flex-col gap-1">
-                                                        <span className="text-[10px] font-bold text-slate-455 uppercase">Target</span>
-                                                        <input
-                                                            type="number"
-                                                            min="1"
-                                                            value={goal.target}
-                                                            onChange={(e) => handleUpdateGoalField(goal.docId, goal, 'target', parseFloat(e.target.value) || 0)}
-                                                            className="w-16 h-9 px-2 text-center text-xs font-bold bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-850 rounded-xl focus:outline-none focus:border-amber-500 dark:text-white"
-                                                        />
-                                                    </div>
-
-                                                    {/* Status dropdown */}
-                                                    <div className="flex flex-col gap-1">
-                                                        <span className="text-[10px] font-bold text-slate-455 uppercase">Status</span>
-                                                        <select
-                                                            value={goal.status}
-                                                            onChange={(e) => handleUpdateGoalField(goal.docId, goal, 'status', e.target.value)}
-                                                            className="h-9 px-3 text-xs font-bold bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl focus:outline-none focus:border-amber-500 cursor-pointer dark:text-white"
-                                                        >
-                                                            <option value="Pending">Pending</option>
-                                                            <option value="On Track">On Track</option>
-                                                            <option value="Completed">Completed</option>
-                                                            <option value="At Risk">At Risk</option>
-                                                        </select>
-                                                    </div>
-                                                </div>
-
-                                                {/* Right section: Delete */}
-                                                <div className="flex md:flex-col justify-end items-center shrink-0 border-t md:border-t-0 md:border-l border-slate-200/60 dark:border-slate-800 pt-3 md:pt-0 md:pl-4">
-                                                    <button
-                                                        onClick={() => handleDeleteGoal(goal.docId)}
-                                                        className="text-red-500 hover:text-red-655 p-2 rounded-lg hover:bg-red-50 dark:hover:bg-red-500/10 cursor-pointer transition-colors"
-                                                        title="Delete Goal"
-                                                    >
-                                                        <Trash2 size={16} />
-                                                    </button>
-                                                </div>
+                                                )}
                                             </div>
                                         ))}
                                     </div>
@@ -721,7 +736,7 @@ export default function Clients() {
                                                 </div>
 
                                                 {/* Action Buttons */}
-                                                {meeting.status === 'pending' && (
+                                                {meeting.status === 'pending' && isManagerOrCore && (
                                                     <div className="flex flex-wrap items-center gap-2">
                                                         <button
                                                             onClick={() => handleAcceptMeetingCalendar(meeting)}
