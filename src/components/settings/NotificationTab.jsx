@@ -27,7 +27,6 @@ const NotificationTab = () => {
     const isBasic = user.plan === 'basic';
 
     const [emailSettings, setEmailSettings] = useState(user.notifications?.email || {
-        campaign: true,
         press: true,
         events: false,
         performance: true,
@@ -35,9 +34,7 @@ const NotificationTab = () => {
     });
 
     const [appSettings, setAppSettings] = useState(user.notifications?.app || {
-        completion: true,
         goals: true,
-        budget: false,
         team: true
     });
 
@@ -72,13 +69,6 @@ const NotificationTab = () => {
                 <div>
                     <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-4 pb-2 border-b border-[#EAE8E4] dark:border-white/10">Email Notifications</h3>
                     <div className="space-y-4">
-                        <div className="flex items-center justify-between">
-                            <div>
-                                <p className="font-medium text-gray-900 dark:text-white">Campaign Updates</p>
-                                <p className="text-sm text-gray-500 dark:text-gray-400 dark:text-gray-500">Receive alerts when campaign status changes.</p>
-                            </div>
-                            <Toggle enabled={emailSettings.campaign} onChange={(val) => setEmailSettings({ ...emailSettings, campaign: val })} />
-                        </div>
                         <div className="flex items-center justify-between">
                             <div>
                                 <p className="font-medium text-gray-900 dark:text-white">Press Release Status</p>
@@ -130,24 +120,10 @@ const NotificationTab = () => {
                     <div className="space-y-4">
                         <div className="flex items-center justify-between">
                             <div>
-                                <p className="font-medium text-gray-900 dark:text-white">Deliverable Completion</p>
-                                <p className="text-sm text-gray-500 dark:text-gray-400 dark:text-gray-500">Ping when team members complete task deliverables.</p>
-                            </div>
-                            <Toggle enabled={appSettings.completion} onChange={(val) => setAppSettings({ ...appSettings, completion: val })} />
-                        </div>
-                        <div className="flex items-center justify-between">
-                            <div>
                                 <p className="font-medium text-gray-900 dark:text-white">Goal Updates</p>
                                 <p className="text-sm text-gray-500 dark:text-gray-400 dark:text-gray-500">Notifies you of progress changes in your commitment goals.</p>
                             </div>
                             <Toggle enabled={appSettings.goals} onChange={(val) => setAppSettings({ ...appSettings, goals: val })} />
-                        </div>
-                        <div className="flex items-center justify-between">
-                            <div>
-                                <p className="font-medium text-gray-900 dark:text-white">Budget Alerts</p>
-                                <p className="text-sm text-gray-500 dark:text-gray-400 dark:text-gray-500">When campaigns near 90% of allocated ad-spend.</p>
-                            </div>
-                            <Toggle enabled={appSettings.budget} onChange={(val) => setAppSettings({ ...appSettings, budget: val })} />
                         </div>
                         <div className="flex items-center justify-between">
                             <div>

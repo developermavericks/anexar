@@ -59,7 +59,26 @@ const TeamLayout = () => {
         }));
     };
     const [showNotifications, setShowNotifications] = React.useState(false);
+    const notificationRef = React.useRef(null);
     const [notificationsList, setNotificationsList] = React.useState([]);
+
+    React.useEffect(() => {
+        const handleClickOutside = (event) => {
+            if (notificationRef.current && !notificationRef.current.contains(event.target)) {
+                setShowNotifications(false);
+            }
+        };
+
+        if (showNotifications) {
+            document.addEventListener('mousedown', handleClickOutside);
+        } else {
+            document.removeEventListener('mousedown', handleClickOutside);
+        }
+
+        return () => {
+            document.removeEventListener('mousedown', handleClickOutside);
+        };
+    }, [showNotifications]);
 
     React.useEffect(() => {
         if (!user?.email) return;
@@ -318,7 +337,7 @@ const TeamLayout = () => {
                         </button>
 
                         {/* Notifications Toggle */}
-                        <div className="relative">
+                        <div className="relative" ref={notificationRef}>
                             <button
                                 onClick={() => setShowNotifications(!showNotifications)}
                                 className="relative text-gray-500 dark:text-slate-400 hover:text-gray-900 dark:hover:text-amber-400 transition-colors cursor-pointer"
@@ -421,15 +440,7 @@ const TeamLayout = () => {
                             </div>
                         </div>
 
-                        <div className="h-8 w-[1px] bg-[#EAE8E4] dark:bg-slate-800 hidden sm:block" />
 
-                        <button
-                            onClick={handleLogout}
-                            title="Log Out"
-                            className="p-2 text-gray-500 dark:text-slate-400 hover:text-red-500 dark:hover:text-red-400 transition-colors cursor-pointer rounded-xl hover:bg-gray-100 dark:hover:bg-slate-800"
-                        >
-                            <LogOut size={20} />
-                        </button>
                     </div>
                 </header>
 

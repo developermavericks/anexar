@@ -1634,7 +1634,7 @@ export default function UploadCoverage() {
             {/* DYNAMIC EXCEL & DOCX FULL-SCREEN MODAL VIEWER */}
             {selectedExcelReport && (
                 <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-md animate-fade-in animate-duration-150">
-                    <div className="bg-white dark:bg-slate-950 w-full max-w-6xl h-[85vh] rounded-3xl overflow-hidden shadow-2xl border border-slate-200 dark:border-slate-800 flex flex-col">
+                    <div className={`bg-white dark:bg-slate-955 w-full h-[85vh] rounded-3xl overflow-hidden shadow-2xl border border-slate-200 dark:border-slate-800 flex flex-col ${selectedExcelReport.type === 'excel' ? 'max-w-6xl lg:max-w-7xl' : 'max-w-4xl'}`}>
                         {/* Modal Header */}
                         <div className="p-6 border-b border-slate-100 dark:border-slate-900 bg-slate-50 dark:bg-slate-950 flex items-center justify-between gap-4">
                             <div>
@@ -1772,7 +1772,7 @@ export default function UploadCoverage() {
             {dayPreview && (
                 <div className="fixed inset-0 z-50 bg-black/60 flex items-center justify-center p-4" onClick={() => { setDayPreview(null); setDayPreviewReachResults({}); setDayPreviewReachRunning(false); }}>
                     <div
-                        className="bg-white dark:bg-slate-950 rounded-3xl shadow-2xl w-full max-w-4xl h-[85vh] flex flex-col overflow-hidden border border-slate-100 dark:border-slate-800"
+                        className={`bg-white dark:bg-slate-955 rounded-3xl shadow-2xl w-full h-[85vh] flex flex-col overflow-hidden border border-slate-100 dark:border-slate-800 ${dayPreview.type === 'sheet' ? 'max-w-6xl lg:max-w-7xl' : 'max-w-4xl'}`}
                         onClick={(e) => e.stopPropagation()}
                     >
                         <div className="flex items-center justify-between p-5 border-b border-slate-100 dark:border-slate-800 shrink-0">

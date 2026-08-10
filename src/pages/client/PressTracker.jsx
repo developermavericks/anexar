@@ -245,7 +245,7 @@ const PressTracker = () => {
             {/* DYNAMIC EXCEL & DOCX FULL-SCREEN MODAL VIEWER */}
             {selectedExcelReport && (
                 <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-955/80 backdrop-blur-md animate-fade-in">
-                    <div className="bg-white dark:bg-slate-950 w-full max-w-6xl h-[85vh] rounded-3xl overflow-hidden shadow-2xl border border-slate-200 dark:border-slate-800 flex flex-col">
+                    <div className={`bg-white dark:bg-slate-955 w-full h-[85vh] rounded-3xl overflow-hidden shadow-2xl border border-slate-200 dark:border-slate-800 flex flex-col ${selectedExcelReport.type === 'excel' ? 'max-w-6xl lg:max-w-7xl' : 'max-w-4xl'}`}>
                         <div className="p-6 border-b border-slate-100 dark:border-slate-900 bg-slate-50 dark:bg-slate-950 flex items-center justify-between gap-4">
                             <div>
                                 <h3 className="text-lg font-black text-slate-850 dark:text-white flex items-center gap-2">
