@@ -21,6 +21,15 @@ function ensureChromiumPath() {
 
 exports.recommend = require('./recommend').recommend;
 exports.discoverEventsForSector = require('./discoverEvents').discoverEventsForSector;
+exports.parseGoals = require('./parseGoals').parseGoals;
+exports.exchangeGoogleAuthCode = require('./calendarAuth').exchangeGoogleAuthCode;
+exports.getTeamMemberAvailability = require('./calendarAuth').getTeamMemberAvailability;
+exports.createCalendarEvent = require('./calendarAuth').createCalendarEvent;
+exports.findInfluencers = require('./influencerFinder').findInfluencers;
+exports.enrichInfluencer = require('./influencerFinder').enrichInfluencer;
+exports.autoFetchEPapers = require('./autoFetchEPapers').autoFetchEPapers;
+exports.syncGmailBriefings = require('./syncGmailBriefings').syncGmailBriefings;
+exports.getEPapersByDate = require('./getEPapers').getEPapersByDate;
 
 exports.analyzeReach = onRequest(
     { timeoutSeconds: 300, memory: '1GiB', cors: true },
@@ -58,7 +67,7 @@ exports.generateArticlePdf = onRequest(
             return;
         }
 
-        const { url: rawInputUrl } = req.body || {};
+        const { url: rawInputUrl, html: preRenderedHtml, userEmail } = req.body || {};
         if (!rawInputUrl || typeof rawInputUrl !== 'string') {
             res.status(400).json({ error: 'URL is required' });
             return;
@@ -121,14 +130,19 @@ exports.generateArticlePdf = onRequest(
         const url = normalizeUrl(rawInputUrl);
 
         try {
-            // 1. Fetch raw HTML using Puppeteer with JS disabled (Strategy 1)
+            // 1. Fetch raw HTML
             let rawHtml = '';
             let mode = 'DIRECT';
-            let scrapeBrowser;
             const scraperApiKey = process.env.SCRAPER_API_KEY || '4663b0263257ba5337353aeb6fe289cc';
 
-            try {
-                await ensureChromiumPath();
+            if (preRenderedHtml && typeof preRenderedHtml === 'string' && preRenderedHtml.trim().length > 0) {
+                rawHtml = preRenderedHtml;
+                mode = 'EXTENSION_CLIP';
+                console.log(`[generateArticlePdf] Using pre-rendered HTML from extension clipper for: ${url}`);
+            } else {
+                let scrapeBrowser;
+                try {
+                    await ensureChromiumPath();
                 const puppeteerExtra = require('puppeteer-extra');
                 scrapeBrowser = await puppeteerExtra.launch({
                     args: chromium.args,
@@ -169,25 +183,47 @@ exports.generateArticlePdf = onRequest(
                      }
                  }
 
-                 // Configure page JS and headers based on active session status
-                 if (sessionCookiesStr) {
-                     await scrapePage.setJavaScriptEnabled(true);
-                     await scrapePage.setExtraHTTPHeaders({
-                         'Referer': 'https://www.google.com/',
-                         'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'
-                     });
-                 } else {
-                     await scrapePage.setJavaScriptEnabled(false);
-                     await scrapePage.setExtraHTTPHeaders({
-                         'Referer': 'https://www.google.com/',
-                         'User-Agent': 'Mozilla/5.0 (compatible; Googlebot/2.1; +http://www.google.com/bot.html)'
-                     });
-                 }
+                  // Configure page JS and headers based on active session status
+                  await scrapePage.setJavaScriptEnabled(true);
+                  if (sessionCookiesStr) {
+                      await scrapePage.setExtraHTTPHeaders({
+                          'Referer': 'https://www.google.com/',
+                          'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'
+                      });
+                  } else {
+                      await scrapePage.setExtraHTTPHeaders({
+                          'Referer': 'https://www.google.com/',
+                          'User-Agent': 'Mozilla/5.0 (compatible; Googlebot/2.1; +http://www.google.com/bot.html)'
+                      });
+                  }
+
+                  // Enable request interception to block ad-trackers and paywall scripts
+                  await scrapePage.setRequestInterception(true);
+                  scrapePage.on('request', (request) => {
+                      const resourceType = request.resourceType();
+                      const requestUrl = request.url().toLowerCase();
+                      
+                      const paywallScriptDomains = [
+                          'tinypass.com', 'piano.io', 'poool.fr', 'cxense.com', 
+                          'dynamic-paywall.js', 'adnxs.com', 'doubleclick.net', 
+                          'adsystem.com', 'google-analytics.com', 'googletagmanager.com'
+                      ];
+                      
+                      const isAdOrPaywall = paywallScriptDomains.some(domain => requestUrl.includes(domain));
+                      
+                      if (isAdOrPaywall && (resourceType === 'script' || resourceType === 'stylesheet')) {
+                          console.log(`[generateArticlePdf] Aborting paywall/ad script: ${request.url()}`);
+                          request.abort();
+                      } else {
+                          request.continue();
+                      }
+                  });
 
                  await scrapePage.goto(url, {
                      waitUntil: 'domcontentloaded',
                      timeout: 20000
                  });
+                 await new Promise(resolve => setTimeout(resolve, 5000));
                  rawHtml = await scrapePage.content();
             } catch (err) {
                 console.warn('[generateArticlePdf] Puppeteer fetch failed, falling back to Axios:', err.message);
@@ -210,6 +246,7 @@ exports.generateArticlePdf = onRequest(
                     await scrapeBrowser.close();
                 }
             }
+        }
 
             // 2. Define DOM Pre-Processing & Cleansing Helpers
             const preprocessDOM = (d, articleUrl) => {
@@ -864,6 +901,26 @@ exports.generateArticlePdf = onRequest(
             });
 
             await browser.close();
+
+            // Log this action to system audit logs in Firestore
+            try {
+                const admin = require('firebase-admin');
+                if (!admin.apps.length) admin.initializeApp();
+                const db = admin.firestore();
+                
+                const logEmail = (userEmail || 'extension-user@themavericksindia.com').trim().toLowerCase();
+                const logDetails = `Generated PDF for: "${article.title || url}" (${mode === 'EXTENSION_CLIP' ? 'via Chrome Extension' : 'via Web Portal'})`;
+                
+                await db.collection('audit_logs').add({
+                    email: logEmail,
+                    action: 'PDF Scraper',
+                    details: logDetails,
+                    timestamp: admin.firestore.FieldValue.serverTimestamp()
+                });
+                console.log(`[generateArticlePdf] Successfully logged scraper action in Firestore for ${logEmail}`);
+            } catch (auditErr) {
+                console.error('[generateArticlePdf] Failed to log action to Firestore:', auditErr);
+            }
 
             // 10. Send PDF back as response stream
             const slugify = (str) => {
