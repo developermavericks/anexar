@@ -220,7 +220,7 @@ export default function EPaperReader() {
   const handleManualSyncToSheets = async () => {
     setIsSyncing(true);
     try {
-      const response = await fetch('https://us-central1-anexar-9820c.cloudfunctions.net/syncToGoogleSheetsHttp', {
+      const response = await fetch('https://synctogooglesheetshttp-mjsmlxvrgq-uc.a.run.app', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' }
       });

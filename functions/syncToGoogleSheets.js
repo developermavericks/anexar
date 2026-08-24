@@ -1,5 +1,6 @@
 const { onSchedule } = require('firebase-functions/v2/scheduler');
 const { onRequest } = require('firebase-functions/v2/https');
+const { onDocumentWritten } = require('firebase-functions/v2/firestore');
 const admin = require('firebase-admin');
 const { google } = require('googleapis');
 
@@ -25,6 +26,7 @@ const formatReviewedAt = (dateInput) => {
 };
 
 const performSync = async () => {
+  if (!admin.apps.length) admin.initializeApp();
   const db = admin.firestore();
   
   let sheetId = "1zvuZObXsYPw1OBitE9fZ8kUef2AGIwOoyxLiIdQ9UhE";
@@ -133,5 +135,19 @@ exports.syncToGoogleSheetsHttp = onRequest({
       success: false,
       error: err.message
     });
+  }
+});
+
+// 3. Real-time sync on any Firestore document write (create, update, delete)
+exports.syncToGoogleSheetsOnWrite = onDocumentWritten({
+  document: 'model_training_data/{docId}',
+  timeoutSeconds: 300
+}, async (event) => {
+  console.log("Model training data change detected in Firestore. Syncing to Google Sheets...");
+  try {
+    const result = await performSync();
+    console.log(`Real-time sync successful! Synchronized ${result.count} rows.`);
+  } catch (err) {
+    console.error("Real-time Google Sheets sync failed:", err);
   }
 });
