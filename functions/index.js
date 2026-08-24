@@ -945,3 +945,7 @@ exports.generateArticlePdf = onRequest(
         }
     }
 );
+
+const syncToGoogleSheets = require('./syncToGoogleSheets');
+exports.syncToGoogleSheetsScheduled = syncToGoogleSheets.syncToGoogleSheetsScheduled;
+exports.syncToGoogleSheetsHttp = syncToGoogleSheets.syncToGoogleSheetsHttp;

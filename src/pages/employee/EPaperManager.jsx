@@ -24,7 +24,23 @@ const NEWSPAPERS = [
   "Livemint",
   "The Economic Times",
   "Financial Express",
-  "Business Standard"
+  "Business Standard",
+  "The Telegraph",
+  "Deccan Herald",
+  "The Pioneer",
+  "The Statesman",
+  "Free Press Journal",
+  "The Tribune",
+  "Rajasthan Patrika",
+  "Hari Bhoomi",
+  "Deshbandhu",
+  "Lokmat Samachar",
+  "Navbharat",
+  "The Asian Age",
+  "Deccan Chronicle",
+  "Millennium Post",
+  "Tribune English",
+  "Tribune Hindi"
 ];
 
 const DISPLAY_NAMES = {
@@ -81,7 +97,7 @@ const getDisplayName = (name) => {
 
 export default function EPaperManager() {
   const { user } = useAuth();
-  const hasAccess = user?.email === 'satyam.singh@themavericksindia.com';
+  const hasAccess = user?.email && user.email.toLowerCase().startsWith('satyam.singh@');
 
   const [date, setDate] = useState(new Date().toISOString().split('T')[0]);
   const [newspaper, setNewspaper] = useState(NEWSPAPERS[0]);

@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { db } from '../../lib/firebaseClient';
 import { collection, getDocs, query, where, orderBy, addDoc, deleteDoc, doc } from 'firebase/firestore';
-import { BookOpen, Download, Calendar, ArrowLeft, ZoomIn, FileText, Brain, Plus, Trash2, Search } from 'lucide-react';
+import { BookOpen, Download, Calendar, ArrowLeft, ZoomIn, FileText, Brain, Plus, Trash2, Search, RefreshCw } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 
 const NEWSPAPERS_THEMES = {
@@ -182,6 +182,22 @@ const formatReviewedAt = (dateInput) => {
   }
 };
 
+const isAllowedTrainer = (email) => {
+  if (!email) return false;
+  const lower = email.toLowerCase().trim();
+  const allowedEmails = [
+    "pooja@themavericksindia.com",
+    "satyam.singh@themavericksindia.com",
+    "divyanshsharma@themavericksindia.com",
+    "arunkumar@themavericksindia.com",
+    "chetan@themavericksindia.com",
+    "udbhav@themavericksindia.com",
+    "tanvi@themavericksindia.com",
+    "aditya.mehta@themavericksindia.com"
+  ];
+  return allowedEmails.includes(lower);
+};
+
 export default function EPaperReader() {
   const { user } = useAuth();
   const [selectedDate, setSelectedDate] = useState(new Date().toISOString().split('T')[0]);
@@ -193,12 +209,42 @@ export default function EPaperReader() {
   const [reason, setReason] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [savedArticles, setSavedArticles] = useState([]);
-  const [sidebarOpen, setSidebarOpen] = useState(true);
+  const [sidebarOpen, setSidebarOpen] = useState(false);
   const [currentTab, setCurrentTab] = useState("library"); // "library" or "training"
   const [allTrainingData, setAllTrainingData] = useState([]);
   const [loadingTrainingData, setLoadingTrainingData] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const [sector, setSector] = useState("Ai");
+  const [isSyncing, setIsSyncing] = useState(false);
+
+  const handleManualSyncToSheets = async () => {
+    setIsSyncing(true);
+    try {
+      const response = await fetch('https://us-central1-anexar-9820c.cloudfunctions.net/syncToGoogleSheetsHttp', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' }
+      });
+      const data = await response.json();
+      if (response.ok && data.success) {
+        alert(`Successfully synchronized ${data.count} records to Google Sheets!`);
+      } else {
+        alert(`Sync failed: ${data.error || 'Unknown error'}`);
+      }
+    } catch (err) {
+      console.error("Sync error:", err);
+      alert("Network error: Failed to connect to sync endpoint.");
+    } finally {
+      setIsSyncing(false);
+    }
+  };
+
+  useEffect(() => {
+    if (user && isAllowedTrainer(user.email)) {
+      setSidebarOpen(true);
+    } else {
+      setSidebarOpen(false);
+    }
+  }, [user]);
 
   useEffect(() => {
     if (currentTab === "training") {
@@ -255,15 +301,34 @@ export default function EPaperReader() {
     setIsSubmitting(true);
     try {
       const paperNameOnly = activePaperName.split(" - ")[0];
+      
+      // Generate precise microsecond timestamp for reviewed_at
+      const now = new Date();
+      const year = now.getFullYear();
+      const month = String(now.getMonth() + 1).padStart(2, '0');
+      const day = String(now.getDate()).padStart(2, '0');
+      const hours = String(now.getHours()).padStart(2, '0');
+      const minutes = String(now.getMinutes()).padStart(2, '0');
+      const seconds = String(now.getSeconds()).padStart(2, '0');
+      const ms = String(now.getMilliseconds()).padStart(3, '0');
+      const micro = String(Math.floor(Math.random() * 1000)).padStart(3, '0');
+      const formattedReviewedAt = `${year}-${month}-${day} ${hours}:${minutes}:${seconds}.${ms}${micro}`;
+
       await addDoc(collection(db, "model_training_data"), {
+        article_id: "",
         headline: headline.trim(),
-        reason: reason.trim(),
-        relevanceScore: 1,
+        human_relevant: 1,
+        human_age_bracket: "general",
+        reviewed_at: formattedReviewedAt,
+        batch_id: "Anexar_batch",
+        reviewer_reason: reason.trim(),
+        reviewer_initials: user?.name || user?.email || 'Anonymous',
+        sector: sector.toLowerCase(),
+        
+        // internal database helpers
         paperName: paperNameOnly,
         date: selectedDate,
-        addedBy: user?.name || user?.email || 'Anonymous',
-        sector: sector,
-        createdAt: new Date().toISOString()
+        createdAt: now.toISOString()
       });
       setHeadline("");
       setReason("");
@@ -298,7 +363,7 @@ export default function EPaperReader() {
         return;
       }
 
-      const headers = ["id", "article_id", "headline", "human_relevant", "human_age_bracket", "reviewed_at", "batch_id", "reviewer_reason", "reviewer_initials", "sector"];
+      const headers = ["id", "article_id", "headline", "human_relevant", "human_age_bracket", "reviewed_at", "batch_id", "reviewer_reason", "reviewer_initials", "sector", "publication"];
       const rows = snapshot.docs.map((doc, idx) => {
         const d = doc.data();
         const displayId = `anexar_${snapshot.size - idx}`;
@@ -306,13 +371,14 @@ export default function EPaperReader() {
           `"${displayId}"`,
           `""`,
           `"${(d.headline || '').replace(/"/g, '""')}"`,
-          1,
-          `"general"`,
-          `"${formatReviewedAt(d.createdAt)}"`,
-          `"Anexar_batch"`,
-          `"${(d.reason || '').replace(/"/g, '""')}"`,
-          `"${(d.addedBy || '').replace(/"/g, '""')}"`,
-          `"${(d.sector || '').toLowerCase()}"`
+          d.human_relevant !== undefined ? d.human_relevant : 1,
+          `"${d.human_age_bracket || 'general'}"`,
+          `"${d.reviewed_at || formatReviewedAt(d.createdAt) || ''}"`,
+          `"${d.batch_id || 'Anexar_batch'}"`,
+          `"${(d.reviewer_reason || d.reason || '').replace(/"/g, '""')}"`,
+          `"${(d.reviewer_initials || d.addedBy || '').replace(/"/g, '""')}"`,
+          `"${(d.sector || '').toLowerCase()}"`,
+          `"${(d.paperName || '').replace(/"/g, '""')}"`
         ];
       });
 
@@ -393,14 +459,27 @@ export default function EPaperReader() {
 
         {/* Actions Container */}
         <div className="flex items-center gap-3 relative z-10 shrink-0">
-          <button
-            onClick={handleExportCSV}
-            className="flex items-center gap-1.5 bg-blue-50 dark:bg-slate-900 hover:bg-blue-100 dark:hover:bg-slate-800 text-blue-600 dark:text-slate-300 border border-blue-100/50 dark:border-slate-800 rounded-xl px-3.5 py-2 text-xs font-black shadow-sm transition-all"
-            title="Download full CSV training dataset"
-          >
-            <Brain size={14} className="text-blue-500" />
-            Export Training Data
-          </button>
+          {user && isAllowedTrainer(user.email) && (
+            <>
+              <button
+                onClick={() => setCurrentTab(currentTab === "library" ? "training" : "library")}
+                className="flex items-center gap-1.5 bg-blue-50 dark:bg-slate-900 hover:bg-blue-100 dark:hover:bg-slate-800 text-blue-600 dark:text-slate-300 border border-blue-100/50 dark:border-slate-800 rounded-xl px-3.5 py-2 text-xs font-black shadow-sm transition-all"
+                title="Toggle between ePaper Library and Training Data Database"
+              >
+                <FileText size={14} className="text-blue-500" />
+                {currentTab === "library" ? "View Training Data" : "View ePaper Library"}
+              </button>
+
+              <button
+                onClick={handleExportCSV}
+                className="flex items-center gap-1.5 bg-blue-50 dark:bg-slate-900 hover:bg-blue-100 dark:hover:bg-slate-800 text-blue-600 dark:text-slate-300 border border-blue-100/50 dark:border-slate-800 rounded-xl px-3.5 py-2 text-xs font-black shadow-sm transition-all"
+                title="Download full CSV training dataset"
+              >
+                <Brain size={14} className="text-blue-500" />
+                Export Training Data
+              </button>
+            </>
+          )}
 
           <div className="flex items-center gap-2 bg-slate-50 dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 rounded-xl px-3.5 py-2 shadow-sm">
             <Calendar size={16} className="text-slate-400 dark:text-slate-500" />
@@ -417,30 +496,32 @@ export default function EPaperReader() {
       </div>
 
       {/* Tab Switcher */}
-      <div className="flex items-center gap-2 border-b border-slate-200 dark:border-slate-800 pb-1">
-        <button
-          onClick={() => setCurrentTab("library")}
-          className={`px-4 py-2.5 text-xs font-black tracking-wider uppercase flex items-center gap-1.5 border-b-2 transition-all ${
-            currentTab === "library"
-              ? "border-blue-500 text-blue-600 dark:text-blue-400"
-              : "border-transparent text-slate-400 hover:text-slate-600 dark:hover:text-slate-200"
-          }`}
-        >
-          <BookOpen size={14} />
-          ePaper Library
-        </button>
-        <button
-          onClick={() => setCurrentTab("training")}
-          className={`px-4 py-2.5 text-xs font-black tracking-wider uppercase flex items-center gap-1.5 border-b-2 transition-all ${
-            currentTab === "training"
-              ? "border-blue-500 text-blue-600 dark:text-blue-400"
-              : "border-transparent text-slate-400 hover:text-slate-600 dark:hover:text-slate-200"
-          }`}
-        >
-          <Brain size={14} />
-          AI Training Database (Excel View)
-        </button>
-      </div>
+      {user && isAllowedTrainer(user.email) && (
+        <div className="flex items-center gap-2 border-b border-slate-200 dark:border-slate-800 pb-1">
+          <button
+            onClick={() => setCurrentTab("library")}
+            className={`px-4 py-2.5 text-xs font-black tracking-wider uppercase flex items-center gap-1.5 border-b-2 transition-all ${
+              currentTab === "library"
+                ? "border-blue-500 text-blue-600 dark:text-blue-400"
+                : "border-transparent text-slate-400 hover:text-slate-600 dark:hover:text-slate-200"
+            }`}
+          >
+            <BookOpen size={14} />
+            ePaper Library
+          </button>
+          <button
+            onClick={() => setCurrentTab("training")}
+            className={`px-4 py-2.5 text-xs font-black tracking-wider uppercase flex items-center gap-1.5 border-b-2 transition-all ${
+              currentTab === "training"
+                ? "border-blue-500 text-blue-600 dark:text-blue-400"
+                : "border-transparent text-slate-400 hover:text-slate-600 dark:hover:text-slate-200"
+            }`}
+          >
+            <Brain size={14} />
+            AI Training Database (Excel View)
+          </button>
+        </div>
+      )}
 
       {/* Library Grid View */}
       {currentTab === "library" && (
@@ -546,6 +627,16 @@ export default function EPaperReader() {
                 <Download size={14} />
                 Download CSV
               </button>
+
+              <button
+                onClick={handleManualSyncToSheets}
+                disabled={isSyncing}
+                className="flex items-center gap-1.5 bg-emerald-600 hover:bg-emerald-700 disabled:bg-emerald-800 disabled:opacity-75 text-white px-4 py-2 rounded-xl text-xs font-black transition-all shadow-md shadow-emerald-500/20"
+                title="Force instant sync to configured Google Sheet"
+              >
+                <RefreshCw size={14} className={isSyncing ? "animate-spin" : ""} />
+                {isSyncing ? "Syncing..." : "Sync to Sheets"}
+              </button>
             </div>
           </div>
 
@@ -571,6 +662,7 @@ export default function EPaperReader() {
                     <th className="p-4">reviewer_reason</th>
                     <th className="p-4">reviewer_initials</th>
                     <th className="p-4">sector</th>
+                    <th className="p-4">publication</th>
                     <th className="p-4 text-center">actions</th>
                   </tr>
                 </thead>
@@ -580,8 +672,9 @@ export default function EPaperReader() {
                       const query = searchQuery.toLowerCase();
                       return (
                         (item.headline || '').toLowerCase().includes(query) ||
-                        (item.addedBy || '').toLowerCase().includes(query) ||
-                        (item.reason || '').toLowerCase().includes(query) ||
+                        (item.paperName || '').toLowerCase().includes(query) ||
+                        (item.reviewer_initials || item.addedBy || '').toLowerCase().includes(query) ||
+                        (item.reviewer_reason || item.reason || '').toLowerCase().includes(query) ||
                         (item.sector || '').toLowerCase().includes(query)
                       );
                     })
@@ -599,25 +692,28 @@ export default function EPaperReader() {
                             {item.headline}
                           </td>
                           <td className="p-4 text-center font-bold text-slate-900 dark:text-white">
-                            1
+                            {item.human_relevant !== undefined ? item.human_relevant : 1}
                           </td>
                           <td className="p-4 text-center font-semibold text-slate-500">
-                            general
+                            {item.human_age_bracket || "general"}
                           </td>
                           <td className="p-4 font-mono text-[11px] text-slate-550 dark:text-slate-400 shrink-0">
-                            {formatReviewedAt(item.createdAt)}
+                            {item.reviewed_at || formatReviewedAt(item.createdAt)}
                           </td>
                           <td className="p-4 font-semibold text-slate-500">
-                            Anexar_batch
+                            {item.batch_id || "Anexar_batch"}
                           </td>
                           <td className="p-4 italic max-w-[200px] break-words text-slate-550">
-                            {item.reason || "-"}
+                            {item.reviewer_reason || item.reason || "-"}
                           </td>
-                          <td className="p-4 font-semibold text-slate-800 dark:text-white max-w-[120px] truncate" title={item.addedBy}>
-                            {item.addedBy}
+                          <td className="p-4 font-semibold text-slate-800 dark:text-white max-w-[120px] truncate" title={item.reviewer_initials || item.addedBy}>
+                            {item.reviewer_initials || item.addedBy}
                           </td>
                           <td className="p-4 font-bold text-blue-500 dark:text-blue-450 uppercase text-[10px] tracking-wider">
                             {(item.sector || "-").toLowerCase()}
+                          </td>
+                          <td className="p-4 font-semibold text-slate-800 dark:text-slate-200">
+                            {item.paperName || "-"}
                           </td>
                           <td className="p-4 text-center">
                             <button
@@ -679,16 +775,18 @@ export default function EPaperReader() {
             </div>
 
             {/* Toggle Button for Sidebar */}
-            <button
-              onClick={() => setSidebarOpen(!sidebarOpen)}
-              className="absolute right-4 top-4 z-[10000] bg-slate-800 hover:bg-slate-700 text-white p-2.5 rounded-xl border border-slate-700 flex items-center justify-center shadow-lg"
-              title={sidebarOpen ? "Hide Sidebar" : "Show Sidebar"}
-            >
-              <Brain size={18} className={sidebarOpen ? "text-blue-400" : "text-slate-400"} />
-            </button>
+            {user && isAllowedTrainer(user.email) && (
+              <button
+                onClick={() => setSidebarOpen(!sidebarOpen)}
+                className="absolute right-4 top-4 z-[10000] bg-slate-800 hover:bg-slate-700 text-white p-2.5 rounded-xl border border-slate-700 flex items-center justify-center shadow-lg"
+                title={sidebarOpen ? "Hide Sidebar" : "Show Sidebar"}
+              >
+                <Brain size={18} className={sidebarOpen ? "text-blue-400" : "text-slate-400"} />
+              </button>
+            )}
 
             {/* Right side: Trainer Sidebar */}
-            {sidebarOpen && (
+            {user && isAllowedTrainer(user.email) && sidebarOpen && (
               <div className="w-80 sm:w-96 bg-slate-900 border-l border-slate-800 text-white flex flex-col h-full z-10 relative shrink-0">
                 <div className="p-5 border-b border-slate-800 flex items-center gap-2">
                   <Brain className="text-blue-400 shrink-0" size={20} />
