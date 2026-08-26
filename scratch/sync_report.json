@@ -1,0 +1,10 @@
+{
+  "totalTarget": 90,
+  "totalCurrentFirestore": 90,
+  "toCreateCount": 0,
+  "toCreate": [],
+  "toUpdateCount": 0,
+  "toUpdate": [],
+  "unchangedCount": 90,
+  "extraInFirestoreNotInTarget": []
+}

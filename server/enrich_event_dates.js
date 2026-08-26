@@ -36,29 +36,32 @@ const firebaseConfig = {
 const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
 
-const SERPER_KEY = process.env.SERPER_API_KEY || 'a1197e2fb88842f0105953569dd4d4f11031c5bb';
+const SERPER_KEYS = (process.env.SERPER_API_KEY || 'a1197e2fb88842f0105953569dd4d4f11031c5bb').split(',');
 const GROQ_KEY = process.env.GROQ_API_KEY || '';
 
 const SERPER_URL = 'https://google.serper.dev/search';
 const GROQ_URL = 'https://api.groq.com/openai/v1/chat/completions';
-const GROQ_MODEL = 'llama-3.1-8b-instant'; // lightweight and very fast, perfect for this!
+const GROQ_MODEL = 'openai/gpt-oss-120b';
 
 async function serperSearch(query) {
-  try {
-    const res = await fetch(SERPER_URL, {
-      method: 'POST',
-      headers: { 'X-API-KEY': SERPER_KEY, 'Content-Type': 'application/json' },
-      body: JSON.stringify({ q: query, gl: 'in', num: 5 })
-    });
-    if (!res.ok) {
-      console.error(`Serper search failed for "${query}": ${res.status}`);
-      return null;
+  for (let i = 0; i < SERPER_KEYS.length; i++) {
+    const key = SERPER_KEYS[i].trim();
+    try {
+      const res = await fetch(SERPER_URL, {
+        method: 'POST',
+        headers: { 'X-API-KEY': key, 'Content-Type': 'application/json' },
+        body: JSON.stringify({ q: query, gl: 'in', num: 5 })
+      });
+      if (res.ok) {
+        return await res.json();
+      }
+      console.warn(`Serper key index ${i} failed with status: ${res.status}`);
+    } catch (err) {
+      console.error(`Serper key index ${i} error:`, err);
     }
-    return await res.json();
-  } catch (err) {
-    console.error(`Serper error:`, err);
-    return null;
   }
+  console.error(`All Serper search API keys failed for "${query}".`);
+  return null;
 }
 
 async function callGroq(prompt) {

@@ -25,8 +25,74 @@ const formatReviewedAt = (dateInput) => {
   }
 };
 
+const syncCollection = async (db, sheets, spreadsheetId, collectionName, sheetTabName) => {
+  try {
+    const spreadsheet = await sheets.spreadsheets.get({ spreadsheetId });
+    const sheetExists = spreadsheet.data.sheets.some(s => s.properties.title === sheetTabName);
+    if (!sheetExists) {
+      console.log(`Sheet "${sheetTabName}" does not exist. Creating...`);
+      await sheets.spreadsheets.batchUpdate({
+        spreadsheetId,
+        requestBody: {
+          requests: [{
+            addSheet: {
+              properties: { title: sheetTabName }
+            }
+          }]
+        }
+      });
+    }
+  } catch (sheetErr) {
+    console.error(`Error checking/creating sheet tab ${sheetTabName}:`, sheetErr);
+  }
+
+  const snapshot = await db.collection(collectionName).orderBy("createdAt", "asc").get();
+  
+  const headers = ["id", "article_id", "headline", "human_relevant", "human_age_bracket", "reviewed_at", "batch_id", "reviewer_reason", "reviewer_initials", "sector", "publication", "screenshot_url"];
+  
+  const rows = snapshot.docs.map((doc, idx) => {
+    const d = doc.data();
+    const displayId = `anexar_${idx + 1}`;
+    
+    return [
+      displayId,
+      d.article_id || doc.id,
+      d.headline || "",
+      d.human_relevant !== undefined ? d.human_relevant : 1,
+      d.human_age_bracket || "general",
+      d.reviewed_at || formatReviewedAt(d.createdAt) || "",
+      d.batch_id || "Anexar_batch",
+      d.reviewer_reason || d.reason || "",
+      d.reviewer_initials || d.addedBy || "",
+      (d.sector || "").toLowerCase(),
+      d.sourceType === "website" ? (d.publication || "") : (d.paperName || ""),
+      d.screenshotUrl ? `=HYPERLINK("${d.screenshotUrl}", IMAGE("${d.screenshotUrl}"))` : ""
+    ];
+  });
+
+  await sheets.spreadsheets.values.clear({
+    spreadsheetId,
+    range: `${sheetTabName}!A1:Z`,
+  });
+
+  await sheets.spreadsheets.values.update({
+    spreadsheetId,
+    range: `${sheetTabName}!A1`,
+    valueInputOption: 'USER_ENTERED',
+    requestBody: {
+      values: [headers, ...rows]
+    }
+  });
+
+  return rows.length;
+};
+
 const performSync = async () => {
-  if (!admin.apps.length) admin.initializeApp();
+  try {
+    admin.app();
+  } catch (e) {
+    admin.initializeApp();
+  }
   const db = admin.firestore();
   
   let sheetId = "1zvuZObXsYPw1OBitE9fZ8kUef2AGIwOoyxLiIdQ9UhE";
@@ -50,57 +116,21 @@ const performSync = async () => {
     console.warn("Firestore config read failed, using default fallback sheet ID:", err.message);
   }
   
-  // 2. Fetch all training data documents from Firestore, sorted by createdAt asc
-  const snapshot = await db.collection("model_training_data")
-    .orderBy("createdAt", "asc")
-    .get();
-    
-  // 3. Map Firestore documents to rows matching the 11-column training layout
-  const headers = ["id", "article_id", "headline", "human_relevant", "human_age_bracket", "reviewed_at", "batch_id", "reviewer_reason", "reviewer_initials", "sector", "publication"];
-  const rows = snapshot.docs.map((doc, idx) => {
-    const d = doc.data();
-    const displayId = `anexar_${idx + 1}`;
-    return [
-      displayId,
-      "", // article_id
-      d.headline || "",
-      d.human_relevant !== undefined ? d.human_relevant : 1,
-      d.human_age_bracket || "general",
-      d.reviewed_at || formatReviewedAt(d.createdAt) || "",
-      d.batch_id || "Anexar_batch",
-      d.reviewer_reason || d.reason || "",
-      d.reviewer_initials || d.addedBy || "",
-      (d.sector || "").toLowerCase(),
-      d.paperName || ""
-    ];
-  });
-  
-  // 4. Authenticate using Application Default Credentials (ADC)
   const auth = new google.auth.GoogleAuth({
     scopes: ['https://www.googleapis.com/auth/spreadsheets'],
   });
   const sheets = google.sheets({ version: 'v4', auth });
   
-  // 5. Clear current sheet contents to prevent overlap
-  console.log(`Clearing Google Sheet range: ${sheetName}!A1:Z`);
-  await sheets.spreadsheets.values.clear({
-    spreadsheetId: sheetId,
-    range: `${sheetName}!A1:Z`,
-  });
+  let targetSheetName = sheetName;
+  if (targetSheetName === "Sheet1") targetSheetName = "Model_Training_Data";
+
+  console.log("Syncing all training data to:", targetSheetName);
+  const count = await syncCollection(db, sheets, sheetId, "model_training_data", targetSheetName);
   
-  // 6. Write fresh clean dataset
-  console.log(`Uploading ${rows.length} rows to Google Sheet ${sheetId} (tab: ${sheetName})...`);
-  await sheets.spreadsheets.values.update({
-    spreadsheetId: sheetId,
-    range: `${sheetName}!A1`,
-    valueInputOption: 'USER_ENTERED',
-    requestBody: {
-      values: [headers, ...rows]
-    }
-  });
-  
-  return { success: true, count: rows.length };
+  return { success: true, count };
 };
+
+exports.performSync = performSync;
 
 // 1. Scheduled sync (runs every 4 hours)
 exports.syncToGoogleSheetsScheduled = onSchedule({
@@ -131,9 +161,26 @@ exports.syncToGoogleSheetsHttp = onRequest({
     });
   } catch (err) {
     console.error("HTTP Google Sheets sync failed:", err);
-    res.status(500).json({
+    let clientEmail = "unknown";
+    try {
+      const axios = require('axios');
+      const metadataRes = await axios.get(
+        'http://metadata.google.internal/computeMetadata/v1/instance/service-accounts/default/email',
+        { headers: { 'Metadata-Flavor': 'Google' }, timeout: 2000 }
+      );
+      clientEmail = metadataRes.data.trim();
+    } catch (metadataErr) {
+      try {
+        const auth = new google.auth.GoogleAuth({
+          scopes: ['https://www.googleapis.com/auth/spreadsheets'],
+        });
+        const client = await auth.getClient();
+        clientEmail = client.email || client.credentials?.client_email || "unknown";
+      } catch (authErr) {}
+    }
+    res.status(550).json({
       success: false,
-      error: err.message
+      error: `${err.message} (Service Account Email: ${clientEmail})`
     });
   }
 });

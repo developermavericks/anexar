@@ -2,6 +2,8 @@ import React, { useState, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '../lib/supabaseClient';
+import { db } from '../lib/firebaseClient';
+import { doc, getDoc } from 'firebase/firestore';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Button } from '../components/ui/Button';
 import { Card, CardContent } from '../components/ui/Card';
@@ -222,14 +224,22 @@ export default function TeamDashboard() {
         : 0;
 
     // Dynamic client and onboarding states
+    const emailLower = user?.email?.toLowerCase() || '';
     const [assignedClients, setAssignedClients] = useState(() => {
-        const saved = localStorage.getItem('anexar_assigned_clients');
-        return saved ? JSON.parse(saved) : ['RedBull Racing', 'Spotify', 'Vercel', 'Acura Corporate', 'Nike'];
+        try {
+            if (emailLower) {
+                const saved = localStorage.getItem(`anexar_assigned_clients_${emailLower}`);
+                if (saved) return JSON.parse(saved);
+            }
+        } catch (e) {}
+        return []; // Default to empty array to prevent client leaks
     });
 
     useEffect(() => {
-        localStorage.setItem('anexar_assigned_clients', JSON.stringify(assignedClients));
-    }, [assignedClients]);
+        if (emailLower && assignedClients && assignedClients.length > 0) {
+            localStorage.setItem(`anexar_assigned_clients_${emailLower}`, JSON.stringify(assignedClients));
+        }
+    }, [assignedClients, emailLower]);
 
     useEffect(() => {
         const fetchClients = async () => {
@@ -239,34 +249,17 @@ export default function TeamDashboard() {
                 const userRole = user.role?.toLowerCase();
                 const emailLower = user.email?.toLowerCase() || '';
                 
-                if (userRole === 'core' || userRole === 'manager') {
-                    // Core gets clients for their core owner name, or all active clients if 0 assigned
-                    const coreName = user.name ? user.name.split(' ')[0] : '';
+                const isWholeAccess = emailLower.includes('satyam') || emailLower.includes('chetan') || emailLower.includes('pooja') || userRole === 'core' || userRole === 'manager';
+                if (isWholeAccess) {
                     let clientNames = [];
-                    
-                    if (coreName) {
-                        const { data } = await supabase
-                            .from('clients')
-                            .select('name')
-                            .eq('core_owner', coreName)
-                            .eq('is_active', true);
-                        if (data && data.length > 0) {
-                            clientNames = data.map(c => c.name);
-                        }
+                    const { data } = await supabase
+                        .from('clients')
+                        .select('name')
+                        .eq('is_active', true)
+                        .order('name', { ascending: true });
+                    if (data && data.length > 0) {
+                        clientNames = data.map(c => c.name);
                     }
-
-                    // Fallback if 0 clients listed for this core member
-                    if (clientNames.length === 0) {
-                        const { data } = await supabase
-                            .from('clients')
-                            .select('name')
-                            .eq('is_active', true)
-                            .order('name', { ascending: true });
-                        if (data && data.length > 0) {
-                            clientNames = data.map(c => c.name);
-                        }
-                    }
-
                     if (clientNames.length > 0) {
                         setAssignedClients(clientNames);
                     }
@@ -284,7 +277,7 @@ export default function TeamDashboard() {
                     ]);
 
                     const clientNamesSet = new Set();
-                    
+
                     if (weeklyRes.data) {
                         weeklyRes.data.forEach(item => {
                             if (item.clients?.name) clientNamesSet.add(item.clients.name);
@@ -296,13 +289,25 @@ export default function TeamDashboard() {
                         });
                     }
 
-                    const clientNames = Array.from(clientNamesSet);
-                    if (clientNames.length > 0) {
-                        setAssignedClients(clientNames);
-                    } else {
-                        // Fallback to default list if they have no allocations logged in DB yet
-                        setAssignedClients(['RedBull Racing', 'Spotify', 'Vercel', 'Acura Corporate', 'Nike']);
+                    let clientNames = Array.from(clientNamesSet);
+
+                    // Supabase allocations aren't populated for most people yet --
+                    // fall back to the actively-maintained per-employee mapping in
+                    // Firestore (same source Clients.jsx uses) instead of showing
+                    // fake placeholder clients.
+                    if (clientNames.length === 0) {
+                        try {
+                            const docSnap = await getDoc(doc(db, "user_clients", emailLower));
+                            const firestoreClients = docSnap.exists() ? docSnap.data().clients : null;
+                            if (Array.isArray(firestoreClients)) {
+                                clientNames = firestoreClients;
+                            }
+                        } catch (fsErr) {
+                            console.error("Error fetching team clients from Firestore fallback:", fsErr);
+                        }
                     }
+
+                    setAssignedClients(clientNames);
                 }
             } catch (err) {
                 console.error("Error fetching user clients from Supabase:", err);
@@ -662,10 +667,12 @@ export default function TeamDashboard() {
                                     <p className="text-3xs text-brand-gray mt-5 font-bold tracking-wide">
                                         Premium PR & Communications contracts
                                     </p>
-                                    <div className="flex items-center gap-1 mt-2.5">
-                                        <span className="text-2xs font-extrabold text-brand-amber">Top client:</span>
-                                        <span className="text-2xs text-brand-charcoal font-semibold bg-brand-amber/15 px-2 py-0.5 rounded-md">RedBull Racing</span>
-                                    </div>
+                                    {assignedClients.length > 0 && (
+                                        <div className="flex items-center gap-1 mt-2.5">
+                                            <span className="text-2xs font-extrabold text-brand-amber">Top client:</span>
+                                            <span className="text-2xs text-brand-charcoal font-semibold bg-brand-amber/15 px-2 py-0.5 rounded-md">{assignedClients[0]}</span>
+                                        </div>
+                                    )}
                                 </div>
                                 <div className="p-3.5 rounded-2xl bg-blue-50 text-blue-600 shrink-0 shadow-sm">
                                     <Users size={20} className="stroke-[2.5px]" />

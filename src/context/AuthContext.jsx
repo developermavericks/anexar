@@ -8,6 +8,8 @@ const USERS_KEY = 'anexar_users_db';
 const CURRENT_USER_KEY = 'anexar_current_user';
 
 import { supabase } from '../lib/supabaseClient';
+import { auth } from '../lib/firebaseClient';
+import { GoogleAuthProvider, signInWithCredential, signOut as firebaseSignOut } from 'firebase/auth';
 
 export function AuthProvider({ children }) {
     // Lazy initialization: read cached user synchronously on first render
@@ -195,8 +197,23 @@ export function AuthProvider({ children }) {
             picture: googleUser.picture,
             provider: "google",
             role: role,
-            title: title
+            title: title,
+            idToken: googleUser.idToken || ""
         };
+
+        // Establish a real, Google-verified Firebase Auth session so Firestore/Storage
+        // security rules can check request.auth instead of trusting the client alone.
+        // Non-fatal: if this fails, the app-level session above still proceeds so login
+        // isn't blocked, but Firestore reads/writes will be denied by the security rules
+        // until a valid Firebase Auth session exists.
+        if (googleUser.idToken) {
+            try {
+                const credential = GoogleAuthProvider.credential(googleUser.idToken);
+                await signInWithCredential(auth, credential);
+            } catch (authErr) {
+                console.error("Firebase Auth sign-in failed (Firestore access may be denied):", authErr);
+            }
+        }
 
         localStorage.setItem(CURRENT_USER_KEY, JSON.stringify(userData));
         setUser(userData);
@@ -205,7 +222,40 @@ export function AuthProvider({ children }) {
 
     const logout = () => {
         setUser(null);
+        firebaseSignOut(auth).catch((err) => console.error("Firebase sign-out failed:", err));
     };
+
+    // Auto-logout if inactive for 15 minutes
+    useEffect(() => {
+        if (!user) return;
+
+        let idleTimer = null;
+        const IDLE_TIMEOUT_MS = 15 * 60 * 1000; // 15 minutes
+
+        const resetTimer = () => {
+            if (idleTimer) clearTimeout(idleTimer);
+            idleTimer = setTimeout(() => {
+                console.log("Session inactive for 15 minutes. Automatic logout triggered.");
+                logout();
+            }, IDLE_TIMEOUT_MS);
+        };
+
+        const activityEvents = ['mousemove', 'keydown', 'click', 'scroll', 'touchstart'];
+
+        activityEvents.forEach(evtName => {
+            window.addEventListener(evtName, resetTimer);
+        });
+
+        // Start the first timer
+        resetTimer();
+
+        return () => {
+            if (idleTimer) clearTimeout(idleTimer);
+            activityEvents.forEach(evtName => {
+                window.removeEventListener(evtName, resetTimer);
+            });
+        };
+    }, [user]);
 
     return (
         <AuthContext.Provider value={{ user, isAuthenticated: !!user, login, register, resetPassword, oauthLogin, loginWithGoogle, logout, isLoading }}>

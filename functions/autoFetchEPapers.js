@@ -156,10 +156,10 @@ async function downloadZDrivePdf(browser, zdriveUrl) {
 
   try {
     await page.goto(zdriveUrl, { waitUntil: 'networkidle2', timeout: 60000 });
-    await page.waitForSelector('#freeBtn', { visible: true, timeout: 15000 });
+    await page.waitForSelector('#freeBtn', { visible: true, timeout: 35000 });
     await page.click('#freeBtn');
     
-    await page.waitForSelector('button.btn-secondary', { visible: true, timeout: 15000 });
+    await page.waitForSelector('button.btn-secondary', { visible: true, timeout: 35000 });
     await page.click('button.btn-secondary');
     
     let foundCreate = false;
@@ -340,7 +340,7 @@ async function scrapeCareersWave(db, bucket, formattedDate) {
 
 exports.autoFetchEPapers = onSchedule(
   {
-    schedule: '*/15 5-15 * * *', // Run every 15 mins between 5:00 AM and 3:59 PM IST
+    schedule: '*/15 * * * *', // Run every 15 minutes, 24 hours a day
     timeZone: 'Asia/Kolkata',
     memory: '1GiB',
     timeoutSeconds: 300

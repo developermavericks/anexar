@@ -153,10 +153,10 @@ async function downloadZDrivePdf(browser, zdriveUrl) {
 
   try {
     await page.goto(zdriveUrl, { waitUntil: 'networkidle2', timeout: 60000 });
-    await page.waitForSelector('#freeBtn', { visible: true, timeout: 15000 });
+    await page.waitForSelector('#freeBtn', { visible: true, timeout: 35000 });
     await page.click('#freeBtn');
     
-    await page.waitForSelector('button.btn-secondary', { visible: true, timeout: 15000 });
+    await page.waitForSelector('button.btn-secondary', { visible: true, timeout: 35000 });
     await page.click('button.btn-secondary');
     
     let foundCreate = false;

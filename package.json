@@ -7,7 +7,8 @@
     "dev": "vite",
     "build": "vite build",
     "lint": "eslint .",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "scrape:excel": "node scrape_custom_journalists.js"
   },
   "dependencies": {
     "@fontsource/inter": "^5.2.8",
@@ -21,6 +22,7 @@
     "jwt-decode": "^4.0.0",
     "lucide-react": "^0.575.0",
     "mammoth": "^1.12.0",
+    "pdfjs-dist": "^6.2.108",
     "react": "^19.2.0",
     "react-dom": "^19.2.0",
     "react-router-dom": "^7.13.1",

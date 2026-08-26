@@ -22,11 +22,13 @@ import {
     ChevronRight,
     Linkedin,
     Twitter,
-    Edit2
+    Edit2,
+    Newspaper,
+    Briefcase
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { db } from '../../lib/firebaseClient';
-import { collection, addDoc, doc, deleteDoc, query, onSnapshot, orderBy, writeBatch } from 'firebase/firestore';
+import { collection, addDoc, doc, deleteDoc, query, onSnapshot, orderBy, writeBatch, getDocs, updateDoc } from 'firebase/firestore';
 
 import INITIAL_JOURNALISTS from '../../data/journalists_extracted.json';
 
@@ -41,15 +43,16 @@ const getCategoryString = (category) => {
     return String(category);
 };
 
-const getLocationString = (address) => {
-    if (!address) return '';
-    if (Array.isArray(address)) {
-        return address.map(v => typeof v === 'object' && v ? (v.cityName || v.city || v.stateName || v.state || v.name || JSON.stringify(v)) : String(v)).filter(Boolean).join(', ');
+const getLocationString = (address, location) => {
+    const addr = address || location;
+    if (!addr) return '';
+    if (Array.isArray(addr)) {
+        return addr.map(v => typeof v === 'object' && v ? (v.cityName || v.city || v.stateName || v.state || v.name || JSON.stringify(v)) : String(v)).filter(Boolean).join(', ');
     }
-    if (typeof address === 'object') {
-        return address.cityName || address.city || address.stateName || address.state || address.name || JSON.stringify(address);
+    if (typeof addr === 'object') {
+        return addr.cityName || addr.city || addr.stateName || addr.state || addr.name || JSON.stringify(addr);
     }
-    const strVal = String(address).trim();
+    const strVal = String(addr).trim();
     if (strVal.toLowerCase().includes('[object object]')) {
         return '';
     }
@@ -107,9 +110,21 @@ const JournalistAvatar = ({ journalist, size = 'md', onClick }) => {
 
 export default function JournalistSource() {
     const [journalists, setJournalists] = useState([]);
-    const [searchQuery, setSearchQuery] = useState('');
-    const [selectedId, setSelectedId] = useState('');
-    const [selectedCategoryFilter, setSelectedCategoryFilter] = useState('All');
+    const [searchQuery, setSearchQuery] = useState(() => sessionStorage.getItem('js_searchQuery') || '');
+    const [selectedId, setSelectedId] = useState(() => sessionStorage.getItem('js_selectedId') || '');
+    const [selectedCategoryFilter, setSelectedCategoryFilter] = useState(() => sessionStorage.getItem('js_selectedCategoryFilter') || 'All');
+
+    useEffect(() => {
+        sessionStorage.setItem('js_searchQuery', searchQuery);
+    }, [searchQuery]);
+
+    useEffect(() => {
+        sessionStorage.setItem('js_selectedId', selectedId);
+    }, [selectedId]);
+
+    useEffect(() => {
+        sessionStorage.setItem('js_selectedCategoryFilter', selectedCategoryFilter);
+    }, [selectedCategoryFilter]);
     
     // Modal, upload & notification states
     const [isAddModalOpen, setIsAddModalOpen] = useState(false);
@@ -148,19 +163,18 @@ export default function JournalistSource() {
         setVisibleCount(12);
     }, [searchQuery, selectedCategoryFilter]);
 
-    // Load from Firestore or seed initial subset if database is empty
-    useEffect(() => {
-        const q = query(collection(db, "journalists"), orderBy("createdAt", "desc"));
-        const unsubscribe = onSnapshot(q, (snapshot) => {
+    const loadJournalists = async (isSeedingCall = false) => {
+        try {
+            const q = query(collection(db, "journalists"), orderBy("createdAt", "desc"));
+            const snapshot = await getDocs(q);
             const list = [];
             snapshot.forEach(docSnap => {
                 list.push({ docId: docSnap.id, id: docSnap.id, ...docSnap.data() });
             });
             
-            if (list.length === 0) {
+            if (list.length === 0 && !isSeedingCall) {
                 const seedData = async () => {
                     try {
-                        // Seed first 150 items using a single batch commit
                         const subset = INITIAL_JOURNALISTS.slice(0, 150);
                         const batch = writeBatch(db);
                         subset.forEach(item => {
@@ -178,11 +192,12 @@ export default function JournalistSource() {
                             });
                         });
                         await batch.commit();
+                        await loadJournalists(true);
                     } catch (err) {
                         console.error("Error seeding initial journalists to Firestore:", err);
                     }
                 };
-                seedData();
+                await seedData();
             } else {
                 list.sort((a, b) => {
                     const nameA = (a.name || '').trim().toLowerCase();
@@ -194,10 +209,13 @@ export default function JournalistSource() {
                     setSelectedId(list[0].id);
                 }
             }
-        }, (err) => {
-            console.error("Error listening to journalists collection:", err);
-        });
-        return () => unsubscribe();
+        } catch (err) {
+            console.error("Error loading journalists:", err);
+        }
+    };
+
+    useEffect(() => {
+        loadJournalists();
     }, []);
 
     const triggerNotification = (message, type = 'success') => {
@@ -280,6 +298,7 @@ export default function JournalistSource() {
                 photo: '',
                 bio: ''
             });
+            await loadJournalists();
             triggerNotification(`${displayName} successfully added to cloud.`, 'success');
         } catch (err) {
             console.error("Error adding journalist to cloud:", err);
@@ -296,6 +315,7 @@ export default function JournalistSource() {
                 const remaining = journalists.filter(j => j.id !== id);
                 setSelectedId(remaining[0].id);
             }
+            await loadJournalists();
             triggerNotification('Journalist contact deleted from cloud.', 'info');
         } catch (err) {
             console.error("Error deleting journalist contact:", err);
@@ -322,6 +342,7 @@ export default function JournalistSource() {
                 bio: (editData.bio || '').trim(),
                 updatedAt: new Date().toISOString()
             });
+            await loadJournalists();
             triggerNotification('Journalist contact updated successfully.', 'success');
             setIsEditing(false);
         } catch (err) {
@@ -331,16 +352,27 @@ export default function JournalistSource() {
     };
 
     const uploadInBatches = async (records) => {
+        // Fetch all existing contacts once to perform local duplicate check
+        const querySnapshot = await getDocs(collection(db, "journalists"));
+        const existingMap = new Map();
+        querySnapshot.forEach(docSnap => {
+            const data = docSnap.data();
+            const key = `${(data.name || '').trim().toLowerCase()}|${(data.publication || '').trim().toLowerCase()}`;
+            existingMap.set(key, docSnap.id);
+        });
+
         const CHUNK_SIZE = 400;
         for (let i = 0; i < records.length; i += CHUNK_SIZE) {
             const chunk = records.slice(i, i + CHUNK_SIZE);
             const batch = writeBatch(db);
+            
             chunk.forEach((record) => {
-                const docRef = doc(collection(db, "journalists"));
-                batch.set(docRef, {
-                    name: record.name || 'Unnamed Journalist',
+                const name = (record.name || 'Unnamed Journalist').trim();
+                const publication = (record.publication || 'Independent').trim();
+                const key = `${name.toLowerCase()}|${publication.toLowerCase()}`;
+                
+                const recordData = {
                     role: record.role || 'Reporter',
-                    publication: record.publication || 'Independent',
                     category: record.category || 'General',
                     email: record.email || '',
                     phone: record.phone || '',
@@ -349,8 +381,24 @@ export default function JournalistSource() {
                     twitter: record.twitter || '',
                     photo: record.photo || '',
                     bio: record.bio || '',
-                    createdAt: new Date().toISOString()
-                });
+                    updatedAt: new Date().toISOString()
+                };
+
+                if (existingMap.has(key)) {
+                    // Update existing document instead of duplicating
+                    const docId = existingMap.get(key);
+                    const docRef = doc(db, "journalists", docId);
+                    batch.update(docRef, recordData);
+                } else {
+                    // Insert new document
+                    const docRef = doc(collection(db, "journalists"));
+                    batch.set(docRef, {
+                        ...recordData,
+                        name: name,
+                        publication: publication,
+                        createdAt: new Date().toISOString()
+                    });
+                }
             });
             await batch.commit();
         }
@@ -378,6 +426,7 @@ export default function JournalistSource() {
                         return;
                     }
                     await uploadInBatches(parsedRecords);
+                    await loadJournalists();
                     triggerNotification(`Successfully uploaded ${parsedRecords.length} contacts to cloud from CSV!`, 'success');
                 } catch (err) {
                     console.error("Error uploading CSV records:", err);
@@ -447,6 +496,7 @@ export default function JournalistSource() {
                         return;
                     }
                     await uploadInBatches(parsedRecords);
+                    await loadJournalists();
                     triggerNotification(`Successfully uploaded ${parsedRecords.length} contacts to cloud from Excel!`, 'success');
                 } catch (err) {
                     console.error("Error uploading Excel records:", err);
@@ -853,7 +903,7 @@ export default function JournalistSource() {
                                     </div>
 
                                     <div className="pt-4 border-t border-slate-50 dark:border-slate-850 flex justify-between items-center text-3xs text-slate-400">
-                                        <span className="font-bold uppercase tracking-wider">{getLocationString(j.address) || 'Remote Bureau'}</span>
+                                        <span className="font-bold uppercase tracking-wider">{getLocationString(j.address, j.location) || 'Remote Bureau'}</span>
                                         <span className="text-indigo-600 dark:text-indigo-400 font-bold group-hover:underline flex items-center gap-0.5">
                                             View Details &rarr;
                                         </span>
@@ -887,7 +937,7 @@ export default function JournalistSource() {
                     />
                     
                     {/* Modal Content */}
-                    <div className="relative bg-[#FDFBF7] dark:bg-slate-900 rounded-3xl border border-slate-150 dark:border-slate-800 w-full max-w-2xl overflow-hidden shadow-2xl p-6 md:p-8 animate-in fade-in zoom-in-95 duration-200 z-10">
+                    <div className="relative bg-[#FDFBF7] dark:bg-slate-900 rounded-3xl border border-slate-150 dark:border-slate-800 w-full max-w-4xl max-h-[90vh] overflow-hidden flex flex-col shadow-2xl p-6 md:p-8 animate-in fade-in zoom-in-95 duration-200 z-10">
                         {/* Decorative gradient blur background */}
                         <div className="absolute -right-24 -top-24 h-72 w-72 rounded-full bg-gradient-to-br from-indigo-500/10 to-purple-500/10 blur-3xl pointer-events-none" />
                         
@@ -900,130 +950,132 @@ export default function JournalistSource() {
 
                         {isEditing ? (
                             <>
-                                {/* Profile Header (Edit Mode) */}
-                                <div className="relative flex flex-col sm:flex-row items-start sm:items-center gap-5 border-b border-slate-100 dark:border-slate-800 pb-6 mb-6">
-                                    <JournalistAvatar journalist={selectedJournalist} size="lg" />
-                                    <div className="space-y-2 w-full">
-                                        <div>
-                                            <label className="block text-[9px] text-gray-450 uppercase font-bold mb-1">Journalist Name</label>
-                                            <input 
-                                                type="text" 
-                                                value={editData.name || ''} 
-                                                onChange={(e) => setEditData({...editData, name: e.target.value})} 
-                                                className="w-full max-w-md px-3.5 py-2 rounded-xl border border-gray-200 dark:border-gray-800 bg-white dark:bg-slate-950 font-bold text-sm text-slate-800 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-indigo-500/50" 
-                                            />
-                                        </div>
-                                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                                <div className="flex-1 overflow-y-auto pr-1 no-scrollbar space-y-6 pb-4">
+                                    {/* Profile Header (Edit Mode) */}
+                                    <div className="relative flex flex-col sm:flex-row items-start sm:items-center gap-5 border-b border-slate-100 dark:border-slate-800 pb-6 mb-6">
+                                        <JournalistAvatar journalist={selectedJournalist} size="lg" />
+                                        <div className="space-y-2 w-full">
                                             <div>
-                                                <label className="block text-[9px] text-gray-455 uppercase font-bold mb-1">Role / Title</label>
+                                                <label className="block text-[9px] text-gray-455 uppercase font-bold mb-1">Journalist Name</label>
                                                 <input 
                                                     type="text" 
-                                                    value={editData.role || ''} 
-                                                    onChange={(e) => setEditData({...editData, role: e.target.value})} 
-                                                    className="w-full px-3.5 py-2 rounded-xl border border-gray-200 dark:border-gray-800 bg-white dark:bg-slate-950 font-bold text-xs text-slate-800 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-indigo-500/50" 
+                                                    value={editData.name || ''} 
+                                                    onChange={(e) => setEditData({...editData, name: e.target.value})} 
+                                                    className="w-full max-w-md px-3.5 py-2 rounded-xl border border-gray-200 dark:border-gray-800 bg-white dark:bg-slate-950 font-bold text-sm text-slate-800 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-indigo-500/50" 
                                                 />
                                             </div>
-                                            <div>
-                                                <label className="block text-[9px] text-gray-455 uppercase font-bold mb-1">Outlet / Publication</label>
-                                                <input 
-                                                    type="text" 
-                                                    value={editData.publication || ''} 
-                                                    onChange={(e) => setEditData({...editData, publication: e.target.value})} 
-                                                    className="w-full px-3.5 py-2 rounded-xl border border-gray-200 dark:border-gray-800 bg-white dark:bg-slate-950 font-bold text-xs text-slate-800 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-indigo-500/50" 
-                                                />
+                                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                                                <div>
+                                                    <label className="block text-[9px] text-gray-455 uppercase font-bold mb-1">Role / Title</label>
+                                                    <input 
+                                                        type="text" 
+                                                        value={editData.role || ''} 
+                                                        onChange={(e) => setEditData({...editData, role: e.target.value})} 
+                                                        className="w-full px-3.5 py-2 rounded-xl border border-gray-200 dark:border-gray-800 bg-white dark:bg-slate-950 font-bold text-xs text-slate-800 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-indigo-500/50" 
+                                                    />
+                                                </div>
+                                                <div>
+                                                    <label className="block text-[9px] text-gray-455 uppercase font-bold mb-1">Outlet / Publication</label>
+                                                    <input 
+                                                        type="text" 
+                                                        value={editData.publication || ''} 
+                                                        onChange={(e) => setEditData({...editData, publication: e.target.value})} 
+                                                        className="w-full px-3.5 py-2 rounded-xl border border-gray-200 dark:border-gray-800 bg-white dark:bg-slate-950 font-bold text-xs text-slate-800 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-indigo-500/50" 
+                                                    />
+                                                </div>
                                             </div>
                                         </div>
                                     </div>
-                                </div>
 
-                                {/* Contact Details Grid (Edit Mode) */}
-                                <div className="grid grid-cols-1 md:grid-cols-2 gap-6 relative z-10 mb-6">
-                                    <div className="space-y-4 bg-white/40 dark:bg-slate-850/40 rounded-2xl p-5 border border-slate-100/50 dark:border-slate-800/50">
-                                        <h3 className="font-bold text-xs text-gray-900 dark:text-white uppercase tracking-wider">
-                                            Contact Information
-                                        </h3>
-                                        
-                                        <div>
-                                            <label className="block text-[9px] text-gray-450 uppercase font-bold mb-1">Email Address</label>
-                                            <input 
-                                                type="email" 
-                                                value={editData.email || ''} 
-                                                onChange={(e) => setEditData({...editData, email: e.target.value})} 
-                                                className="w-full px-3.5 py-2 rounded-xl border border-gray-200 dark:border-gray-800 bg-white dark:bg-slate-950 font-bold text-xs text-slate-800 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-indigo-500/50" 
-                                            />
-                                        </div>
-
-                                        <div>
-                                            <label className="block text-[9px] text-gray-455 uppercase font-bold mb-1">Phone Number</label>
-                                            <input 
-                                                type="text" 
-                                                value={editData.phone || ''} 
-                                                onChange={(e) => setEditData({...editData, phone: e.target.value})} 
-                                                className="w-full px-3.5 py-2 rounded-xl border border-gray-200 dark:border-gray-800 bg-white dark:bg-slate-950 font-bold text-xs text-slate-800 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-indigo-500/50" 
-                                            />
-                                        </div>
-
-                                        <div>
-                                            <label className="block text-[9px] text-gray-455 uppercase font-bold mb-1">Location / Address</label>
-                                            <input 
-                                                type="text" 
-                                                value={editData.address || ''} 
-                                                onChange={(e) => setEditData({...editData, address: e.target.value})} 
-                                                className="w-full px-3.5 py-2 rounded-xl border border-gray-200 dark:border-gray-800 bg-white dark:bg-slate-950 font-bold text-xs text-slate-800 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-indigo-500/50" 
-                                            />
-                                        </div>
-                                    </div>
-
-                                    {/* Right Side: Bio & Pitch (Edit Mode) */}
-                                    <div className="space-y-4 bg-white/40 dark:bg-slate-850/40 rounded-2xl p-5 border border-slate-100/50 dark:border-slate-800/50">
-                                        <h3 className="font-bold text-xs text-gray-900 dark:text-white uppercase tracking-wider">
-                                            Socials & Category
-                                        </h3>
-                                        <div className="grid grid-cols-2 gap-3">
+                                    {/* Contact Details Grid (Edit Mode) */}
+                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6 relative z-10 mb-6">
+                                        <div className="space-y-4 bg-white/40 dark:bg-slate-850/40 rounded-2xl p-5 border border-slate-100/50 dark:border-slate-800/50">
+                                            <h3 className="font-bold text-xs text-gray-900 dark:text-white uppercase tracking-wider">
+                                                Contact Information
+                                            </h3>
+                                            
                                             <div>
-                                                <label className="block text-[9px] text-gray-455 uppercase font-bold mb-1">Category / Beat</label>
+                                                <label className="block text-[9px] text-gray-455 uppercase font-bold mb-1">Email Address</label>
                                                 <input 
-                                                    type="text" 
-                                                    value={editData.category || ''} 
-                                                    onChange={(e) => setEditData({...editData, category: e.target.value})} 
+                                                    type="email" 
+                                                    value={editData.email || ''} 
+                                                    onChange={(e) => setEditData({...editData, email: e.target.value})} 
                                                     className="w-full px-3.5 py-2 rounded-xl border border-gray-200 dark:border-gray-800 bg-white dark:bg-slate-950 font-bold text-xs text-slate-800 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-indigo-500/50" 
                                                 />
                                             </div>
+
                                             <div>
-                                                <label className="block text-[9px] text-gray-455 uppercase font-bold mb-1">Twitter Handle</label>
+                                                <label className="block text-[9px] text-gray-455 uppercase font-bold mb-1">Phone Number</label>
                                                 <input 
                                                     type="text" 
-                                                    value={editData.twitter || ''} 
-                                                    onChange={(e) => setEditData({...editData, twitter: e.target.value})} 
+                                                    value={editData.phone || ''} 
+                                                    onChange={(e) => setEditData({...editData, phone: e.target.value})} 
+                                                    className="w-full px-3.5 py-2 rounded-xl border border-gray-200 dark:border-gray-800 bg-white dark:bg-slate-950 font-bold text-xs text-slate-800 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-indigo-500/50" 
+                                                />
+                                            </div>
+
+                                            <div>
+                                                <label className="block text-[9px] text-gray-455 uppercase font-bold mb-1">Location / Address</label>
+                                                <input 
+                                                    type="text" 
+                                                    value={editData.address || ''} 
+                                                    onChange={(e) => setEditData({...editData, address: e.target.value})} 
                                                     className="w-full px-3.5 py-2 rounded-xl border border-gray-200 dark:border-gray-800 bg-white dark:bg-slate-950 font-bold text-xs text-slate-800 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-indigo-500/50" 
                                                 />
                                             </div>
                                         </div>
 
-                                        <div>
-                                            <label className="block text-[9px] text-gray-455 uppercase font-bold mb-1">LinkedIn Profile Link</label>
-                                            <input 
-                                                type="text" 
-                                                value={editData.linkedin || ''} 
-                                                onChange={(e) => setEditData({...editData, linkedin: e.target.value})} 
-                                                className="w-full px-3.5 py-2 rounded-xl border border-gray-200 dark:border-gray-800 bg-white dark:bg-slate-950 font-bold text-xs text-slate-800 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-indigo-500/50" 
-                                            />
-                                        </div>
+                                        {/* Right Side: Bio & Pitch (Edit Mode) */}
+                                        <div className="space-y-4 bg-white/40 dark:bg-slate-850/40 rounded-2xl p-5 border border-slate-100/50 dark:border-slate-800/50">
+                                            <h3 className="font-bold text-xs text-gray-900 dark:text-white uppercase tracking-wider">
+                                                Socials & Category
+                                            </h3>
+                                            <div className="grid grid-cols-2 gap-3">
+                                                <div>
+                                                    <label className="block text-[9px] text-gray-455 uppercase font-bold mb-1">Category / Beat</label>
+                                                    <input 
+                                                        type="text" 
+                                                        value={editData.category || ''} 
+                                                        onChange={(e) => setEditData({...editData, category: e.target.value})} 
+                                                        className="w-full px-3.5 py-2 rounded-xl border border-gray-200 dark:border-gray-800 bg-white dark:bg-slate-950 font-bold text-xs text-slate-800 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-indigo-500/50" 
+                                                    />
+                                                </div>
+                                                <div>
+                                                    <label className="block text-[9px] text-gray-455 uppercase font-bold mb-1">Twitter Handle</label>
+                                                    <input 
+                                                        type="text" 
+                                                        value={editData.twitter || ''} 
+                                                        onChange={(e) => setEditData({...editData, twitter: e.target.value})} 
+                                                        className="w-full px-3.5 py-2 rounded-xl border border-gray-200 dark:border-gray-800 bg-white dark:bg-slate-950 font-bold text-xs text-slate-800 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-indigo-500/50" 
+                                                    />
+                                                </div>
+                                            </div>
 
-                                        <div>
-                                            <label className="block text-[9px] text-gray-455 uppercase font-bold mb-1">Outreach Insights / Bio</label>
-                                            <textarea 
-                                                value={editData.bio || ''} 
-                                                onChange={(e) => setEditData({...editData, bio: e.target.value})} 
-                                                className="w-full p-3 rounded-xl border border-gray-200 dark:border-gray-800 bg-white dark:bg-slate-950 font-bold text-xs text-slate-800 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-indigo-500/50 resize-none" 
-                                                rows="3"
-                                            />
+                                            <div>
+                                                <label className="block text-[9px] text-gray-455 uppercase font-bold mb-1">LinkedIn Profile Link</label>
+                                                <input 
+                                                    type="text" 
+                                                    value={editData.linkedin || ''} 
+                                                    onChange={(e) => setEditData({...editData, linkedin: e.target.value})} 
+                                                    className="w-full px-3.5 py-2 rounded-xl border border-gray-200 dark:border-gray-800 bg-white dark:bg-slate-950 font-bold text-xs text-slate-800 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-indigo-500/50" 
+                                                />
+                                            </div>
+
+                                            <div>
+                                                <label className="block text-[9px] text-gray-455 uppercase font-bold mb-1">Outreach Insights / Bio</label>
+                                                <textarea 
+                                                    value={editData.bio || ''} 
+                                                    onChange={(e) => setEditData({...editData, bio: e.target.value})} 
+                                                    className="w-full p-3 rounded-xl border border-gray-200 dark:border-gray-800 bg-white dark:bg-slate-950 font-bold text-xs text-slate-800 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-indigo-500/50 resize-none" 
+                                                    rows="3"
+                                                />
+                                            </div>
                                         </div>
                                     </div>
                                 </div>
 
                                 {/* Modal Footer Controls (Edit Mode) */}
-                                <div className="pt-4 border-t border-slate-100 dark:border-slate-800 flex justify-between gap-3">
+                                <div className="pt-4 border-t border-slate-100 dark:border-slate-800 flex justify-between gap-3 mt-auto bg-[#FDFBF7] dark:bg-slate-900 z-10 shrink-0">
                                     <button
                                         onClick={() => setIsEditing(false)}
                                         className="px-6 py-3 border border-slate-200 dark:border-slate-800 rounded-xl font-bold text-xs tracking-wider uppercase text-slate-700 dark:text-slate-350 hover:bg-slate-50 dark:hover:bg-slate-850 transition-all cursor-pointer text-center"
@@ -1040,190 +1092,268 @@ export default function JournalistSource() {
                             </>
                         ) : (
                             <>
-                                {/* Profile Header (View Mode) */}
-                                <div className="relative flex flex-col sm:flex-row items-start sm:items-center gap-5 border-b border-slate-100 dark:border-slate-800 pb-6 mb-6">
-                                    <JournalistAvatar 
-                                        journalist={selectedJournalist} 
-                                        size="lg" 
-                                        onClick={() => {
-                                            if (selectedJournalist.photo) {
-                                                const PHOTO_BASE_URL = 'https://storage.googleapis.com/skribe-media-prod/JournoImage/';
-                                                setMaximizedPhoto(`${PHOTO_BASE_URL}${selectedJournalist.photo}`);
-                                            }
-                                        }}
-                                    />
-                                    <div className="space-y-1">
-                                        <h2 className="text-2xl font-bold text-gray-900 dark:text-white">
-                                            {selectedJournalist.name}
-                                        </h2>
-                                        <div className="flex flex-wrap items-center gap-2">
-                                            <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-semibold bg-indigo-50 dark:bg-indigo-950/40 text-indigo-650 dark:text-indigo-405">
-                                                <Building2 className="h-3.5 w-3.5" />
-                                                {selectedJournalist.publication}
-                                            </span>
-                                            <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-semibold bg-purple-50 dark:bg-purple-950/40 text-purple-600 dark:text-purple-400">
-                                                <Tag className="h-3.5 w-3.5" />
-                                                {getCategoryString(selectedJournalist.category)}
-                                            </span>
-                                        </div>
-                                        <p className="text-sm font-semibold text-gray-500 dark:text-gray-400 pt-0.5">
-                                            {selectedJournalist.role}
-                                        </p>
-                                    </div>
-                                </div>
-
-                                {/* Contact Details Grid (View Mode) */}
-                                <div className="grid grid-cols-1 md:grid-cols-2 gap-6 relative z-10 mb-6">
-                                    {/* Left Side: Details Card Block */}
-                                    <div className="space-y-5 bg-white/40 dark:bg-slate-850/40 rounded-2xl p-5 border border-slate-100/50 dark:border-slate-800/50">
-                                        <h3 className="font-bold text-xs text-gray-900 dark:text-white uppercase tracking-wider">
-                                            Contact Information
-                                        </h3>
-                                        
-                                        {/* Email */}
-                                        <div className="flex items-center justify-between group/row">
-                                            <div className="flex items-center gap-3 min-w-0">
-                                                <div className="p-2 rounded-lg bg-indigo-50 dark:bg-indigo-950/30 text-indigo-600 dark:text-indigo-400 shrink-0">
-                                                    <Mail className="h-4.5 w-4.5" />
-                                                </div>
-                                                <div className="min-w-0">
-                                                    <p className="text-[9px] text-gray-450 uppercase font-bold">Email Address</p>
-                                                    <p className="text-xs font-bold text-gray-800 dark:text-gray-205 truncate">
-                                                        {selectedJournalist.email || 'N/A'}
-                                                    </p>
-                                                </div>
+                                <div className="flex-1 overflow-y-auto pr-1 no-scrollbar space-y-6 pb-4">
+                                    {/* Profile Header (View Mode) */}
+                                    <div className="relative flex flex-col sm:flex-row items-start sm:items-center gap-5 border-b border-slate-100 dark:border-slate-800 pb-6 mb-6">
+                                        <JournalistAvatar 
+                                            journalist={selectedJournalist} 
+                                            size="lg" 
+                                            onClick={() => {
+                                                if (selectedJournalist.photo) {
+                                                    const PHOTO_BASE_URL = 'https://storage.googleapis.com/skribe-media-prod/JournoImage/';
+                                                    setMaximizedPhoto(`${PHOTO_BASE_URL}${selectedJournalist.photo}`);
+                                                }
+                                            }}
+                                        />
+                                        <div className="space-y-1">
+                                            <h2 className="text-2xl font-bold text-gray-900 dark:text-white">
+                                                {selectedJournalist.name}
+                                            </h2>
+                                            <div className="flex flex-wrap items-center gap-2">
+                                                <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-semibold bg-indigo-50 dark:bg-indigo-950/40 text-indigo-650 dark:text-indigo-405">
+                                                    <Building2 className="h-3.5 w-3.5" />
+                                                    {selectedJournalist.publication}
+                                                </span>
+                                                <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-semibold bg-purple-50 dark:bg-purple-950/40 text-purple-600 dark:text-purple-400">
+                                                    <Tag className="h-3.5 w-3.5" />
+                                                    {getCategoryString(selectedJournalist.category)}
+                                                </span>
                                             </div>
-                                            {selectedJournalist.email && (
-                                                <button
-                                                    onClick={() => handleCopy(selectedJournalist.email, 'email')}
-                                                    className="p-1.5 rounded-lg text-gray-400 hover:text-indigo-600 hover:bg-indigo-50 dark:hover:bg-indigo-950/30 transition-all duration-200 cursor-pointer shrink-0"
-                                                    title="Copy Email"
-                                                >
-                                                    {copiedField === 'email' ? <Check className="h-4 w-4 text-green-500" /> : <Copy className="h-4 w-4" />}
-                                                </button>
-                                            )}
-                                        </div>
-
-                                        {/* Phone */}
-                                        <div className="flex items-center justify-between group/row">
-                                            <div className="flex items-center gap-3 min-w-0">
-                                                <div className="p-2 rounded-lg bg-indigo-50 dark:bg-indigo-950/30 text-indigo-600 dark:text-indigo-400 shrink-0">
-                                                    <Phone className="h-4.5 w-4.5" />
-                                                </div>
-                                                <div className="min-w-0">
-                                                    <p className="text-[9px] text-gray-450 uppercase font-bold">Phone Number</p>
-                                                    <p className="text-xs font-bold text-gray-800 dark:text-gray-205 truncate">
-                                                        {selectedJournalist.phone || 'N/A'}
-                                                    </p>
-                                                </div>
-                                            </div>
-                                            {selectedJournalist.phone && (
-                                                <button
-                                                    onClick={() => handleCopy(selectedJournalist.phone, 'phone')}
-                                                    className="p-1.5 rounded-lg text-gray-400 hover:text-indigo-600 hover:bg-indigo-50 dark:hover:bg-indigo-950/30 transition-all duration-200 cursor-pointer shrink-0"
-                                                    title="Copy Phone"
-                                                >
-                                                    {copiedField === 'phone' ? <Check className="h-4 w-4 text-green-500" /> : <Copy className="h-4 w-4" />}
-                                                </button>
-                                            )}
-                                        </div>
-
-                                        {/* Address */}
-                                        <div className="flex items-center justify-between group/row">
-                                            <div className="flex items-center gap-3 min-w-0">
-                                                <div className="p-2 rounded-lg bg-indigo-50 dark:bg-indigo-950/30 text-indigo-650 dark:text-indigo-400 shrink-0">
-                                                    <MapPin className="h-4.5 w-4.5" />
-                                                </div>
-                                                <div className="min-w-0">
-                                                    <p className="text-[9px] text-gray-455 uppercase font-bold">Location / Address</p>
-                                                    <p className="text-xs font-bold text-gray-800 dark:text-gray-205 truncate">
-                                                        {getLocationString(selectedJournalist.address) || 'N/A'}
-                                                    </p>
-                                                </div>
-                                            </div>
-                                            {selectedJournalist.address && (
-                                                <button
-                                                    onClick={() => handleCopy(getLocationString(selectedJournalist.address), 'address')}
-                                                    className="p-1.5 rounded-lg text-gray-400 hover:text-indigo-600 hover:bg-indigo-50 dark:hover:bg-indigo-950/30 transition-all duration-200 cursor-pointer shrink-0"
-                                                    title="Copy Address"
-                                                >
-                                                    {copiedField === 'address' ? <Check className="h-4 w-4 text-green-500" /> : <Copy className="h-4 w-4" />}
-                                                </button>
-                                            )}
-                                        </div>
-
-                                        {/* LinkedIn */}
-                                        {selectedJournalist.linkedin && (
-                                            <div className="flex items-center justify-between group/row">
-                                                <div className="flex items-center gap-3 min-w-0">
-                                                    <div className="p-2 rounded-lg bg-indigo-50 dark:bg-indigo-950/30 text-indigo-600 dark:text-indigo-400 shrink-0">
-                                                        <Linkedin className="h-4.5 w-4.5" />
-                                                    </div>
-                                                    <div className="min-w-0">
-                                                        <p className="text-[9px] text-gray-455 uppercase font-bold">LinkedIn</p>
-                                                        <a 
-                                                            href={selectedJournalist.linkedin} 
-                                                            target="_blank" 
-                                                            rel="noopener noreferrer" 
-                                                            className="text-xs font-bold text-indigo-600 dark:text-indigo-400 hover:underline truncate block"
-                                                        >
-                                                            View Profile
-                                                        </a>
-                                                    </div>
-                                                </div>
-                                            </div>
-                                        )}
-
-                                        {/* Twitter */}
-                                        {selectedJournalist.twitter && (
-                                            <div className="flex items-center justify-between group/row">
-                                                <div className="flex items-center gap-3 min-w-0">
-                                                    <div className="p-2 rounded-lg bg-indigo-50 dark:bg-indigo-950/30 text-indigo-600 dark:text-indigo-400 shrink-0">
-                                                        <Twitter className="h-4.5 w-4.5" />
-                                                    </div>
-                                                    <div className="min-w-0">
-                                                        <p className="text-[9px] text-gray-455 uppercase font-bold">Twitter</p>
-                                                        <a 
-                                                            href={selectedJournalist.twitter.startsWith('http') ? selectedJournalist.twitter : `https://twitter.com/${selectedJournalist.twitter.replace('@', '')}`} 
-                                                            target="_blank" 
-                                                            rel="noopener noreferrer" 
-                                                            className="text-xs font-bold text-indigo-600 dark:text-indigo-400 hover:underline truncate block"
-                                                        >
-                                                            {selectedJournalist.twitter}
-                                                        </a>
-                                                    </div>
-                                                </div>
-                                            </div>
-                                        )}
-                                    </div>
-
-                                    {/* Right Side: Brief / Bio & Pitch actions */}
-                                    <div className="flex flex-col justify-between space-y-5 bg-white/40 dark:bg-slate-850/40 rounded-2xl p-5 border border-slate-100/50 dark:border-slate-800/50">
-                                        <div className="space-y-3">
-                                            <h3 className="font-bold text-xs text-gray-900 dark:text-white uppercase tracking-wider flex items-center gap-1.5">
-                                                <Sparkles className="h-4 w-4 text-indigo-500" />
-                                                Outreach Insights
-                                            </h3>
-                                            <p className="text-xs text-gray-650 dark:text-slate-350 leading-relaxed font-semibold">
-                                                {selectedJournalist.bio || "No custom bio or pitching insight available for this contact."}
+                                            <p className="text-sm font-semibold text-gray-500 dark:text-gray-400 pt-0.5">
+                                                {selectedJournalist.role}
                                             </p>
                                         </div>
-
-                                        {/* Action button */}
-                                        {selectedJournalist.email && (
-                                            <a
-                                                href={`mailto:${selectedJournalist.email}?subject=Exclusive pitch from Anexar`}
-                                                className="inline-flex items-center justify-center gap-2 px-4 py-3 rounded-xl text-indigo-600 dark:text-indigo-400 font-bold border border-indigo-200 dark:border-indigo-800/60 bg-indigo-50/50 hover:bg-indigo-50 dark:bg-indigo-950/20 dark:hover:bg-indigo-950/40 hover:-translate-y-0.5 transition-all duration-200 text-xs tracking-wider uppercase cursor-pointer"
-                                            >
-                                                <Mail className="h-4 w-4" />
-                                                <span>Draft Pitch Email</span>
-                                            </a>
-                                        )}
                                     </div>
+
+                                    {/* Contact Details Grid (View Mode) */}
+                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6 relative z-10 mb-6">
+                                        {/* Left Side: Details Card Block */}
+                                        <div className="space-y-5 bg-white/40 dark:bg-slate-850/40 rounded-2xl p-5 border border-slate-100/50 dark:border-slate-800/50">
+                                            <h3 className="font-bold text-xs text-gray-900 dark:text-white uppercase tracking-wider">
+                                                Contact Information
+                                            </h3>
+                                            
+                                            {/* Email */}
+                                            <div className="flex items-center justify-between group/row">
+                                                <div className="flex items-center gap-3 min-w-0">
+                                                    <div className="p-2 rounded-lg bg-indigo-50 dark:bg-indigo-950/30 text-indigo-600 dark:text-indigo-400 shrink-0">
+                                                        <Mail className="h-4.5 w-4.5" />
+                                                    </div>
+                                                    <div className="min-w-0">
+                                                        <p className="text-[9px] text-gray-450 uppercase font-bold">Email Address</p>
+                                                        <p className="text-xs font-bold text-gray-800 dark:text-gray-205 truncate">
+                                                            {selectedJournalist.email || 'N/A'}
+                                                        </p>
+                                                    </div>
+                                                </div>
+                                                {selectedJournalist.email && (
+                                                    <button
+                                                        onClick={() => handleCopy(selectedJournalist.email, 'email')}
+                                                        className="p-1.5 rounded-lg text-gray-400 hover:text-indigo-600 hover:bg-indigo-50 dark:hover:bg-indigo-950/30 transition-all duration-200 cursor-pointer shrink-0"
+                                                        title="Copy Email"
+                                                    >
+                                                        {copiedField === 'email' ? <Check className="h-4 w-4 text-green-500" /> : <Copy className="h-4 w-4" />}
+                                                    </button>
+                                                )}
+                                            </div>
+
+                                            {/* Phone */}
+                                            <div className="flex items-center justify-between group/row">
+                                                <div className="flex items-center gap-3 min-w-0">
+                                                    <div className="p-2 rounded-lg bg-indigo-50 dark:bg-indigo-950/30 text-indigo-600 dark:text-indigo-400 shrink-0">
+                                                        <Phone className="h-4.5 w-4.5" />
+                                                    </div>
+                                                    <div className="min-w-0">
+                                                        <p className="text-[9px] text-gray-450 uppercase font-bold">Phone Number</p>
+                                                        <p className="text-xs font-bold text-gray-800 dark:text-gray-205 truncate">
+                                                            {selectedJournalist.phone || 'N/A'}
+                                                        </p>
+                                                    </div>
+                                                </div>
+                                                {selectedJournalist.phone && (
+                                                    <button
+                                                        onClick={() => handleCopy(selectedJournalist.phone, 'phone')}
+                                                        className="p-1.5 rounded-lg text-gray-400 hover:text-indigo-600 hover:bg-indigo-50 dark:hover:bg-indigo-950/30 transition-all duration-200 cursor-pointer shrink-0"
+                                                        title="Copy Phone"
+                                                    >
+                                                        {copiedField === 'phone' ? <Check className="h-4 w-4 text-green-500" /> : <Copy className="h-4 w-4" />}
+                                                    </button>
+                                                )}
+                                            </div>
+
+                                            {/* Address */}
+                                            <div className="flex items-center justify-between group/row">
+                                                <div className="flex items-center gap-3 min-w-0">
+                                                    <div className="p-2 rounded-lg bg-indigo-50 dark:bg-indigo-950/30 text-indigo-650 dark:text-indigo-405 shrink-0">
+                                                        <MapPin className="h-4.5 w-4.5" />
+                                                    </div>
+                                                    <div className="min-w-0">
+                                                        <p className="text-[9px] text-gray-455 uppercase font-bold">Location / Address</p>
+                                                        <p className="text-xs font-bold text-gray-800 dark:text-gray-205 truncate">
+                                                            {getLocationString(selectedJournalist.address, selectedJournalist.location) || 'N/A'}
+                                                        </p>
+                                                    </div>
+                                                </div>
+                                                {(selectedJournalist.address || selectedJournalist.location) && (
+                                                    <button
+                                                        onClick={() => handleCopy(getLocationString(selectedJournalist.address, selectedJournalist.location), 'address')}
+                                                        className="p-1.5 rounded-lg text-gray-400 hover:text-indigo-600 hover:bg-indigo-50 dark:hover:bg-indigo-950/30 transition-all duration-200 cursor-pointer shrink-0"
+                                                        title="Copy Address"
+                                                    >
+                                                        {copiedField === 'address' ? <Check className="h-4 w-4 text-green-500" /> : <Copy className="h-4 w-4" />}
+                                                    </button>
+                                                )}
+                                            </div>
+
+                                            {/* LinkedIn */}
+                                            {selectedJournalist.linkedin && (
+                                                <div className="flex items-center justify-between group/row">
+                                                    <div className="flex items-center gap-3 min-w-0">
+                                                        <div className="p-2 rounded-lg bg-indigo-50 dark:bg-indigo-950/30 text-indigo-600 dark:text-indigo-400 shrink-0">
+                                                            <Linkedin className="h-4.5 w-4.5" />
+                                                        </div>
+                                                        <div className="min-w-0">
+                                                            <p className="text-[9px] text-gray-455 uppercase font-bold">LinkedIn</p>
+                                                            <a 
+                                                                href={selectedJournalist.linkedin} 
+                                                                target="_blank" 
+                                                                rel="noopener noreferrer" 
+                                                                className="text-xs font-bold text-indigo-600 dark:text-indigo-400 hover:underline truncate block"
+                                                            >
+                                                                View Profile
+                                                            </a>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            )}
+
+                                            {/* Twitter */}
+                                            {selectedJournalist.twitter && (
+                                                <div className="flex items-center justify-between group/row">
+                                                    <div className="flex items-center gap-3 min-w-0">
+                                                        <div className="p-2 rounded-lg bg-indigo-50 dark:bg-indigo-950/30 text-indigo-600 dark:text-indigo-400 shrink-0">
+                                                            <Twitter className="h-4.5 w-4.5" />
+                                                        </div>
+                                                        <div className="min-w-0">
+                                                            <p className="text-[9px] text-gray-455 uppercase font-bold">Twitter</p>
+                                                            <a 
+                                                                href={selectedJournalist.twitter.startsWith('http') ? selectedJournalist.twitter : `https://twitter.com/${selectedJournalist.twitter.replace('@', '')}`} 
+                                                                target="_blank" 
+                                                                rel="noopener noreferrer" 
+                                                                className="text-xs font-bold text-indigo-600 dark:text-indigo-400 hover:underline truncate block"
+                                                            >
+                                                                {selectedJournalist.twitter}
+                                                            </a>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            )}
+                                        </div>
+
+                                        {/* Right Side: Brief / Bio & Pitch actions */}
+                                        <div className="flex flex-col justify-between space-y-5 bg-white/40 dark:bg-slate-850/40 rounded-2xl p-5 border border-slate-100/50 dark:border-slate-800/50">
+                                            <div className="space-y-3">
+                                                <h3 className="font-bold text-xs text-gray-900 dark:text-white uppercase tracking-wider flex items-center gap-1.5">
+                                                    <Sparkles className="h-4 w-4 text-indigo-500" />
+                                                    Outreach Insights
+                                                </h3>
+                                                <p className="text-xs text-gray-655 dark:text-slate-350 leading-relaxed font-semibold">
+                                                    {selectedJournalist.bio || "No custom bio or pitching insight available for this contact."}
+                                                </p>
+                                            </div>
+
+                                            {/* Career Summary Timeline */}
+                                            {selectedJournalist.careerSummary && selectedJournalist.careerSummary.length > 0 && (
+                                                <div className="space-y-3 pt-3.5 border-t border-slate-100/50 dark:border-slate-800/30">
+                                                    <h3 className="font-bold text-xs text-gray-900 dark:text-white uppercase tracking-wider flex items-center gap-1.5">
+                                                        <Briefcase className="h-4 w-4 text-indigo-500" />
+                                                        Career History
+                                                    </h3>
+                                                    <div className="space-y-2.5 max-h-36 overflow-y-auto pr-1 no-scrollbar">
+                                                        {selectedJournalist.careerSummary.map((job, idx) => (
+                                                            <div key={idx} className="flex justify-between items-start gap-4 text-[11px] font-semibold">
+                                                                <span className="text-gray-700 dark:text-gray-300 leading-snug">
+                                                                    {job.description || 'Journalist'} at <strong className="text-indigo-600 dark:text-indigo-400 font-bold">{job.company}</strong>
+                                                                </span>
+                                                                <span className="text-slate-400 dark:text-slate-500 text-[10px] shrink-0 font-bold">
+                                                                    {job.year} - {job.toYear || 'Present'}
+                                                                </span>
+                                                            </div>
+                                                        ))}
+                                                    </div>
+                                                </div>
+                                            )}
+
+                                            {/* Action button */}
+                                            {selectedJournalist.email && (
+                                                <a
+                                                    href={`mailto:${selectedJournalist.email}?subject=Exclusive pitch from Anexar`}
+                                                    className="inline-flex items-center justify-center gap-2 px-4 py-3 rounded-xl text-indigo-600 dark:text-indigo-400 font-bold border border-indigo-200 dark:border-indigo-800/60 bg-indigo-50/50 hover:bg-indigo-50 dark:bg-indigo-950/20 dark:hover:bg-indigo-950/40 hover:-translate-y-0.5 transition-all duration-200 text-xs tracking-wider uppercase cursor-pointer"
+                                                >
+                                                    <Mail className="h-4 w-4" />
+                                                    <span>Draft Pitch Email</span>
+                                                </a>
+                                            )}
+                                        </div>
+                                    </div>
+
+                                    {/* Recent Articles Section */}
+                                    {selectedJournalist.articles && selectedJournalist.articles.length > 0 && (
+                                        <div className="mt-6 border-t border-slate-100 dark:border-slate-800 pt-6">
+                                            <h3 className="font-bold text-xs text-gray-900 dark:text-white uppercase tracking-wider mb-4 flex items-center gap-1.5">
+                                                <Newspaper className="h-4 w-4 text-indigo-500" />
+                                                Recent Articles & Coverage ({selectedJournalist.articles.length})
+                                            </h3>
+                                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 max-h-80 overflow-y-auto pr-2 no-scrollbar">
+                                                {selectedJournalist.articles.map((art, index) => (
+                                                    <div 
+                                                        key={index} 
+                                                        className="bg-white/40 dark:bg-slate-850/40 border border-slate-100/50 dark:border-slate-800/50 rounded-xl p-4 flex flex-col justify-between gap-2 hover:border-indigo-400 dark:hover:border-indigo-500 transition-all group/art"
+                                                    >
+                                                        <div className="space-y-1">
+                                                            <div className="flex items-start justify-between gap-3">
+                                                                <a 
+                                                                    href={art.url} 
+                                                                    target="_blank" 
+                                                                    rel="noopener noreferrer" 
+                                                                    className="text-xs font-bold text-slate-800 dark:text-slate-200 hover:text-indigo-650 dark:hover:text-indigo-400 hover:underline leading-snug flex-1"
+                                                                >
+                                                                    {art.title}
+                                                                </a>
+                                                                <span className={`px-2 py-0.5 rounded-full text-[9px] font-bold uppercase tracking-wider shrink-0 ${
+                                                                    art.sentiment === 'positive' 
+                                                                        ? 'bg-emerald-50 dark:bg-emerald-950/30 text-emerald-600 dark:text-emerald-400'
+                                                                        : art.sentiment === 'negative'
+                                                                        ? 'bg-rose-50 dark:bg-rose-950/30 text-rose-600 dark:text-rose-450'
+                                                                        : 'bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400'
+                                                                }`}>
+                                                                    {art.sentiment}
+                                                                </span>
+                                                            </div>
+                                                            {art.summary && (
+                                                                <p className="text-[10px] text-slate-500 dark:text-slate-400 leading-relaxed font-semibold">
+                                                                    {art.summary}
+                                                                </p>
+                                                            )}
+                                                        </div>
+                                                        <div className="flex items-center justify-between text-[9px] text-slate-400 dark:text-slate-500 font-bold pt-1.5 border-t border-slate-100/50 dark:border-slate-800/30 mt-1">
+                                                            <span>Source: {art.website || 'News Outlet'}</span>
+                                                            <span>
+                                                                {art.publishDate 
+                                                                    ? new Date(art.publishDate).toLocaleDateString(undefined, { year: 'numeric', month: 'short', day: 'numeric' })
+                                                                    : 'N/A'
+                                                                }
+                                                            </span>
+                                                        </div>
+                                                    </div>
+                                                ))}
+                                            </div>
+                                        </div>
+                                    )}
                                 </div>
 
                                 {/* Modal Footer Controls */}
-                                <div className="pt-4 border-t border-slate-100 dark:border-slate-800 flex justify-between gap-3">
+                                <div className="pt-4 border-t border-slate-100 dark:border-slate-800 flex justify-between gap-3 mt-auto bg-[#FDFBF7] dark:bg-slate-900 z-10 shrink-0">
                                     <div className="flex gap-2">
                                         <button
                                             onClick={() => {

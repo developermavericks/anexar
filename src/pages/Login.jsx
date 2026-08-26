@@ -19,15 +19,11 @@ export default function Login() {
     const urlRole = searchParams.get('role');
 
     // 'Team' corresponds to Anexar internally
-    const [role, setRole] = useState(urlRole === 'anexar' ? 'Team' : 'Client');
+    const [role, setRole] = useState('Team');
 
-    // Sync tab with URL parameter changes
+    // Sync tab with URL parameter changes (force 'Team' since Client-side is disabled)
     useEffect(() => {
-        if (urlRole === 'anexar') {
-            setRole('Team');
-        } else if (urlRole === 'client') {
-            setRole('Client');
-        }
+        setRole('Team');
     }, [urlRole]);
 
     const { login, oauthLogin, loginWithGoogle, logout } = useAuth();
@@ -104,13 +100,14 @@ export default function Login() {
                         </h1>
                     </Link>
                     <p className="text-brand-gray mt-2">
-                        Sign In as {role === 'Team' ? 'Mavericks' : 'Client'} to continue
+                        Sign In as Mavericks to continue
                     </p>
                 </div>
 
                 <Card className="shadow-lg border border-brand-border/30">
                     <CardContent className="pt-6">
-                        {/* Custom Role Selector tabs */}
+                        {/* Custom Role Selector tabs (Client option commented out) */}
+                        {/* 
                         <div className="mb-6">
                             <div className="flex p-1 bg-brand-border/10 rounded-2xl border border-brand-border/20">
                                 <button
@@ -137,59 +134,20 @@ export default function Login() {
                                 </button>
                             </div>
                         </div>
+                        */}
 
-                        <form onSubmit={handleSubmit} className="space-y-4">
-                            {error && (
-                                <div className="p-3.5 bg-red-50 text-red-600 text-xs font-semibold rounded-xl border border-red-100 leading-relaxed">
-                                    {error}
-                                </div>
-                            )}
-
-                            <Input
-                                label="Email"
-                                type="email"
-                                placeholder={role === 'Team' ? "strategist@mavericks.com" : "client@company.com"}
-                                value={email}
-                                onChange={(e) => setEmail(e.target.value)}
-                                required
-                            />
-                            <Input
-                                label="Password"
-                                type="password"
-                                placeholder="••••••••"
-                                value={password}
-                                onChange={(e) => setPassword(e.target.value)}
-                                required
-                            />
-
-                            <div className="flex items-center justify-between py-1">
-                                <label className="flex items-center space-x-2 cursor-pointer">
-                                    <input type="checkbox" className="w-4 h-4 rounded border-brand-border text-brand-amber focus:ring-brand-amber form-checkbox" />
-                                    <span className="text-xs text-brand-gray font-medium">Remember me</span>
-                                </label>
-                                <Link to="/forgot-password" className="text-xs text-brand-amber font-semibold hover:underline">
-                                    Forgot password?
-                                </Link>
+                        {error && (
+                            <div className="p-3.5 bg-red-50 text-red-600 text-xs font-semibold rounded-xl border border-red-100 leading-relaxed mb-6">
+                                {error}
                             </div>
+                        )}
 
-                            <div className="pt-2">
-                                <Button type="submit" className="w-full cursor-pointer" size="lg">
-                                    Sign In as {role === 'Team' ? 'Mavericks' : 'Client'}
-                                </Button>
-                            </div>
-                        </form>
-
-                        <div className="mt-6">
-                            <div className="relative">
-                                <div className="absolute inset-0 flex items-center">
-                                    <div className="w-full border-t border-brand-border/50"></div>
-                                </div>
-                                <div className="relative flex justify-center text-xs">
-                                    <span className="px-3 bg-white text-brand-gray font-semibold uppercase tracking-wider">Or continue with</span>
-                                </div>
-                            </div>
-
-                            <div className="mt-5 flex justify-center">
+                        <div className="flex flex-col items-center justify-center py-6 space-y-5">
+                            <p className="text-sm font-semibold text-brand-gray text-center max-w-xs leading-relaxed">
+                                Access is restricted. Please sign in using your official **@themavericksindia.com** Google Workspace account:
+                            </p>
+                            
+                            <div className="pt-2 flex justify-center scale-105">
                                 <GoogleLogin
                                     onSuccess={async (credentialResponse) => {
                                         try {
@@ -207,12 +165,20 @@ export default function Login() {
                                             if (role === 'Client' && userEmail.toLowerCase().endsWith('@themavericksindia.com')) {
                                                 setRole('Team');
                                                 setError("Strategic Redirect: @themavericksindia.com accounts must log in as Mavericks. Switched view to Maverick Sign-In.");
-                                                const loggedInUser = await loginWithGoogle({ ...decoded, role: 'Team' });
+                                                const loggedInUser = await loginWithGoogle({ 
+                                                    ...decoded, 
+                                                    role: 'Team', 
+                                                    idToken: credentialResponse.credential 
+                                                });
                                                 navigate('/dashboard');
                                                 return;
                                             }
 
-                                            const loggedInUser = await loginWithGoogle({ ...decoded, role });
+                                            const loggedInUser = await loginWithGoogle({ 
+                                                ...decoded, 
+                                                role, 
+                                                idToken: credentialResponse.credential 
+                                            });
                                             navigate('/dashboard');
                                         } catch (err) {
                                             setError(err.message || "Failed to log in with Google");
@@ -222,16 +188,6 @@ export default function Login() {
                                         console.log("Google Login Failed");
                                     }}
                                 />
-                            </div>
-
-                            <div className="mt-8 text-center text-xs text-brand-gray font-medium">
-                                Don't have an account?{' '}
-                                <Link
-                                    to={role === 'Team' ? "/signup?role=anexar" : "/signup?role=client"}
-                                    className="text-brand-amber font-bold hover:underline"
-                                >
-                                    Sign Up as {role === 'Team' ? 'Mavericks' : 'Client'}
-                                </Link>
                             </div>
                         </div>
                     </CardContent>

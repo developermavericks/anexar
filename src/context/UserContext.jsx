@@ -82,6 +82,13 @@ export const UserProvider = ({ children }) => {
                 }
             } catch (e) {}
 
+            // Set cookie for extension lookup
+            try {
+                document.cookie = `anexar_user_email=${encodeURIComponent(email)}; path=/; max-age=31536000; Secure; SameSite=Lax`;
+            } catch (e) {
+                console.error("Error setting email cookie:", e);
+            }
+
             setUserState(prev => ({
                 ...prev,
                 name: authUser.name,
@@ -101,6 +108,11 @@ export const UserProvider = ({ children }) => {
                     companyName: 'The Mavericks Communications LLP',
                 }
             }));
+        } else {
+            // Clear cookie on logout
+            try {
+                document.cookie = `anexar_user_email=; path=/; max-age=0; Secure; SameSite=Lax`;
+            } catch (e) {}
         }
     }, [authUser]);
 

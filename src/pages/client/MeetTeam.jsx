@@ -3,7 +3,7 @@ import { Mail, Calendar as CalendarIcon, X, Send, MessageSquare } from 'lucide-r
 import { useUser } from '../../context/UserContext';
 import { supabase } from '../../lib/supabaseClient';
 import { db } from '../../lib/firebaseClient';
-import { collection, addDoc } from 'firebase/firestore';
+import { collection, addDoc, getDocs } from 'firebase/firestore';
 
 const MeetTeam = () => {
     const { user } = useUser();
@@ -30,6 +30,10 @@ const MeetTeam = () => {
     const [busySlots, setBusySlots] = useState([]);
     const [loadingAvailability, setLoadingAvailability] = useState(false);
 
+    // Custom time range states
+    const [isCustomTime, setIsCustomTime] = useState(false);
+    const [customStartTime, setCustomStartTime] = useState('');
+    const [customEndTime, setCustomEndTime] = useState('');
     // Developer Test bypass logic consistent with other components
     const clientName = user?.clientBrand || '';
 
@@ -87,19 +91,53 @@ const MeetTeam = () => {
                     }
                 }
 
-                // 4. Fallback: If no allocations, load all team/manager users
+                // 4. Fallback: If no allocations, load from Firestore's "user_clients"
                 if (members.length === 0) {
-                    const { data: allUsers, error: allUsersErr } = await supabase
-                        .from('users')
-                        .select('id, name, email, role, picture, title')
-                        .in('role', ['team', 'manager']);
+                    const userClientsSnap = await getDocs(collection(db, "user_clients"));
+                    const matchedEmails = [];
+                    userClientsSnap.forEach(docSnap => {
+                        const data = docSnap.data();
+                        const clientsList = Array.isArray(data.clients) ? data.clients : [];
+                        if (clientsList.some(c => (c || '').toLowerCase() === clientName.toLowerCase())) {
+                            matchedEmails.push((data.email || docSnap.id || '').toLowerCase());
+                        }
+                    });
 
-                    if (allUsers && !allUsersErr) {
-                        members = allUsers;
+                    if (matchedEmails.length > 0) {
+                        const { data: usersData, error: usersErr } = await supabase
+                            .from('users')
+                            .select('id, name, email, role, picture, title')
+                            .in('email', matchedEmails);
+
+                        members = (usersData && !usersErr) ? [...usersData] : [];
+
+                        // Some Firestore-mapped emails may not have a matching Supabase
+                        // users row (case differences, not yet synced) - still show them
+                        // using the Firestore record so the directory stays accurate.
+                        const foundEmails = new Set(members.map(u => (u.email || '').toLowerCase()));
+                        userClientsSnap.forEach(docSnap => {
+                            const data = docSnap.data();
+                            const email = (data.email || docSnap.id || '').toLowerCase();
+                            if (matchedEmails.includes(email) && !foundEmails.has(email)) {
+                                members.push({
+                                    id: email,
+                                    name: data.name || email.split('@')[0],
+                                    email: email,
+                                    role: 'team',
+                                    title: 'Account Representative'
+                                });
+                            }
+                        });
                     }
                 }
 
-                setTeamList(members);
+                const filteredMembers = members.filter(m => {
+                    const emailLower = (m.email || '').toLowerCase();
+                    const nameLower = (m.name || '').toLowerCase();
+                    return !emailLower.includes('satyam') && !nameLower.includes('satyam');
+                });
+
+                setTeamList(filteredMembers);
             } catch (err) {
                 console.error("Error loading team members:", err);
             } finally {
@@ -144,11 +182,18 @@ const MeetTeam = () => {
         setIsSentViaEmailJS(false);
     };
 
-    const standardTimeSlots = [
-        '09:00', '09:30', '10:00', '10:30', '11:00', '11:30', '12:00', '12:30',
-        '13:00', '13:30', '14:00', '14:30', '15:00', '15:30', '16:00', '16:30',
-        '17:00', '17:30'
-    ];
+    const generateTimeSlots = (startHour = 9, endHour = 18, interval = 15) => {
+        const slots = [];
+        for (let h = startHour; h <= endHour; h++) {
+            for (let m = 0; m < 60; m += interval) {
+                if (h === endHour && m > 0) break;
+                slots.push(`${h.toString().padStart(2, '0')}:${m.toString().padStart(2, '0')}`);
+            }
+        }
+        return slots;
+    };
+
+    const standardTimeSlots = generateTimeSlots(9, 18, 15);
 
     // Google Calendar free/busy availability effect loader
     useEffect(() => {
@@ -231,7 +276,15 @@ const MeetTeam = () => {
 
     const handleSubmit = async (e) => {
         e.preventDefault();
-        if (!selectedMember || !meetingDate || selectedSlots.length === 0) return;
+        if (!selectedMember || !meetingDate) return;
+        
+        if (isCustomTime && (!customStartTime || !customEndTime)) {
+            alert("Please provide both start and end times.");
+            return;
+        } else if (!isCustomTime && selectedSlots.length === 0) {
+            alert("Please select at least one time slot.");
+            return;
+        }
 
         try {
             // Save meeting schedule to Firestore with status 'pending'
@@ -242,15 +295,20 @@ const MeetTeam = () => {
                 memberName: selectedMember.name,
                 memberEmail: selectedMember.email,
                 date: meetingDate,
-                slots: selectedSlots,
+                slots: isCustomTime ? [] : selectedSlots,
+                isCustomTime: isCustomTime,
+                customStartTime: isCustomTime ? customStartTime : null,
+                customEndTime: isCustomTime ? customEndTime : null,
                 topic: meetingTopic,
                 status: 'pending',
                 createdAt: new Date().toISOString()
             });
 
+            const timeText = isCustomTime ? `${customStartTime} - ${customEndTime}` : selectedSlots.join(', ');
+
             // Send notification to the member's notification bell list in Firestore
             await addDoc(collection(db, "notifications"), {
-                message: `Client ${clientName} requested a meeting with you on ${meetingDate}. Slots: ${selectedSlots.join(', ')}. Topic: "${meetingTopic}"`,
+                message: `Client ${clientName} requested a meeting with you on ${meetingDate}. Time: ${timeText}. Topic: "${meetingTopic}"`,
                 createdAt: new Date().toISOString(),
                 read: false,
                 recipientEmail: selectedMember.email,
@@ -258,8 +316,12 @@ const MeetTeam = () => {
                 meetingId: meetingDoc.id,
                 type: 'meeting_request',
                 meetingDate: meetingDate,
-                slots: selectedSlots,
+                slots: isCustomTime ? [] : selectedSlots,
+                isCustomTime: isCustomTime,
+                customStartTime: isCustomTime ? customStartTime : null,
+                customEndTime: isCustomTime ? customEndTime : null,
                 clientEmail: user?.email || '',
+
                 topic: meetingTopic
             });
 
@@ -497,41 +559,88 @@ const MeetTeam = () => {
                                     
                                     {meetingDate && (
                                         <div>
-                                            <label className="block text-xs font-bold text-slate-500 dark:text-slate-400 mb-1.5 flex justify-between items-center">
-                                                <span>Select Time Slots (30 min increments)</span>
-                                                {selectedSlots.length > 0 && (
-                                                    <span className="text-[10px] text-amber-500 bg-amber-500/10 px-2 py-0.5 rounded-full font-bold">
-                                                        {selectedSlots.length} slot(s) selected
-                                                    </span>
-                                                )}
-                                            </label>
-                                            <div className="max-h-40 overflow-y-auto pr-1">
-                                                <div className="grid grid-cols-3 gap-2">
-                                                    {standardTimeSlots.map(slot => {
-                                                        const isSelected = selectedSlots.includes(slot);
-                                                        return (
-                                                            <button
-                                                                key={slot}
-                                                                type="button"
-                                                                onClick={() => {
-                                                                    if (selectedSlots.includes(slot)) {
-                                                                        setSelectedSlots(selectedSlots.filter(s => s !== slot));
-                                                                    } else {
-                                                                        setSelectedSlots([...selectedSlots, slot]);
-                                                                    }
-                                                                }}
-                                                                className={`py-2 text-xs font-bold rounded-xl border transition-all cursor-pointer ${
-                                                                    isSelected
-                                                                    ? "bg-amber-500 border-amber-500 text-white shadow-sm shadow-amber-500/10"
-                                                                    : "bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800 text-slate-700 dark:text-slate-300 hover:border-amber-500 hover:text-amber-500"
-                                                                }`}
-                                                            >
-                                                                {slot}
-                                                            </button>
-                                                        );
-                                                    })}
+                                            <div className="flex justify-between items-center mb-2">
+                                                <label className="block text-xs font-bold text-slate-500 dark:text-slate-400">
+                                                    Meeting Time
+                                                </label>
+                                                <div className="flex gap-2">
+                                                    <button
+                                                        type="button"
+                                                        onClick={() => setIsCustomTime(false)}
+                                                        className={`px-2 py-1 text-[10px] font-bold rounded-lg transition-all ${!isCustomTime ? 'bg-amber-500 text-white' : 'bg-slate-100 dark:bg-slate-800 text-slate-500 hover:bg-slate-200'}`}
+                                                    >
+                                                        Choose Slots
+                                                    </button>
+                                                    <button
+                                                        type="button"
+                                                        onClick={() => setIsCustomTime(true)}
+                                                        className={`px-2 py-1 text-[10px] font-bold rounded-lg transition-all ${isCustomTime ? 'bg-amber-500 text-white' : 'bg-slate-100 dark:bg-slate-800 text-slate-500 hover:bg-slate-200'}`}
+                                                    >
+                                                        Custom Time
+                                                    </button>
                                                 </div>
                                             </div>
+
+                                            {!isCustomTime ? (
+                                                <>
+                                                    <label className="block text-[10px] font-bold text-slate-400 mb-1.5 flex justify-between items-center">
+                                                        <span>Select Time Slots (15 min increments)</span>
+                                                        {selectedSlots.length > 0 && (
+                                                            <span className="text-[10px] text-amber-500 bg-amber-500/10 px-2 py-0.5 rounded-full font-bold">
+                                                                {selectedSlots.length} slot(s) selected
+                                                            </span>
+                                                        )}
+                                                    </label>
+                                                    <div className="max-h-40 overflow-y-auto pr-1">
+                                                        <div className="grid grid-cols-4 sm:grid-cols-5 gap-2">
+                                                            {standardTimeSlots.map(slot => {
+                                                                const isSelected = selectedSlots.includes(slot);
+                                                                return (
+                                                                    <button
+                                                                        key={slot}
+                                                                        type="button"
+                                                                        onClick={() => {
+                                                                            if (selectedSlots.includes(slot)) {
+                                                                                setSelectedSlots(selectedSlots.filter(s => s !== slot));
+                                                                            } else {
+                                                                                setSelectedSlots([...selectedSlots, slot]);
+                                                                            }
+                                                                        }}
+                                                                        className={`py-1.5 text-[10px] font-bold rounded-lg border transition-all cursor-pointer ${
+                                                                            isSelected
+                                                                            ? "bg-amber-500 border-amber-500 text-white shadow-sm shadow-amber-500/10"
+                                                                            : "bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800 text-slate-700 dark:text-slate-300 hover:border-amber-500 hover:text-amber-500"
+                                                                        }`}
+                                                                    >
+                                                                        {slot}
+                                                                    </button>
+                                                                );
+                                                            })}
+                                                        </div>
+                                                    </div>
+                                                </>
+                                            ) : (
+                                                <div className="flex gap-4">
+                                                    <div className="flex-1">
+                                                        <label className="block text-[10px] font-bold text-slate-400 mb-1.5">Start Time</label>
+                                                        <input
+                                                            type="time"
+                                                            value={customStartTime}
+                                                            onChange={(e) => setCustomStartTime(e.target.value)}
+                                                            className="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-slate-900 dark:text-white rounded-xl px-4 py-2 focus:outline-none focus:border-amber-500 transition-all text-xs font-semibold"
+                                                        />
+                                                    </div>
+                                                    <div className="flex-1">
+                                                        <label className="block text-[10px] font-bold text-slate-400 mb-1.5">End Time</label>
+                                                        <input
+                                                            type="time"
+                                                            value={customEndTime}
+                                                            onChange={(e) => setCustomEndTime(e.target.value)}
+                                                            className="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-slate-900 dark:text-white rounded-xl px-4 py-2 focus:outline-none focus:border-amber-500 transition-all text-xs font-semibold"
+                                                        />
+                                                    </div>
+                                                </div>
+                                            )}
                                         </div>
                                     )}
 

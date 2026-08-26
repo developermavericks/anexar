@@ -40,10 +40,13 @@ const NEWSPAPERS = [
   "Deccan Chronicle",
   "Millennium Post",
   "Tribune English",
-  "Tribune Hindi"
+  "Tribune Hindi",
+  "Financial Times"
 ];
 
 const DISPLAY_NAMES = {
+  "Financial Times": "Financial Times",
+  "F.T. Daily": "Financial Times",
   "The Hindu": "The Hindu",
   "The H. Edition": "The Hindu",
   "The Indian Express": "The Indian Express",
@@ -101,12 +104,15 @@ export default function EPaperManager() {
 
   const [date, setDate] = useState(new Date().toISOString().split('T')[0]);
   const [newspaper, setNewspaper] = useState(NEWSPAPERS[0]);
+  const [isCustom, setIsCustom] = useState(false);
+  const [customNewspaper, setCustomNewspaper] = useState("");
   const [file, setFile] = useState(null);
   const [progress, setProgress] = useState(0);
   const [uploading, setUploading] = useState(false);
   const [message, setMessage] = useState(null);
   const [epapersList, setEpapersList] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [dynamicNewspapers, setDynamicNewspapers] = useState(NEWSPAPERS);
 
   useEffect(() => {
     if (hasAccess) {
@@ -123,6 +129,11 @@ export default function EPaperManager() {
       const snapshot = await getDocs(q);
       const list = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
       setEpapersList(list);
+      
+      // Update dynamic newspapers list with unique names from database
+      const uniqueDbNames = Array.from(new Set(list.map(ep => ep.name))).filter(Boolean);
+      const merged = Array.from(new Set([...NEWSPAPERS, ...uniqueDbNames]));
+      setDynamicNewspapers(merged);
     } catch (err) {
       console.error("Error fetching ePapers:", err);
     } finally {
@@ -171,11 +182,17 @@ export default function EPaperManager() {
       return;
     }
 
+    const finalPaperName = isCustom ? customNewspaper.trim() : newspaper;
+    if (!finalPaperName) {
+      setMessage({ type: 'error', text: 'Please enter a custom publication name!' });
+      return;
+    }
+
     setUploading(true);
     setProgress(0);
     setMessage(null);
 
-    const safeName = newspaper.replace(/\s+/g, '_');
+    const safeName = finalPaperName.replace(/\s+/g, '_');
     const storagePath = `epapers/${date}_${safeName}.pdf`;
     const storageRef = ref(storage, storagePath);
 
@@ -197,15 +214,17 @@ export default function EPaperManager() {
           const docId = `${date}_${safeName.toLowerCase()}`;
           
           await setDoc(doc(db, "epapers", docId), {
-            name: newspaper,
+            name: finalPaperName,
             date: date,
             pdfUrl: downloadUrl,
             uploadedBy: user?.name || 'Admin',
             createdAt: new Date().toISOString()
           });
 
-          setMessage({ type: 'success', text: `Successfully uploaded ${newspaper} for ${date}!` });
+          setMessage({ type: 'success', text: `Successfully uploaded ${finalPaperName} for ${date}!` });
           setFile(null);
+          setCustomNewspaper("");
+          setIsCustom(false);
           // Reset file input element
           e.target.reset();
 
@@ -294,14 +313,33 @@ export default function EPaperManager() {
               <label className="block text-xs font-semibold uppercase tracking-wider text-slate-500 mb-1">Newspaper / Publication</label>
               <select 
                 value={newspaper} 
-                onChange={(e) => setNewspaper(e.target.value)}
+                onChange={(e) => {
+                  const val = e.target.value;
+                  setNewspaper(val);
+                  setIsCustom(val === "Custom / New Publication...");
+                }}
                 className="w-full bg-slate-50 border border-slate-200 dark:bg-slate-900 dark:border-slate-800 rounded-xl px-3 py-2 text-sm outline-none text-slate-800 dark:text-white"
               >
-                {NEWSPAPERS.map(paper => (
+                {dynamicNewspapers.map(paper => (
                   <option key={paper} value={paper}>{paper}</option>
                 ))}
+                <option value="Custom / New Publication...">+ Custom / New Publication...</option>
               </select>
             </div>
+
+            {isCustom && (
+              <div className="space-y-1">
+                <label className="block text-xs font-semibold uppercase tracking-wider text-slate-500 mb-1">Enter Publication Name</label>
+                <input 
+                  type="text" 
+                  value={customNewspaper} 
+                  onChange={(e) => setCustomNewspaper(e.target.value)}
+                  placeholder="e.g. Financial Times, The Guardian"
+                  className="w-full bg-slate-50 border border-slate-200 dark:bg-slate-900 dark:border-slate-800 rounded-xl px-3 py-2 text-sm outline-none text-slate-800 dark:text-white"
+                  required
+                />
+              </div>
+            )}
 
             <div>
               <label className="block text-xs font-semibold uppercase tracking-wider text-slate-500 mb-1">Date</label>

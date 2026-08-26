@@ -21,15 +21,11 @@ export default function Signup() {
     const urlRole = searchParams.get('role');
 
     // 'Team' corresponds to Anexar internally
-    const [role, setRole] = useState(urlRole === 'anexar' ? 'Team' : 'Client');
+    const [role, setRole] = useState('Team');
 
-    // Sync tab with URL parameter changes
+    // Sync tab with URL parameter changes (force 'Team' since Client-side is disabled)
     useEffect(() => {
-        if (urlRole === 'anexar') {
-            setRole('Team');
-        } else if (urlRole === 'client') {
-            setRole('Client');
-        }
+        setRole('Team');
     }, [urlRole]);
 
     const { register, oauthLogin, loginWithGoogle } = useAuth();
@@ -98,13 +94,14 @@ export default function Signup() {
                         </h1>
                     </Link>
                     <p className="text-brand-gray mt-2">
-                        Create your {role === 'Team' ? 'Mavericks' : 'Client'} account to get started
+                        Create your Mavericks account to get started
                     </p>
                 </div>
 
                 <Card className="shadow-lg border border-brand-border/30">
                     <CardContent className="pt-6">
-                        {/* Custom Role Selector tabs */}
+                        {/* Custom Role Selector tabs (Client option commented out) */}
+                        {/* 
                         <div className="mb-6">
                             <div className="flex p-1 bg-brand-border/10 rounded-2xl border border-brand-border/20">
                                 <button
@@ -131,6 +128,7 @@ export default function Signup() {
                                 </button>
                             </div>
                         </div>
+                        */}
 
                         <form onSubmit={handleSubmit} className="space-y-4">
                             {error && (
@@ -227,10 +225,10 @@ export default function Signup() {
                         <div className="mt-8 text-center text-xs text-brand-gray font-medium">
                             Already have an account?{' '}
                             <Link
-                                to={role === 'Team' ? "/login?role=anexar" : "/login?role=client"}
+                                to="/login?role=anexar"
                                 className="text-brand-amber font-bold hover:underline"
                             >
-                                Sign In as {role === 'Team' ? 'Mavericks' : 'Client'}
+                                Sign In as Mavericks
                             </Link>
                         </div>
                     </CardContent>

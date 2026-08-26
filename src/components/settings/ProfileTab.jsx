@@ -9,7 +9,7 @@ const ProfileTab = () => {
         name: user.name,
         email: user.email,
         avatar: user.avatar,
-        phone: user.profile?.phone || '+91 93040 47238',
+        phone: user.profile?.phone || (user.email?.toLowerCase().includes('satyam') ? '+91 93040 47238' : '+91'),
         designation: user.profile?.designation || 'Management Trainee-Tech',
         timezone: user.profile?.timezone || 'IST',
         language: user.profile?.language || 'en'

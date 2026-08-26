@@ -3,6 +3,7 @@ import { FileText, Download, Eye, Calendar, BarChart2, PieChart, FileSpreadsheet
 import { useUser } from '../../context/UserContext';
 import { db } from '../../lib/firebaseClient';
 import { collection, query, where, onSnapshot, doc } from 'firebase/firestore';
+import * as XLSX from 'xlsx';
 
 const DEFAULT_CLIENT_MASTER_LINKS = {
     'Scapia': {
@@ -31,11 +32,6 @@ const DEFAULT_CLIENT_MASTER_LINKS = {
         masterDocUrl: 'https://docs.google.com/document/d/1RHG8y63xEVd-N4o5Kb0pThgXTpu4yfSzGvAlELu2788/edit?usp=drivesdk'
     },
     'Murf AI': {
-        cumulativeSheetUrl: '',
-        filteredDocUrl: 'https://docs.google.com/document/d/11o3qSpOeuPRwAHNdhHNqHTLLctMSPLTIDhwitajq9TA/edit?usp=drivesdk',
-        masterDocUrl: 'https://docs.google.com/document/d/1qCxg--XA89qV1luwtJA5K0GMg9NOGfQInW3B4wBwkTw/edit?usp=drivesdk'
-    },
-    'Murf-AI': {
         cumulativeSheetUrl: '',
         filteredDocUrl: 'https://docs.google.com/document/d/11o3qSpOeuPRwAHNdhHNqHTLLctMSPLTIDhwitajq9TA/edit?usp=drivesdk',
         masterDocUrl: 'https://docs.google.com/document/d/1qCxg--XA89qV1luwtJA5K0GMg9NOGfQInW3B4wBwkTw/edit?usp=drivesdk'
@@ -125,11 +121,20 @@ const Reports = () => {
                     size: data.fileSize || 'Unknown size',
                     uploadedBy: data.uploadedBy || 'Team Partner',
                     fileData: data.fileData || null,
+                    reportDate: data.reportDate || '',
+                    createdAt: data.createdAt || '',
+                    content: data.content || null,
+                    rows: data.rows || null,
+                    headers: data.headers || null,
                     isDynamic: true
                 });
             });
-            // Sort by id descending
-            list.sort((a, b) => b.id.localeCompare(a.id));
+            // Sort chronologically descending
+            list.sort((a, b) => {
+                const dateA = new Date(a.reportDate || a.createdAt || 0).getTime();
+                const dateB = new Date(b.reportDate || b.createdAt || 0).getTime();
+                return dateB - dateA;
+            });
             setDynamicReports(list);
         }, (err) => {
             console.error("Error listening to client documents:", err);
@@ -158,21 +163,101 @@ const Reports = () => {
             document.body.appendChild(link);
             link.click();
             document.body.removeChild(link);
+        } else if (report?.type === 'excel' || (report?.rows && report?.headers)) {
+            const dataToExport = report.rows.map(row => {
+                const cleanRow = {};
+                report.headers.forEach(h => {
+                    if (row[h] !== undefined) {
+                        cleanRow[h] = row[h];
+                    }
+                });
+                return cleanRow;
+            });
+            const worksheet = XLSX.utils.json_to_sheet(dataToExport);
+            const workbook = XLSX.utils.book_new();
+            XLSX.utils.book_append_sheet(workbook, worksheet, "Tracker");
+            XLSX.writeFile(workbook, `${report.title || 'Tracker'}.xlsx`);
+        } else if (report?.content) {
+            const blob = new Blob([report.content], { type: 'text/html;charset=utf-8' });
+            const url = URL.createObjectURL(blob);
+            const link = document.createElement('a');
+            link.href = url;
+            link.download = `${report.title || 'Document'}.html`;
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+            URL.revokeObjectURL(url);
         } else {
             console.log(`Downloading: ${report?.title || report}`);
-            alert(`Downloading file: ${report?.title || report}`);
+            alert(`No download source available for this item.`);
         }
     };
 
     const handleView = (report) => {
         if (report?.fileData) {
-            const win = window.open();
-            if (win) {
-                win.document.write(`<iframe src="${report.fileData}" frameborder="0" style="border:0; top:0px; left:0px; bottom:0px; right:0px; width:100%; height:100%;" allowfullscreen></iframe>`);
+            window.open(report.fileData, '_blank');
+        } else if (report?.type === 'excel' || (report?.rows && report?.headers)) {
+            const newWindow = window.open();
+            if (newWindow) {
+                let tableHtml = `
+                    <html>
+                    <head>
+                        <title>${report.title}</title>
+                        <style>
+                            body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; padding: 25px; background: #f8fafc; color: #1e293b; }
+                            .header { margin-bottom: 20px; border-bottom: 2px solid #e2e8f0; padding-bottom: 10px; }
+                            h3 { margin: 0; font-size: 16px; font-weight: 800; color: #0f172a; }
+                            p { margin: 5px 0 0 0; font-size: 11px; color: #64748b; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; }
+                            .table-container { overflow-x: auto; border: 1px solid #cbd5e1; border-radius: 12px; background: white; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05); }
+                            table { border-collapse: collapse; width: 100%; }
+                            th, td { border-bottom: 1px solid #cbd5e1; padding: 10px 14px; text-align: left; font-size: 12px; }
+                            th { background: #f1f5f9; font-weight: bold; color: #334155; text-transform: uppercase; font-size: 10px; letter-spacing: 0.05em; }
+                            tr:last-child td { border-bottom: none; }
+                            tr:hover { background: #f8fafc; }
+                            a { color: #3b82f6; text-decoration: none; font-weight: 600; }
+                            a:hover { text-decoration: underline; }
+                        </style>
+                    </head>
+                    <body>
+                        <div class="header">
+                            <h3>${report.title}</h3>
+                            <p>Ingested via Gmail</p>
+                        </div>
+                        <div class="table-container">
+                            <table>
+                                <thead>
+                                    <tr>
+                                        ${report.headers.map(h => `<th>${h}</th>`).join('')}
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    ${report.rows.map(row => `
+                                        <tr>
+                                            ${report.headers.map(h => {
+                                                const val = row[h] !== undefined ? row[h] : '';
+                                                if (h === 'Link' && val) {
+                                                    return `<td><a href="${val}" target="_blank" rel="noopener noreferrer">View Link</a></td>`;
+                                                }
+                                                return `<td>${val}</td>`;
+                                            }).join('')}
+                                        </tr>
+                                    `).join('')}
+                                </tbody>
+                            </table>
+                        </div>
+                    </body>
+                    </html>
+                `;
+                newWindow.document.write(tableHtml);
+                newWindow.document.close();
             }
+        } else if (report?.content) {
+            const blob = new Blob([report.content], { type: 'text/html;charset=utf-8' });
+            const url = URL.createObjectURL(blob);
+            window.open(url, '_blank');
         } else {
             console.log(`Viewing: ${report?.title || report}`);
-            alert(`Opening ${report?.title || report} in viewer.`);
+            alert(`No preview source available for this item.`);
         }
     };
 

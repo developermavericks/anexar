@@ -28,7 +28,7 @@ export default function CrisisPredictor() {
     const isLocal = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
 
     return (
-        <div className="space-y-6 max-w-7xl mx-auto px-4 py-6 font-sans animate-fade-in">
+        <div className="space-y-6 w-full font-sans animate-fade-in">
             {/* Scoped animations */}
             <style dangerouslySetInnerHTML={{__html: `
                 @keyframes crisis-pulse {

@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useAuth } from '../../context/AuthContext';
+import { logActivity } from '../../utils/auditLogger';
 import { Card, CardContent } from '../../components/ui/Card';
 import { Button } from '../../components/ui/Button';
 import { db } from '../../lib/firebaseClient';
@@ -42,6 +43,12 @@ import fujifilmData from '../../mock/fujifilm_data.json';
 
 export default function UploadCoverage() {
     const { user } = useAuth();
+    const emailLower = user?.email?.toLowerCase() || '';
+    // Special exceptions for Pooja, Chetan, and Satyam to see all clients
+    const isDeveloperSatyam = emailLower.includes('satyam');
+    const isPooja = emailLower.includes('pooja');
+    const isChetan = emailLower.includes('chetan');
+    const hasWholeAccess = isDeveloperSatyam || isPooja || isChetan;
 
     const MONTHS = [
         'January', 'February', 'March', 'April', 'May', 'June',
@@ -57,73 +64,82 @@ export default function UploadCoverage() {
 
     const [activeClients, setActiveClients] = useState(() => {
         try {
-            const saved = localStorage.getItem('anexar_assigned_clients');
-            const parsed = saved ? JSON.parse(saved) : [];
-            if (parsed && parsed.length > 0) return parsed;
+            const userEmail = user?.email?.toLowerCase() || '';
+            if (userEmail) {
+                const saved = localStorage.getItem(`anexar_assigned_clients_${userEmail}`);
+                const parsed = saved ? JSON.parse(saved) : [];
+                if (parsed && parsed.length > 0) return parsed;
+            }
         } catch (e) {}
-        return ['FUJIFILM', 'Google', 'Spotify', 'Plum', 'Nike', 'Udaiti', 'Scapia', 'Musashi-D'];
+        return [];
     });
 
     useEffect(() => {
         const fetchClientsList = async () => {
             if (!user || !user.email) return;
 
-            const emailLower = user.email.toLowerCase();
-            const isDeveloperSatyam = emailLower.includes('satyam') || emailLower.includes('ss1084169') || emailLower.includes('test') || user.name?.toLowerCase().includes('satyam');
-            const isCoreUser = user.role?.toLowerCase() === 'core' || user.role?.toLowerCase() === 'manager';
-            const isChetan = emailLower === 'chetan@themavericksindia.com' || user.name?.toLowerCase().includes('chetan');
-            const hasWholeAccess = isChetan || isDeveloperSatyam || isCoreUser;
+            // 1. Satyam, Pooja or Chetan bypass - fetch all active clients from Supabase
+            if (hasWholeAccess) {
+                try {
+                    const { data, error } = await supabase
+                        .from('clients')
+                        .select('name')
+                        .eq('is_active', true)
+                        .order('name', { ascending: true });
 
-            const DEFAULT_FALLBACK = ['FUJIFILM', 'Google', 'Spotify', 'Plum', 'Nike', 'Udaiti', 'Scapia', 'Musashi-D'];
+                    if (!error && data && data.length > 0) {
+                        const names = data.map(c => c.name);
+                        setActiveClients(names);
+                        localStorage.setItem(`anexar_assigned_clients_${emailLower}`, JSON.stringify(names));
+                        return;
+                    }
+                } catch (e) {
+                    console.error("Supabase active clients fetch error:", e);
+                }
+            }
 
             try {
-                // 1. Core, Manager, or Developer bypass - fetch all active clients
-                if (hasWholeAccess) {
+                const clientNamesSet = new Set();
+
+                // 2a. Fetch user's client assignments fed in Firestore user_clients
+                try {
+                    const docSnap = await getDoc(doc(db, "user_clients", emailLower));
+                    if (docSnap.exists() && Array.isArray(docSnap.data().clients)) {
+                        docSnap.data().clients.forEach(c => clientNamesSet.add(c));
+                    }
+                } catch (fsErr) {
+                    console.error("Error reading Firestore user_clients:", fsErr);
+                }
+
+                // 2b. Also fetch user's allocated clients from Supabase
+                let userId = user.id;
+                if (!userId) {
                     try {
-                        const { data, error } = await supabase
-                            .from('clients')
-                            .select('name')
-                            .eq('is_active', true)
-                            .order('name', { ascending: true });
-
-                        if (!error && data && data.length > 0) {
-                            setActiveClients(data.map(c => c.name));
-                            return;
+                        const { data: userData } = await supabase
+                            .from('users')
+                            .select('id')
+                            .ilike('email', emailLower)
+                            .maybeSingle();
+                        if (userData) {
+                            userId = userData.id;
                         }
-                    } catch (e) {
-                        console.error("Supabase client fetch exception:", e);
-                    }
-                    setActiveClients(DEFAULT_FALLBACK);
-                    return;
-                }
-
-                // 2. Otherwise try loading user clients from Firestore
-                const docRef = doc(db, "user_clients", emailLower);
-                const docSnap = await getDoc(docRef);
-                
-                if (docSnap.exists() && docSnap.data().clients) {
-                    const clientNames = docSnap.data().clients;
-                    if (clientNames.length > 0) {
-                        setActiveClients(clientNames);
-                        return; // Successfully loaded from Firestore!
+                    } catch (err) {
+                        console.error("Error looking up user id in Supabase:", err);
                     }
                 }
 
-                // 3. Fallback to Supabase allocations
-                if (user.id) {
+                if (userId) {
                     const [weeklyRes, monthlyRes] = await Promise.all([
                         supabase
                             .from('allocations_weekly')
                             .select('clients(name)')
-                            .eq('user_id', user.id),
+                            .eq('user_id', userId),
                         supabase
                             .from('allocations_monthly')
                             .select('clients(name)')
-                            .eq('user_id', user.id)
+                            .eq('user_id', userId)
                     ]);
 
-                    const clientNamesSet = new Set();
-                    
                     if (weeklyRes.data) {
                         weeklyRes.data.forEach(item => {
                             if (item.clients?.name) clientNamesSet.add(item.clients.name);
@@ -134,18 +150,17 @@ export default function UploadCoverage() {
                             if (item.clients?.name) clientNamesSet.add(item.clients.name);
                         });
                     }
-
-                    const clientNames = Array.from(clientNamesSet);
-                    if (clientNames.length > 0) {
-                        setActiveClients(clientNames);
-                        return;
-                    }
                 }
 
-                setActiveClients(DEFAULT_FALLBACK);
+                const clientNames = Array.from(clientNamesSet);
+                const sortedClients = clientNames.sort();
+                setActiveClients(sortedClients);
+                if (emailLower) {
+                    localStorage.setItem(`anexar_assigned_clients_${emailLower}`, JSON.stringify(sortedClients));
+                }
             } catch (err) {
                 console.error("Error loading active clients:", err);
-                setActiveClients(DEFAULT_FALLBACK);
+                setActiveClients([]);
             }
         };
         fetchClientsList();
@@ -210,12 +225,20 @@ export default function UploadCoverage() {
 
     const uniqueClients = React.useMemo(() => {
         const clientsSet = new Set(documentList.map(d => d.client).filter(Boolean));
-        return ['All', ...Array.from(clientsSet).sort()];
-    }, [documentList]);
+        const allClients = Array.from(clientsSet).sort();
+        if (hasWholeAccess) {
+            return ['All', ...allClients];
+        }
+        const allowed = allClients.filter(c => activeClients.some(ac => ac.toLowerCase() === c.toLowerCase()));
+        return ['All', ...allowed];
+    }, [documentList, activeClients, hasWholeAccess]);
 
     const processedDocuments = React.useMemo(() => {
         return documentList
             .filter(d => {
+                if (!hasWholeAccess && !activeClients.some(ac => ac.toLowerCase() === d.client.toLowerCase())) {
+                    return false;
+                }
                 const matchesSearch = d.client.toLowerCase().includes(searchTerm.toLowerCase()) || 
                                      d.fileName.toLowerCase().includes(searchTerm.toLowerCase());
                 const matchesClient = selectedFeedClient === 'All' || d.client.toLowerCase() === selectedFeedClient.toLowerCase();
@@ -226,7 +249,7 @@ export default function UploadCoverage() {
                 const dateB = new Date(b.reportDate || b.createdAt).getTime();
                 return dateB - dateA;
             });
-    }, [documentList, searchTerm, selectedFeedClient]);
+    }, [documentList, searchTerm, selectedFeedClient, activeClients, hasWholeAccess]);
 
     // Master Live Links states (Google Sheets & Docs)
     const DEFAULT_CLIENT_MASTER_LINKS = {
@@ -247,13 +270,33 @@ export default function UploadCoverage() {
         },
         'E3 Electric AI': {
             cumulativeSheetUrl: 'https://docs.google.com/spreadsheets/d/16AbQMygKpWhYmvhmyFc7oxcz5WNsYacs/edit?usp=drivesdk&ouid=111134406246031913275&rtpof=true&sd=true',
-            filteredDocUrl: 'https://docs.google.com/document/d/1_VCUF7QaCtsqiS5nz191RVZ0ayt0Paves52OMo4EmOY/edit?usp=drivesdk',
-            masterDocUrl: 'https://docs.google.com/document/d/1RHG8y63xEVd-N4o5Kb0pThgXTpu4yfSzGvAlELu2788/edit?usp=drivesdk'
+            filteredDocUrl: '',
+            masterDocUrl: ''
         },
         'E3 Electric.AI': {
             cumulativeSheetUrl: 'https://docs.google.com/spreadsheets/d/16AbQMygKpWhYmvhmyFc7oxcz5WNsYacs/edit?usp=drivesdk&ouid=111134406246031913275&rtpof=true&sd=true',
-            filteredDocUrl: 'https://docs.google.com/document/d/1_VCUF7QaCtsqiS5nz191RVZ0ayt0Paves52OMo4EmOY/edit?usp=drivesdk',
-            masterDocUrl: 'https://docs.google.com/document/d/1RHG8y63xEVd-N4o5Kb0pThgXTpu4yfSzGvAlELu2788/edit?usp=drivesdk'
+            filteredDocUrl: '',
+            masterDocUrl: ''
+        },
+        'E3Electric.AI': {
+            cumulativeSheetUrl: 'https://docs.google.com/spreadsheets/d/16AbQMygKpWhYmvhmyFc7oxcz5WNsYacs/edit?usp=drivesdk&ouid=111134406246031913275&rtpof=true&sd=true',
+            filteredDocUrl: '',
+            masterDocUrl: ''
+        },
+        'E3 Electric': {
+            cumulativeSheetUrl: 'https://docs.google.com/spreadsheets/d/16AbQMygKpWhYmvhmyFc7oxcz5WNsYacs/edit?usp=drivesdk&ouid=111134406246031913275&rtpof=true&sd=true',
+            filteredDocUrl: '',
+            masterDocUrl: ''
+        },
+        'Protectt.ai': {
+            cumulativeSheetUrl: 'https://docs.google.com/spreadsheets/d/1_8CFzeMtOE2iUpcFpMwnE6RHDPZrym0B/edit?usp=drivesdk&ouid=111134406246031913275&rtpof=true&sd=true',
+            filteredDocUrl: '',
+            masterDocUrl: ''
+        },
+        'protectt.ai': {
+            cumulativeSheetUrl: 'https://docs.google.com/spreadsheets/d/1_8CFzeMtOE2iUpcFpMwnE6RHDPZrym0B/edit?usp=drivesdk&ouid=111134406246031913275&rtpof=true&sd=true',
+            filteredDocUrl: '',
+            masterDocUrl: ''
         },
         'Murf AI': {
             cumulativeSheetUrl: '',
@@ -468,7 +511,11 @@ export default function UploadCoverage() {
                 setFilteredDocUrl(data.filteredDocUrl || '');
                 setMasterDocUrl(data.masterDocUrl || '');
             } else {
-                const foundKey = Object.keys(DEFAULT_CLIENT_MASTER_LINKS).find(k => k.toLowerCase() === clientName.toLowerCase());
+                const normTarget = clientName.toLowerCase().replace(/[^a-z0-9]/g, '');
+                const foundKey = Object.keys(DEFAULT_CLIENT_MASTER_LINKS).find(k => {
+                    const normK = k.toLowerCase().replace(/[^a-z0-9]/g, '');
+                    return normK === normTarget || (normK.length > 3 && normTarget.includes(normK)) || (normTarget.length > 3 && normK.includes(normTarget));
+                });
                 const defaults = foundKey ? DEFAULT_CLIENT_MASTER_LINKS[foundKey] : null;
                 setCumulativeSheetUrl(defaults?.cumulativeSheetUrl || '');
                 setFilteredDocUrl(defaults?.filteredDocUrl || '');
@@ -565,6 +612,7 @@ export default function UploadCoverage() {
                 createdAt: new Date().toISOString()
             };
             await addDoc(collection(db, "client_documents"), newDoc);
+            await logActivity(user, "Upload Coverage", `Uploaded ${reportType} report ("${reportFile.name}") for client ${clientName}`);
             
             // Send Firestore Header Bell Notification for coordinator
             await addDoc(collection(db, "notifications"), {
@@ -1011,6 +1059,9 @@ export default function UploadCoverage() {
     };
 
     const filteredCoverage = coverageList.filter(c => {
+        const matchesClient = hasWholeAccess || !c.client || activeClients.some(ac => ac.toLowerCase() === c.client.toLowerCase());
+        if (!matchesClient) return false;
+        
         const term = searchTerm.toLowerCase();
         if (c.type === 'excel') {
             return (c.client && c.client.toLowerCase().includes(term)) ||
@@ -1949,8 +2000,8 @@ export default function UploadCoverage() {
 
             {/* DYNAMIC EXCEL & DOCX FULL-SCREEN MODAL VIEWER */}
             {selectedExcelReport && (
-                <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-md animate-fade-in animate-duration-150">
-                    <div className={`bg-white dark:bg-slate-955 w-full h-[85vh] rounded-3xl overflow-hidden shadow-2xl border border-slate-200 dark:border-slate-800 flex flex-col ${selectedExcelReport.type === 'excel' ? 'max-w-6xl lg:max-w-7xl' : 'max-w-4xl'}`}>
+                <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-955/80 backdrop-blur-md animate-fade-in animate-duration-150">
+                    <div className="bg-white dark:bg-slate-955 w-full h-[85vh] rounded-3xl overflow-hidden shadow-2xl border border-slate-200 dark:border-slate-800 flex flex-col max-w-6xl lg:max-w-7xl">
                         {/* Modal Header */}
                         <div className="p-6 border-b border-slate-100 dark:border-slate-900 bg-slate-50 dark:bg-slate-950 flex items-center justify-between gap-4">
                             <div>
@@ -2000,7 +2051,7 @@ export default function UploadCoverage() {
                         {/* Modal Body Content (Word Document html OR Excel Table) */}
                         {selectedExcelReport.type === 'docx' ? (
                             <div className="flex-1 overflow-hidden p-6 bg-slate-50 dark:bg-slate-900/10 flex justify-center h-full">
-                                <div className="bg-white w-full max-w-5xl h-full rounded-2xl border border-slate-150 dark:border-slate-800 shadow-sm overflow-hidden flex flex-col">
+                                <div className="bg-white w-full h-full rounded-2xl border border-slate-150 dark:border-slate-800 shadow-sm overflow-hidden flex flex-col">
                                     <iframe 
                                         srcDoc={
                                             selectedExcelReport.content.includes('<html') || selectedExcelReport.content.includes('<!DOCTYPE')
@@ -2112,7 +2163,7 @@ export default function UploadCoverage() {
             {dayPreview && (
                 <div className="fixed inset-0 z-50 bg-black/60 flex items-center justify-center p-4" onClick={() => { setDayPreview(null); setDayPreviewReachResults({}); setDayPreviewReachRunning(false); }}>
                     <div
-                        className={`bg-white dark:bg-slate-955 rounded-3xl shadow-2xl w-full h-[85vh] flex flex-col overflow-hidden border border-slate-100 dark:border-slate-800 ${dayPreview.type === 'sheet' ? 'max-w-6xl lg:max-w-7xl' : 'max-w-4xl'}`}
+                        className="bg-white dark:bg-slate-955 rounded-3xl shadow-2xl w-full h-[85vh] flex flex-col overflow-hidden border border-slate-100 dark:border-slate-800 max-w-6xl lg:max-w-7xl"
                         onClick={(e) => e.stopPropagation()}
                     >
                         <div className="flex items-center justify-between p-5 border-b border-slate-100 dark:border-slate-800 shrink-0">

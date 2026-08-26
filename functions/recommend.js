@@ -15,37 +15,61 @@ function getDb() {
     return admin.firestore();
 }
 
-function buildJournalistText(j) {
-    return [
-        j.name, 
-        j.role, 
-        j.publication, 
-        j.category, 
-        j.address, 
-        j.city, 
-        j.state, 
-        j.country, 
-        j.email, 
-        j.phone, 
-        j.twitter, 
-        j.linkedin, 
-        j.mediaTypes, 
-        j.bio
-    ].filter(Boolean).join(' | ');
-}
 
-function buildEventText(e) {
-    return [e.event_name || e.name, e.event_type || e.type, e.sector, e.location || e.venue, e.status].filter(Boolean).join(' | ');
+
+const STOP_WORDS = new Set([
+    'the', 'and', 'a', 'of', 'to', 'in', 'is', 'that', 'it', 'for', 'on', 'with', 'as', 'at', 'by', 'an', 'this', 'about', 'from', 'or', 'are', 'be', 'your', 'our'
+]);
+
+function scoreRecord(record, type, queryWords, rawQuery) {
+    let score = 0;
+    
+    // 1. Exact phrase match boost
+    const cleanQuery = rawQuery.toLowerCase().trim();
+    if (cleanQuery.length >= 3) {
+        const nameField = (type === 'journalists' ? record.name : (record.event_name || record.name)) || '';
+        const categoryField = (type === 'journalists' ? record.category : record.sector) || '';
+        
+        if (nameField.toLowerCase().includes(cleanQuery)) score += 15;
+        if (categoryField.toLowerCase().includes(cleanQuery)) score += 10;
+    }
+    
+    // 2. Individual word matches with weights
+    queryWords.forEach(w => {
+        if (type === 'journalists') {
+            const name = (record.name || '').toLowerCase();
+            const pub = (record.publication || '').toLowerCase();
+            const cat = (record.category || '').toLowerCase();
+            const role = (record.role || '').toLowerCase();
+            const bio = (record.bio || '').toLowerCase();
+            
+            if (name.includes(w)) score += 5;
+            if (pub.includes(w)) score += 3;
+            if (cat.includes(w)) score += 3;
+            if (role.includes(w)) score += 3;
+            if (bio.includes(w)) score += 1;
+        } else {
+            const name = ((record.event_name || record.name) || '').toLowerCase();
+            const sector = (record.sector || '').toLowerCase();
+            const loc = [record.location, record.venue].filter(Boolean).join(' ').toLowerCase();
+            const org = (record.organizer || '').toLowerCase();
+            
+            if (name.includes(w)) score += 5;
+            if (sector.includes(w)) score += 3;
+            if (loc.includes(w)) score += 1;
+            if (org.includes(w)) score += 1;
+        }
+    });
+    
+    return score;
 }
 
 // Cheap keyword-overlap pre-filter so the LLM prompt stays small even as the
 // underlying collection grows daily - no embeddings/vector DB needed at this scale.
-function preFilter(records, textBuilder, query, topN) {
-    // Preserve 2-letter words like 'AI', 'IT', 'TV', 'ET', 'PR'
-    const queryWords = query.toLowerCase().split(/\W+/).filter(w => w.length >= 2);
+function preFilter(records, type, query, topN) {
+    const queryWords = query.toLowerCase().split(/\W+/).filter(w => w.length >= 2 && !STOP_WORDS.has(w));
     const scored = records.map(r => {
-        const text = textBuilder(r).toLowerCase();
-        const score = queryWords.reduce((acc, w) => acc + (text.includes(w) ? 1 : 0), 0);
+        const score = scoreRecord(r, type, queryWords, query);
         return { r, score };
     });
     scored.sort((a, b) => b.score - a.score);
@@ -139,7 +163,6 @@ exports.recommend = onRequest(
 
         try {
             const collectionName = type === 'journalists' ? 'journalists' : 'events_awards';
-            const textBuilder = type === 'journalists' ? buildJournalistText : buildEventText;
 
             const all = await fetchCollection(collectionName);
             if (all.length === 0) {
@@ -147,7 +170,7 @@ exports.recommend = onRequest(
                 return;
             }
 
-            const candidates = preFilter(all, textBuilder, query, PREFILTER_TOP_N);
+            const candidates = preFilter(all, type, query, PREFILTER_TOP_N);
             const prompt = buildPrompt(type, query, candidates);
             const parsed = await callGroq(prompt, groqApiKey.value());
 

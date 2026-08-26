@@ -13,14 +13,23 @@ import {
     ExternalLink,
     X
 } from 'lucide-react';
-export default function ArticlePdfScraper() {
+import { useAuth } from '../../context/AuthContext';
+import { logActivity } from '../../utils/auditLogger';
 
-    const [url, setUrl] = useState('');
-    const [loading, setLoading] = useState(false);
-    const [progressPercent, setProgressPercent] = useState(0);
-    const [progressLabel, setProgressLabel] = useState('Initializing job...');
-    const [error, setError] = useState(null);
-    const [scrapedResult, setScrapedResult] = useState(null);
+export default function ArticlePdfScraper() {
+    const { user } = useAuth();
+
+    const activeEventSourceRef = React.useRef(null);
+
+    const [url, setUrl] = useState(() => sessionStorage.getItem('scraper_url') || '');
+    const [loading, setLoading] = useState(() => sessionStorage.getItem('scraper_loading') === 'true');
+    const [progressPercent, setProgressPercent] = useState(() => parseInt(sessionStorage.getItem('scraper_progressPercent')) || 0);
+    const [progressLabel, setProgressLabel] = useState(() => sessionStorage.getItem('scraper_progressLabel') || 'Initializing job...');
+    const [error, setError] = useState(() => sessionStorage.getItem('scraper_error') || null);
+    const [scrapedResult, setScrapedResult] = useState(() => {
+        const stored = sessionStorage.getItem('scraper_scrapedResult');
+        return stored ? JSON.parse(stored) : null;
+    });
     const [history, setHistory] = useState([]);
     const [showErrorModal, setShowErrorModal] = useState(false);
 
@@ -44,34 +53,96 @@ export default function ArticlePdfScraper() {
         { label: "Printing A4 PDF buffer and initiating stream...", minProgress: 100 }
     ];
 
-    // Load history from localStorage on mount
+    // Load history from user-scoped localStorage on mount or user change
     useEffect(() => {
-        const storedHistory = localStorage.getItem('anexar_scraped_history');
+        if (!user?.email) return;
+        const storedHistory = localStorage.getItem(`anexar_scraped_history_${user.email}`);
         if (storedHistory) {
             try {
                 setHistory(JSON.parse(storedHistory));
             } catch (err) {
                 console.error("Failed to parse history from localStorage", err);
             }
+        } else {
+            setHistory([]);
         }
+    }, [user?.email]);
+
+    // Save state changes to sessionStorage for persistence across tab unmounts
+    useEffect(() => {
+        sessionStorage.setItem('scraper_url', url);
+    }, [url]);
+
+    useEffect(() => {
+        sessionStorage.setItem('scraper_loading', loading);
+    }, [loading]);
+
+    useEffect(() => {
+        sessionStorage.setItem('scraper_progressPercent', progressPercent);
+    }, [progressPercent]);
+
+    useEffect(() => {
+        sessionStorage.setItem('scraper_progressLabel', progressLabel);
+    }, [progressLabel]);
+
+    useEffect(() => {
+        if (error) {
+            sessionStorage.setItem('scraper_error', error);
+        } else {
+            sessionStorage.removeItem('scraper_error');
+        }
+    }, [error]);
+
+    useEffect(() => {
+        if (scrapedResult) {
+            sessionStorage.setItem('scraper_scrapedResult', JSON.stringify(scrapedResult));
+        } else {
+            sessionStorage.removeItem('scraper_scrapedResult');
+        }
+    }, [scrapedResult]);
+
+    // Reconnect SSE progress tracking if page unmounted during active job
+    useEffect(() => {
+        const storedLoading = sessionStorage.getItem('scraper_loading') === 'true';
+        const storedJobId = sessionStorage.getItem('scraper_jobId');
+        const storedUrl = sessionStorage.getItem('scraper_url') || '';
+        
+        if (storedLoading && storedJobId && storedUrl) {
+            startProgressTracking(storedJobId, storedUrl, `article-${Date.now()}.pdf`, () => {
+                handleDownloadJobPdf(storedJobId, storedUrl, null);
+                sessionStorage.removeItem('scraper_jobId');
+                sessionStorage.removeItem('scraper_loading');
+            });
+        }
+
+        return () => {
+            if (activeEventSourceRef.current) {
+                activeEventSourceRef.current.close();
+            }
+        };
     }, []);
 
-    // Save history to localStorage
+    // Save history to user-scoped localStorage
     const saveToHistory = (item) => {
+        if (!user?.email) return;
+        const key = `anexar_scraped_history_${user.email}`;
         const updated = [item, ...history.filter(h => h.url !== item.url)].slice(0, 10);
         setHistory(updated);
-        localStorage.setItem('anexar_scraped_history', JSON.stringify(updated));
+        localStorage.setItem(key, JSON.stringify(updated));
     };
 
     const clearHistory = () => {
+        if (!user?.email) return;
+        const key = `anexar_scraped_history_${user.email}`;
         setHistory([]);
-        localStorage.removeItem('anexar_scraped_history');
+        localStorage.removeItem(key);
     };
 
     // Helper to monitor progress through Server-Sent Events (SSE)
     const startProgressTracking = (jobId, originalUrl, targetFilename, onComplete) => {
         const statusUrl = `${GENERATE_PDF_API_URL.replace(/\/$/, '')}/status/${jobId}`;
         const eventSource = new EventSource(statusUrl);
+        activeEventSourceRef.current = eventSource;
 
         eventSource.onmessage = (event) => {
             try {
@@ -170,9 +241,8 @@ export default function ArticlePdfScraper() {
         setProgressPercent(0);
         setProgressLabel('Initializing scraper job...');
 
-        let activeEventSource = null;
-
         try {
+            logActivity(user, "PDF Scraper", `Scraped article URL: ${url}`);
             const res = await fetch(GENERATE_PDF_API_URL, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
@@ -227,8 +297,11 @@ export default function ArticlePdfScraper() {
             } else {
                 // Async queue path (Local Server)
                 const { jobId } = await res.json();
-                activeEventSource = startProgressTracking(jobId, url, `article-${Date.now()}.pdf`, () => {
+                sessionStorage.setItem('scraper_jobId', jobId);
+                startProgressTracking(jobId, url, `article-${Date.now()}.pdf`, () => {
                     handleDownloadJobPdf(jobId, url, null);
+                    sessionStorage.removeItem('scraper_jobId');
+                    sessionStorage.removeItem('scraper_loading');
                 });
             }
 
@@ -237,7 +310,7 @@ export default function ArticlePdfScraper() {
             setError(err.message || 'An unexpected error occurred while processing the URL.');
             setShowErrorModal(true);
             setLoading(false);
-            if (activeEventSource) activeEventSource.close();
+            if (activeEventSourceRef.current) activeEventSourceRef.current.close();
         }
     };
 
@@ -249,8 +322,6 @@ export default function ArticlePdfScraper() {
         setLoading(true);
         setProgressPercent(0);
         setProgressLabel('Re-initializing PDF build job...');
-
-        let activeEventSource = null;
 
         try {
             const res = await fetch(GENERATE_PDF_API_URL, {
@@ -297,8 +368,11 @@ export default function ArticlePdfScraper() {
             } else {
                 // Async queue path
                 const { jobId } = await res.json();
-                activeEventSource = startProgressTracking(jobId, historyItem.url, historyItem.filename, () => {
+                sessionStorage.setItem('scraper_jobId', jobId);
+                startProgressTracking(jobId, historyItem.url, historyItem.filename, () => {
                     handleDownloadJobPdf(jobId, historyItem.url, historyItem.filename);
+                    sessionStorage.removeItem('scraper_jobId');
+                    sessionStorage.removeItem('scraper_loading');
                 });
             }
 
@@ -307,12 +381,12 @@ export default function ArticlePdfScraper() {
             setError(err.message || 'Failed to download the PDF.');
             setShowErrorModal(true);
             setLoading(false);
-            if (activeEventSource) activeEventSource.close();
+            if (activeEventSourceRef.current) activeEventSourceRef.current.close();
         }
     };
 
     return (
-        <div className="space-y-8 max-w-6xl mx-auto px-4 py-8 font-sans animate-fade-in">
+        <div className="space-y-8 w-full font-sans animate-fade-in">
             {/* Scoped animations */}
             <style dangerouslySetInnerHTML={{__html: `
                 @keyframes gold-pulse {
@@ -360,13 +434,29 @@ export default function ArticlePdfScraper() {
                             </div>
                         </div>
                         <p className="text-slate-300 text-sm max-w-3xl leading-relaxed mt-2">
-                            Submit any news article URL to extract its core content, optimize the typography using our layout parser, and export a ready-to-print, formatted editorial A4 PDF.
+                            Submit any news article URL to extract its core content and export an exact, formatted A4 PDF.
                         </p>
                     </div>
                 </div>
 
                 {/* Form Input Section */}
                 <div className="p-8 md:p-10 space-y-6">
+                    {/* Paywall & Support Callout Banner */}
+                    <div className="bg-amber-500/10 dark:bg-amber-500/5 border border-amber-500/20 rounded-2xl p-5 flex gap-4">
+                        <div className="h-10 w-10 rounded-xl bg-amber-500/20 flex items-center justify-center text-amber-500 dark:text-amber-400 shrink-0">
+                            <Sparkles size={20} className="gold-pulse-icon" />
+                        </div>
+                        <div className="text-xs leading-relaxed text-slate-650 dark:text-slate-300">
+                            <span className="block font-black text-slate-850 dark:text-amber-400 uppercase tracking-widest text-[9px] mb-1">
+                                Paywall Bypass Notice
+                            </span>
+                            Soft paywalls are easily bypassed automatically. Strict server-side paywalls (like WSJ or NYT) are currently not bypassed, but we are actively working on it. 
+                            <strong className="block mt-1.5 text-slate-800 dark:text-amber-350">
+                                💬 Pro-Tip: If you need to scrape a hard-paywalled article, post the link to the tech team in our WhatsApp group and they will retrieve/publish it for you.
+                            </strong>
+                        </div>
+                    </div>
+
                     <form onSubmit={handleScrape} className="space-y-4">
                         <div>
                             <label className="block text-xs font-extrabold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-2">
@@ -394,7 +484,7 @@ export default function ArticlePdfScraper() {
                                 disabled={loading || !url}
                                 className={`flex items-center gap-2 px-6 py-3.5 rounded-2xl font-semibold text-sm transition-all duration-305 cursor-pointer ${
                                     loading || !url
-                                    ? 'bg-slate-100 dark:bg-slate-800 text-slate-400 dark:text-slate-650 cursor-not-allowed border border-slate-200/50 dark:border-slate-850'
+                                    ? 'bg-slate-100 dark:bg-slate-800 text-slate-400 dark:text-slate-655 cursor-not-allowed border border-slate-200/50 dark:border-slate-850'
                                     : 'bg-slate-900 hover:bg-slate-850 text-white dark:bg-amber-500 dark:hover:bg-amber-600 dark:text-slate-950 shadow-lg hover:shadow-xl hover:-translate-y-0.5'
                                 }`}
                             >
@@ -495,7 +585,7 @@ export default function ArticlePdfScraper() {
                                 <CheckCircle2 size={24} className="flex-shrink-0" />
                                 <div>
                                     <h3 className="font-bold text-sm">PDF Compiled & Downloaded!</h3>
-                                    <p className="text-xs text-slate-500 dark:text-slate-400">Successfully generated and streamed the print-ready document.</p>
+                                    <p className="text-xs text-slate-550 dark:text-slate-400">Successfully generated and streamed the print-ready document.</p>
                                 </div>
                             </div>
 
@@ -518,7 +608,7 @@ export default function ArticlePdfScraper() {
                     )}
 
                     {/* Error message */}
-                    {error && (
+                    {error && !showErrorModal && (
                         <div className="p-4 rounded-2xl bg-rose-500/5 dark:bg-rose-500/10 border border-rose-500/25 flex items-start gap-3">
                             <AlertCircle size={18} className="text-rose-500 flex-shrink-0 mt-0.5" />
                             <div>
@@ -530,6 +620,102 @@ export default function ArticlePdfScraper() {
                 </div>
             </div>
 
+            {/* Anexar Companion Chrome Extension Setup Card */}
+            <div className="rounded-[2rem] border border-slate-200/80 dark:border-slate-800 bg-white dark:bg-slate-950 p-6 md:p-8 space-y-6">
+                <div className="flex items-start gap-4 justify-between flex-wrap md:flex-nowrap">
+                    <div>
+                        <div className="flex items-center gap-2 text-amber-500 dark:text-amber-400">
+                            <Sparkles size={18} />
+                            <h3 className="text-base font-black tracking-tight text-slate-900 dark:text-white">
+                                🔌 Anexar Web Clipper Extension
+                            </h3>
+                        </div>
+                        <p className="text-xs text-slate-550 dark:text-slate-400 mt-1 leading-relaxed max-w-2xl">
+                            Struggling with strict server-side paywalls or Captcha blocks (like Nikkei Asia, Bloomberg, or WSJ)? Use our browser extension helper to scrape the rendered article directly from your screen in 1 click!
+                        </p>
+                    </div>
+                    <a 
+                        href="/anexar-extension.zip" 
+                        download
+                        className="flex items-center gap-2 px-5 py-2.5 rounded-xl bg-amber-500 hover:bg-amber-600 dark:bg-amber-500 dark:hover:bg-amber-655 text-slate-950 font-bold text-xs shadow-md transition-all cursor-pointer border-none flex-shrink-0 decoration-none"
+                    >
+                        <FileDown size={14} />
+                        Download Web Clipper (.zip)
+                    </a>
+                </div>
+                
+                <div className="border-t border-slate-100 dark:border-slate-850 pt-4 space-y-4">
+                    <span className="block text-[10px] font-extrabold uppercase text-slate-400 dark:text-slate-500 tracking-wider">Detailed 4-Step Installation & Usage Guide</span>
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                        <div className="bg-slate-50 dark:bg-slate-900/40 rounded-xl p-4 border border-slate-100 dark:border-slate-850/50 space-y-1.5">
+                            <div className="flex items-center gap-2">
+                                <span className="flex h-5 w-5 items-center justify-center rounded-full bg-amber-500/10 text-amber-500 text-xs font-black">1</span>
+                                <span className="text-xs font-bold text-slate-800 dark:text-slate-200">Download & Extract</span>
+                            </div>
+                            <p className="text-[11px] text-slate-550 dark:text-slate-400 leading-relaxed">
+                                Click the download button to get the extension `.zip` file. Unzip/extract it to a folder on your computer.
+                            </p>
+                        </div>
+                        
+                        <div className="bg-slate-50 dark:bg-slate-900/40 rounded-xl p-4 border border-slate-100 dark:border-slate-850/50 space-y-1.5">
+                            <div className="flex items-center gap-2">
+                                <span className="flex h-5 w-5 items-center justify-center rounded-full bg-amber-500/10 text-amber-500 text-xs font-black">2</span>
+                                <span className="text-xs font-bold text-slate-800 dark:text-slate-200">Open Chrome Extensions</span>
+                            </div>
+                            <p className="text-[11px] text-slate-550 dark:text-slate-400 leading-relaxed">
+                                Navigate to <code className="px-1.5 py-0.5 rounded bg-slate-100 dark:bg-slate-900 font-mono text-[10px] text-amber-500 dark:text-amber-400">chrome://extensions</code> in a new browser tab. Enable <strong>Developer Mode</strong> in the top-right.
+                            </p>
+                        </div>
+                        
+                        <div className="bg-slate-50 dark:bg-slate-900/40 rounded-xl p-4 border border-slate-100 dark:border-slate-850/50 space-y-1.5">
+                            <div className="flex items-center gap-2">
+                                <span className="flex h-5 w-5 items-center justify-center rounded-full bg-amber-500/10 text-amber-500 text-xs font-black">3</span>
+                                <span className="text-xs font-bold text-slate-800 dark:text-slate-200">Load unpacked</span>
+                            </div>
+                            <p className="text-[11px] text-slate-550 dark:text-slate-400 leading-relaxed">
+                                Click <strong>Load unpacked</strong> in the top-left, and select the extracted extension folder.
+                            </p>
+                        </div>
+
+                        <div className="bg-slate-50 dark:bg-slate-900/40 rounded-xl p-4 border border-slate-100 dark:border-slate-850/50 space-y-1.5">
+                            <div className="flex items-center gap-2">
+                                <span className="flex h-5 w-5 items-center justify-center rounded-full bg-amber-500/10 text-amber-500 text-xs font-black">4</span>
+                                <span className="text-xs font-bold text-slate-800 dark:text-slate-200">Clip the unblocked tab</span>
+                            </div>
+                            <p className="text-[11px] text-slate-550 dark:text-slate-400 leading-relaxed">
+                                Open the unblocked article page, click the extension icon, and click <strong>Generate Premium PDF</strong>.
+                            </p>
+                        </div>
+                    </div>
+
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div className="bg-slate-50 dark:bg-slate-900/40 p-5 rounded-2xl border border-slate-200/50 dark:border-slate-850/80 leading-relaxed">
+                            <strong className="text-amber-500 dark:text-amber-400 block text-xs mb-1.5">⚠️ Important Installation Note:</strong>
+                            <p className="text-[11px] text-slate-600 dark:text-slate-350 leading-relaxed font-medium">
+                                Upon unpacking, Chrome will automatically open 2 setting tabs (Options and Opt-in). Please **ignore and close these tabs** immediately. They will not open again!
+                            </p>
+                        </div>
+                        
+                        <div className="bg-emerald-500/10 dark:bg-emerald-500/5 border border-emerald-500/20 p-5 rounded-2xl flex flex-col justify-between gap-3">
+                            <div>
+                                <strong className="text-emerald-650 dark:text-emerald-400 block text-xs mb-1.5">🚨 Urgently Need This Article?</strong>
+                                <p className="text-[11px] text-slate-650 dark:text-slate-350 leading-relaxed font-medium">
+                                    If you didn't get the article from the app and need it urgently, send it to our WhatsApp group for manual retrieval by our tech team.
+                                </p>
+                            </div>
+                            <a 
+                                href={url ? `https://api.whatsapp.com/send?text=Hi%20tech%20team,%20please%2520scrape%2520this%2520article%2520urgently:%20${encodeURIComponent(url)}` : 'https://api.whatsapp.com/send?text=Hi%20tech%20team,%20please%2520scrape%2520an%2520article%2520urgently.'}
+                                target="_blank"
+                                rel="noreferrer"
+                                className="inline-flex items-center justify-center gap-2 w-full px-5 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs shadow-md transition-all decoration-none cursor-pointer border-none"
+                            >
+                                Send Link to WhatsApp Group
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
             {/* History Logs Section */}
             <div className="rounded-[2rem] border border-slate-200/80 dark:border-slate-800 bg-white dark:bg-slate-950 p-6 md:p-8 space-y-6">
                 <div className="flex items-center justify-between gap-4">
@@ -537,7 +723,7 @@ export default function ArticlePdfScraper() {
                         <h3 className="text-lg font-black tracking-tight text-slate-900 dark:text-white">
                             Scrape History Logs
                         </h3>
-                        <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">
+                        <p className="text-xs text-slate-550 dark:text-slate-400 mt-1">
                             Access recently compiled PDF documents without repeating the parsing pipeline.
                         </p>
                     </div>
@@ -545,7 +731,7 @@ export default function ArticlePdfScraper() {
                     {history.length > 0 && (
                         <button
                             onClick={clearHistory}
-                            className="flex items-center gap-1 px-3 py-1.5 rounded-xl border border-slate-200 dark:border-slate-800 text-xs text-slate-500 hover:bg-slate-50 hover:text-rose-500 dark:hover:bg-slate-900 dark:text-slate-400 dark:hover:text-rose-400 transition-all cursor-pointer"
+                            className="flex items-center gap-1 px-3 py-1.5 rounded-xl border border-slate-200 dark:border-slate-800 text-xs text-slate-550 hover:bg-slate-50 hover:text-rose-500 dark:hover:bg-slate-900 dark:text-slate-400 dark:hover:text-rose-400 transition-all cursor-pointer"
                         >
                             <Trash2 size={12} />
                             <span>Clear logs</span>
@@ -612,10 +798,10 @@ export default function ArticlePdfScraper() {
             {/* Error Modal Popup */}
             {showErrorModal && (
                 <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/40 backdrop-blur-sm animate-fade-in">
-                    <div className="relative w-full max-w-md overflow-hidden rounded-[2.5rem] border border-slate-200/80 dark:border-slate-800 bg-white dark:bg-slate-950 p-6 shadow-2xl space-y-4 animate-scale-in">
+                    <div className="relative w-full max-w-lg overflow-hidden rounded-[2.5rem] border border-slate-200/80 dark:border-slate-800 bg-white dark:bg-slate-950 p-6 md:p-8 shadow-2xl space-y-5 animate-scale-in max-h-[90vh] overflow-y-auto">
                         <div className="absolute top-6 right-6">
                             <button 
-                                onClick={() => setShowErrorModal(false)}
+                                onClick={() => { setShowErrorModal(false); setError(null); }}
                                 className="text-slate-400 hover:text-slate-650 dark:hover:text-slate-200 cursor-pointer border-none bg-transparent"
                             >
                                 <X size={20} />
@@ -627,30 +813,84 @@ export default function ArticlePdfScraper() {
                                 <AlertCircle size={22} />
                             </div>
                             <div>
-                                <h3 className="font-black text-slate-900 dark:text-white text-base">Scraping Interrupted</h3>
-                                <span className="text-[10px] font-bold text-rose-500 uppercase tracking-widest">Paywall or Missing Content</span>
+                                <h3 className="font-black text-slate-900 dark:text-white text-base">Unable to Scrape Automatically</h3>
+                                <span className="text-[10px] font-bold text-rose-500 uppercase tracking-widest">Paywall or Scraper Blocked</span>
                             </div>
                         </div>
                         
-                        <p className="text-xs text-slate-550 dark:text-slate-400 leading-relaxed pt-2">
-                            {error || 'The source article website has blocked automated reader requests. No PDF was generated.'}
-                        </p>
-                        
-                        <div className="bg-slate-50 dark:bg-slate-900/50 rounded-xl p-3.5 space-y-2 border border-slate-100 dark:border-slate-850">
-                            <span className="block text-[10px] font-extrabold uppercase text-slate-400 dark:text-slate-500 tracking-wider">Troubleshooting Suggestions:</span>
-                            <ul className="list-disc pl-4 text-[10px] text-slate-500 dark:text-slate-400 space-y-1">
-                                <li>Check if the source URL has a strict login barrier (e.g. WSJ, NYT).</li>
-                                <li>Make sure the website supports reader-mode content indexing.</li>
-                                <li>Try downloading the page HTML locally and inputting its local file path to scrape offline.</li>
-                            </ul>
+                        <div className="bg-amber-500/10 dark:bg-amber-500/5 border border-amber-500/20 rounded-2xl p-4 space-y-2">
+                            <strong className="block text-xs text-amber-800 dark:text-amber-400">🔌 You need the Anexar Extension to read/clip this article natively in your browser.</strong>
+                            <p className="text-[11px] text-slate-600 dark:text-slate-350 leading-relaxed font-medium">
+                                Since the target website blocks automated cloud readers, you can easily load and bypass the paywall directly in your browser. Once loaded, click the extension button to download the premium styled PDF instantly!
+                            </p>
+                        </div>
+
+                        {/* WhatsApp Action */}
+                        <div className="bg-emerald-500/10 dark:bg-emerald-500/5 border border-emerald-500/20 rounded-2xl p-4 space-y-3">
+                            <span className="block text-[10px] font-extrabold uppercase text-emerald-600 dark:text-emerald-400 tracking-wider">🚨 Urgently Need This Article?</span>
+                            <p className="text-[11px] text-slate-600 dark:text-slate-350 leading-relaxed font-medium">
+                                If this article is not bypassable automatically or you need it right away, send it directly to our WhatsApp group so the technical team can retrieve and publish it according to the nature of the article.
+                            </p>
+                            <a 
+                                href={`https://api.whatsapp.com/send?text=Hi%20tech%20team,%20please%20scrape%20this%20article%20urgently:%20${encodeURIComponent(url)}`}
+                                target="_blank"
+                                rel="noreferrer"
+                                className="inline-flex items-center justify-center gap-2 w-full px-5 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-750 text-white font-bold text-xs shadow-md transition-all decoration-none cursor-pointer border-none"
+                            >
+                                Send to WhatsApp Group
+                            </a>
+                        </div>
+
+                        {/* Extension Steps */}
+                        <div className="border-t border-slate-100 dark:border-slate-850 pt-4 space-y-3">
+                            <span className="block text-[10px] font-extrabold uppercase text-slate-400 dark:text-slate-500 tracking-wider">Easy Extension Setup Guide</span>
+                            
+                            <div className="space-y-3 text-[11px] text-slate-600 dark:text-slate-350">
+                                <div className="flex gap-2">
+                                    <span className="flex-shrink-0 flex h-5 w-5 items-center justify-center rounded-full bg-amber-500/10 text-amber-500 text-xs font-black">1</span>
+                                    <div>
+                                        <strong className="font-semibold text-slate-800 dark:text-slate-200">Download and unzip: </strong>
+                                        <a href="/anexar-extension.zip" download className="text-sky-500 hover:text-sky-655 font-bold underline">Click here to download</a> the extension ZIP file, then extract it to a folder on your computer.
+                                    </div>
+                                </div>
+                                <div className="flex gap-2">
+                                    <span className="flex-shrink-0 flex h-5 w-5 items-center justify-center rounded-full bg-amber-500/10 text-amber-500 text-xs font-black">2</span>
+                                    <div>
+                                        <strong className="font-semibold text-slate-800 dark:text-slate-200">Open Chrome extensions menu: </strong>
+                                        Go to <code className="px-1.5 py-0.5 rounded bg-slate-100 dark:bg-slate-900 font-mono text-[10px] text-amber-500 dark:text-amber-400">chrome://extensions</code> in a new tab. In the top-right corner of that page, toggle **Developer mode** to ON.
+                                    </div>
+                                </div>
+                                <div className="flex gap-2">
+                                    <span className="flex-shrink-0 flex h-5 w-5 items-center justify-center rounded-full bg-amber-500/10 text-amber-500 text-xs font-black">3</span>
+                                    <div>
+                                        <strong className="font-semibold text-slate-800 dark:text-slate-200">Load extension folder: </strong>
+                                        Click the **Load unpacked** button in the top-left, and select the extracted extension folder.
+                                    </div>
+                                </div>
+                                <div className="flex gap-2 bg-slate-50 dark:bg-slate-905 p-2.5 rounded-xl border border-slate-150 dark:border-slate-850">
+                                    <span className="flex-shrink-0 flex h-5 w-5 items-center justify-center rounded-full bg-slate-200 dark:bg-slate-800 text-slate-600 dark:text-slate-400 text-xs font-black">!</span>
+                                    <div>
+                                        <strong className="font-semibold text-slate-800 dark:text-slate-200">Close the 2 auto-opened tabs: </strong>
+                                        Upon unpacking, Chrome will open 2 setting tabs (Options and Opt-in). Please **ignore and close these tabs** immediately.
+                                    </div>
+                                </div>
+                                <div className="flex gap-2">
+                                    <span className="flex-shrink-0 flex h-5 w-5 items-center justify-center rounded-full bg-amber-500/10 text-amber-500 text-xs font-black">4</span>
+                                    <div>
+                                        <strong className="font-semibold text-slate-800 dark:text-slate-200">Clip the unblocked article: </strong>
+                                        Open the article page, click the **Extensions puzzle icon** in your toolbar, select **Bypass Paywalls Clean** (Anexar Web Clipper), and click **Generate Premium PDF** to download!
+                                    </div>
+                                </div>
+                            </div>
                         </div>
                         
-                        <div className="pt-2 flex justify-end">
+                        <div className="pt-2 flex justify-between items-center gap-3">
+                            <span className="text-[10px] text-slate-400 dark:text-slate-500 font-medium">Or send to WhatsApp group if you need it urgently.</span>
                             <button
-                                onClick={() => setShowErrorModal(false)}
+                                onClick={() => { setShowErrorModal(false); setError(null); }}
                                 className="px-5 py-2.5 rounded-xl bg-slate-900 hover:bg-slate-850 text-white dark:bg-amber-500 dark:hover:bg-amber-600 dark:text-slate-950 font-bold text-xs shadow-md transition-all cursor-pointer border-none"
                             >
-                                Dismiss Window
+                                Dismiss
                             </button>
                         </div>
                     </div>

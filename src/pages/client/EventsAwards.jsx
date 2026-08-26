@@ -117,7 +117,7 @@ export default function EventsAwards() {
     };
 
     return (
-        <div className="space-y-6 max-w-7xl mx-auto px-4 py-6 font-sans">
+        <div className="space-y-6 w-full font-sans">
             
             {/* Header Dashboard Banner */}
             <div className="bg-gradient-to-r from-slate-900 via-slate-950 to-indigo-950 text-white p-6 rounded-3xl border border-slate-800 shadow-xl relative overflow-hidden flex flex-col md:flex-row md:items-center justify-between gap-6">
@@ -375,15 +375,26 @@ export default function EventsAwards() {
 
                                             {/* Source */}
                                             <td className="p-4 pr-6">
-                                                <a 
-                                                    href={e.source_url || '#'} 
-                                                    target="_blank" 
-                                                    rel="noreferrer" 
-                                                    className="flex items-center gap-1 text-[10px] font-bold text-indigo-500 hover:text-indigo-600 dark:text-indigo-400 dark:hover:text-indigo-300 uppercase tracking-wider outline-none"
-                                                >
-                                                    <span>Link</span>
-                                                    <ExternalLink size={10} />
-                                                </a>
+                                                {(() => {
+                                                    let url = e.source_url ? e.source_url.trim() : '';
+                                                    if (!url || url === '#' || url.toLowerCase() === 'n/a') {
+                                                        const queryName = e.event_name || e.name || '';
+                                                        url = `https://www.google.com/search?q=${encodeURIComponent(queryName)}`;
+                                                    } else if (!/^https?:\/\//i.test(url)) {
+                                                        url = `https://${url}`;
+                                                    }
+                                                    return (
+                                                        <a 
+                                                            href={url} 
+                                                            target="_blank" 
+                                                            rel="noreferrer" 
+                                                            className="flex items-center gap-1 text-[10px] font-bold text-indigo-500 hover:text-indigo-600 dark:text-indigo-400 dark:hover:text-indigo-300 uppercase tracking-wider outline-none"
+                                                        >
+                                                            <span>Link</span>
+                                                            <ExternalLink size={10} />
+                                                        </a>
+                                                    );
+                                                })()}
                                             </td>
                                         </tr>
                                     );

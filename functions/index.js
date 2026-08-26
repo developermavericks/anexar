@@ -31,6 +31,12 @@ exports.autoFetchEPapers = require('./autoFetchEPapers').autoFetchEPapers;
 exports.syncGmailBriefings = require('./syncGmailBriefings').syncGmailBriefings;
 exports.getEPapersByDate = require('./getEPapers').getEPapersByDate;
 
+// Google Sheets Sync Triggers
+exports.syncToGoogleSheetsScheduled = require('./syncToGoogleSheets').syncToGoogleSheetsScheduled;
+exports.syncToGoogleSheetsHttp = require('./syncToGoogleSheets').syncToGoogleSheetsHttp;
+exports.syncToGoogleSheetsOnWrite = require('./syncToGoogleSheets').syncToGoogleSheetsOnWrite;
+
+
 exports.analyzeReach = onRequest(
     { timeoutSeconds: 300, memory: '1GiB', cors: true },
     async (req, res) => {
@@ -950,3 +956,32 @@ const syncToGoogleSheets = require('./syncToGoogleSheets');
 exports.syncToGoogleSheetsScheduled = syncToGoogleSheets.syncToGoogleSheetsScheduled;
 exports.syncToGoogleSheetsHttp = syncToGoogleSheets.syncToGoogleSheetsHttp;
 exports.syncToGoogleSheetsOnWrite = syncToGoogleSheets.syncToGoogleSheetsOnWrite;
+
+exports.proxyPdf = onRequest(
+    { 
+        cors: true, 
+        timeoutSeconds: 300,
+        memory: '256MiB'
+    }, 
+    async (req, res) => {
+        const { url } = req.query;
+        if (!url) {
+            return res.status(400).send('Missing url parameter');
+        }
+        try {
+            console.log(`[proxyPdf] Fetching PDF from: ${url}`);
+            const response = await axios.get(url, { 
+                responseType: 'arraybuffer',
+                headers: {
+                    'User-Agent': 'Mozilla/5.0'
+                }
+            });
+            res.setHeader('Content-Type', 'application/pdf');
+            res.setHeader('Access-Control-Allow-Origin', '*');
+            res.end(response.data, 'binary');
+        } catch (error) {
+            console.error('[proxyPdf] Error proxying PDF:', error);
+            res.status(500).send(`Failed to proxy PDF: ${error.message}`);
+        }
+    }
+);

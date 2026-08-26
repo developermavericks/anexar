@@ -18,7 +18,8 @@ import {
     Sun,
     Moon,
     ChevronLeft,
-    ChevronRight
+    ChevronRight,
+    BookOpen
 } from 'lucide-react';
 import { useUser } from '../../context/UserContext';
 import { useAuth } from '../../context/AuthContext';
@@ -71,6 +72,7 @@ const ClientLayout = () => {
         { icon: BarChart, label: 'Reports', to: '/client/reports' },
         { icon: Users, label: 'Meet Your Team', to: '/client/team' },
         { icon: CreditCard, label: 'Subscription', to: '/client/subscription' },
+        { icon: BookOpen, label: 'Morning ePaper', to: '/client/epaper' }
     ];
 
     return (

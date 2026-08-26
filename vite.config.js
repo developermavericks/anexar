@@ -9,6 +9,13 @@ export default defineConfig({
     react()
   ],
   server: {
-    port: 4000
+    port: 4000,
+    proxy: {
+      '/storage-proxy': {
+        target: 'https://firebasestorage.googleapis.com',
+        changeOrigin: true,
+        rewrite: (path) => path.replace(/^\/storage-proxy/, '')
+      }
+    }
   }
 })

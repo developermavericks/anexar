@@ -7,6 +7,7 @@ import Login from './pages/Login';
 import Signup from './pages/Signup';
 import ForgotPassword from './pages/ForgotPassword';
 import ProtectedRoute from './components/ProtectedRoute';
+import CalendarOAuthCallback from './pages/CalendarOAuthCallback';
 
 // Client Dashboard imports
 // Client portal is temporarily disabled - see the commented-out route below.
@@ -35,7 +36,11 @@ import SettingsTeam from './pages/employee/Settings';
 import MorningTracker from './pages/employee/MorningTracker';
 import CrisisPredictor from './pages/employee/CrisisPredictor';
 import ArticlePdfScraper from './pages/employee/ArticlePdfScraper';
+import EPaperReader from './pages/employee/EPaperReader';
+import EPaperManager from './pages/employee/EPaperManager';
+// import InfluencerFinder from './pages/employee/InfluencerFinder'; // disabled for now -- needs further improvement
 
+// Influencer Finder tab integration config
 // Shown in place of the client portal while it's disabled (see route below)
 function ClientPortalUnavailable() {
   return (
@@ -74,6 +79,7 @@ function App() {
             <Route path="/login" element={<Login />} />
             <Route path="/signup" element={<Signup />} />
             <Route path="/forgot-password" element={<ForgotPassword />} />
+            <Route path="/oauth/calendar-callback" element={<CalendarOAuthCallback />} />
 
             {/* Smart Router Redirector */}
             <Route
@@ -130,6 +136,9 @@ function App() {
               <Route path="crisis-tracker" element={<CrisisPredictor />} />
               <Route path="article-pdf" element={<ArticlePdfScraper />} />
               <Route path="settings" element={<SettingsTeam />} />
+              <Route path="epaper" element={<EPaperReader />} />
+              <Route path="manage-epaper" element={<EPaperManager />} />
+              {/* <Route path="influencer-finder" element={<InfluencerFinder />} /> disabled for now -- needs further improvement */}
             </Route>
 
             {/* Fallback Catch-All */}

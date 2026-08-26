@@ -1,0 +1,832 @@
+{
+  "aayushi.akhouri@themavericksindia.com": {
+    "name": "Aayushi Akhouri",
+    "clients": [],
+    "email": "aayushi.akhouri@themavericksindia.com",
+    "role": "team"
+  },
+  "aditya.mehta@themavericksindia.com": {
+    "name": "Aditya Mehta",
+    "clients": [
+      "AVPN",
+      "BD - Industrial47",
+      "Cumin Co.",
+      "Omnicom Global Solutions",
+      "Straive",
+      "iCreate"
+    ],
+    "email": "aditya.mehta@themavericksindia.com",
+    "role": "team"
+  },
+  "aditya.s@themavericksindia.com": {
+    "clients": [],
+    "role": "team",
+    "name": "Aditya Sharma",
+    "email": "aditya.s@themavericksindia.com"
+  },
+  "akshay@themavericksindia.com": {
+    "role": "manager",
+    "email": "akshay@themavericksindia.com",
+    "clients": [],
+    "name": "Akshay Brave"
+  },
+  "ananya.gulati@themavericksindia.com": {
+    "role": "team",
+    "clients": [
+      "Adda Education",
+      "Chupps",
+      "Pearl Academy",
+      "Pronto"
+    ],
+    "email": "ananya.gulati@themavericksindia.com",
+    "name": "Ananya Gulati"
+  },
+  "ananya@themavericksindia.com": {
+    "clients": [
+      "FUJIFILM",
+      "Google",
+      "Merrakki",
+      "Milliken",
+      "Musashi-D",
+      "Udaiti",
+      "iCreate"
+    ],
+    "email": "ananya@themavericksindia.com",
+    "role": "manager",
+    "name": "Ananya Agrawal"
+  },
+  "anil@themavericksindia.com": {
+    "role": "manager",
+    "email": "anil@themavericksindia.com",
+    "clients": [],
+    "name": "Anil Kapoor"
+  },
+  "anoushka.aristotle@themavericksindia.com": {
+    "email": "anoushka.aristotle@themavericksindia.com",
+    "clients": [
+      "BCG",
+      "E3 Electric",
+      "Pixxel"
+    ],
+    "role": "team",
+    "name": "Anoushka Aristotle"
+  },
+  "ansh@themavericksindia.com": {
+    "role": "team",
+    "email": "ansh@themavericksindia.com",
+    "clients": [],
+    "name": "Ansh Maheshwari"
+  },
+  "apurva@themavericksindia.com": {
+    "email": "apurva@themavericksindia.com",
+    "clients": [],
+    "role": "team",
+    "name": "Apurva"
+  },
+  "archana@themavericksindia.com": {
+    "name": "Archana Thomas",
+    "role": "core",
+    "clients": [
+      "Adda Education",
+      "BCG",
+      "CapitaLand",
+      "Chargezone",
+      "Chargezone (TECSO)",
+      "College Vidya",
+      "E3 Electric",
+      "Goldi Solar",
+      "GradRight",
+      "Merrakki",
+      "Murf AI",
+      "Musashi",
+      "Musashi-D",
+      "Omnicom Global",
+      "Omnicom Global Solutions",
+      "Pearl Academy",
+      "Plaksha",
+      "iCreate"
+    ],
+    "email": "archana@themavericksindia.com"
+  },
+  "ariba@themavericksindia.com": {
+    "role": "team",
+    "clients": [
+      "FUJIFILM",
+      "Sense AI"
+    ],
+    "email": "ariba@themavericksindia.com",
+    "name": "Ariba Neyaz"
+  },
+  "arunkumar@themavericksindia.com": {
+    "email": "arunkumar@themavericksindia.com",
+    "role": "team",
+    "name": "Arun Kumar",
+    "clients": []
+  },
+  "avarna@themavericksindia.com": {
+    "email": "avarna@themavericksindia.com",
+    "clients": [
+      "Clinikally",
+      "MFF",
+      "Pearl Academy",
+      "Plum"
+    ],
+    "role": "team",
+    "name": "Avarna Adukia"
+  },
+  "avinash@themavericksindia.com": {
+    "role": "core",
+    "clients": [],
+    "email": "avinash@themavericksindia.com",
+    "name": "Avinash Verma"
+  },
+  "bhavya@themavericksindia.com": {
+    "email": "bhavya@themavericksindia.com",
+    "name": "Bhavya Joshi",
+    "clients": [],
+    "role": "team"
+  },
+  "brinda@themavericksindia.com": {
+    "role": "team",
+    "clients": [
+      "Udaiti",
+      "mPokket"
+    ],
+    "email": "brinda@themavericksindia.com",
+    "name": "Brinda Sridhar"
+  },
+  "chetan@themavericksindia.com": {
+    "role": "core",
+    "clients": [
+      "Optiemus Infracom",
+      "Optimus Infrastructure",
+      "PMI"
+    ],
+    "name": "Chetan Mahajan",
+    "email": "chetan@themavericksindia.com"
+  },
+  "chhavi.a@themavericksindia.com": {
+    "email": "chhavi.a@themavericksindia.com",
+    "name": "Chhavi Arora",
+    "clients": [
+      "BCG",
+      "PYT",
+      "Scapia",
+      "Udaiti"
+    ],
+    "role": "manager"
+  },
+  "deepthyy@themavericksindia.com": {
+    "email": "deepthyy@themavericksindia.com",
+    "clients": [
+      "AVPN",
+      "MFF",
+      "Plum",
+      "Udaiti"
+    ],
+    "role": "team",
+    "name": "Deepthyy Radhakrishnan"
+  },
+  "developerteam@themavericksindia.com": {
+    "name": "Developer Team",
+    "clients": [],
+    "email": "developerteam@themavericksindia.com",
+    "role": "team"
+  },
+  "disha.kalra@themavericksindia.com": {
+    "role": "team",
+    "name": "Disha Kalra",
+    "email": "disha.kalra@themavericksindia.com",
+    "clients": [
+      "FUJIFILM",
+      "Noise",
+      "Plaksha"
+    ]
+  },
+  "divyanshsharma@themavericksindia.com": {
+    "email": "divyanshsharma@themavericksindia.com",
+    "name": "Divyansh Sharma",
+    "role": "core",
+    "clients": []
+  },
+  "drishti.c@themavericksindia.com": {
+    "role": "team",
+    "email": "drishti.c@themavericksindia.com",
+    "clients": [],
+    "name": "Drishti Checker"
+  },
+  "gaurav@themavericksindia.com": {
+    "email": "gaurav@themavericksindia.com",
+    "role": "core",
+    "name": "Gaurav Tuli",
+    "clients": []
+  },
+  "grishma@themavericksindia.com": {
+    "clients": [],
+    "email": "grishma@themavericksindia.com",
+    "role": "team",
+    "name": "Grishma Uchil"
+  },
+  "harprateek@themavericksindia.com": {
+    "role": "team",
+    "email": "harprateek@themavericksindia.com",
+    "clients": [
+      "Google",
+      "Nuuk"
+    ],
+    "name": "Harprateek"
+  },
+  "harshita@themavericksindia.com": {
+    "email": "harshita@themavericksindia.com",
+    "role": "team",
+    "clients": [
+      "Angara",
+      "Nuuk",
+      "PYT",
+      "Scapia"
+    ],
+    "name": "Harshita Mathur"
+  },
+  "ila@themavericksindia.com": {
+    "name": "Ila Upadhyaya",
+    "clients": [
+      "FUJIFILM",
+      "Google",
+      "Sense AI"
+    ],
+    "role": "manager",
+    "email": "ila@themavericksindia.com"
+  },
+  "ishmeet@themavericksindia.com": {
+    "name": "Ishmeet Singh Bedi",
+    "email": "ishmeet@themavericksindia.com",
+    "clients": [
+      "BCG",
+      "Google",
+      "QUBO (HEPL)",
+      "Straive"
+    ],
+    "role": "manager"
+  },
+  "jayeeta@themavericksindia.com": {
+    "name": "Jayeeta Chowdhury",
+    "email": "jayeeta@themavericksindia.com",
+    "clients": [
+      "Eruditus",
+      "GradRight",
+      "Pearl Academy",
+      "Plaksha",
+      "mPokket"
+    ],
+    "role": "team"
+  },
+  "joyeta.debnath@themavericksindia.com": {
+    "role": "team",
+    "email": "joyeta.debnath@themavericksindia.com",
+    "clients": [
+      "BCG",
+      "CapitaLand",
+      "Pixxel"
+    ],
+    "name": "Joyeta Debnath"
+  },
+  "jyoshitha@themavericksindia.com": {
+    "name": "Jyoshitha Unkili",
+    "email": "jyoshitha@themavericksindia.com",
+    "role": "team",
+    "clients": [
+      "Goldi Solar",
+      "Pronto",
+      "Protectt.ai",
+      "iCreate"
+    ]
+  },
+  "kashish@themavericksindia.com": {
+    "email": "kashish@themavericksindia.com",
+    "role": "team",
+    "name": "Kashish Ahuja",
+    "clients": [
+      "Google",
+      "Noise",
+      "Plum"
+    ]
+  },
+  "kavita@themavericksindia.com": {
+    "email": "kavita@themavericksindia.com",
+    "role": "manager",
+    "clients": [
+      "Eruditus",
+      "Google",
+      "Noise",
+      "Nuuk"
+    ],
+    "name": "Kavita Singh"
+  },
+  "khushi@themavericksindia.com": {
+    "role": "team",
+    "email": "khushi@themavericksindia.com",
+    "clients": [],
+    "name": "Khushi Batra"
+  },
+  "kyle@themavericksindia.com": {
+    "email": "kyle@themavericksindia.com",
+    "role": "team",
+    "clients": [],
+    "name": "Kyle Mendonca"
+  },
+  "laveena@themavericksindia.com": {
+    "name": "Laveena Giamalani",
+    "email": "laveena@themavericksindia.com",
+    "role": "team",
+    "clients": []
+  },
+  "mahek.chacha@themavericksindia.com": {
+    "email": "mahek.chacha@themavericksindia.com",
+    "clients": [
+      "Decentro",
+      "Google",
+      "Sense AI",
+      "TrueFan AI"
+    ],
+    "role": "team",
+    "name": "Mahek Chacha"
+  },
+  "mahek@themavericksindia.com": {
+    "role": "manager",
+    "email": "mahek@themavericksindia.com",
+    "clients": [
+      "BCG",
+      "CapitaLand",
+      "Google",
+      "Protectt.ai"
+    ],
+    "name": "Mahek Sahay"
+  },
+  "manaswi@themavericksindia.com": {
+    "role": "manager",
+    "clients": [],
+    "email": "manaswi@themavericksindia.com",
+    "name": "Manaswi"
+  },
+  "mansi@themavericksindia.com": {
+    "role": "team",
+    "name": "Mansi Ganda",
+    "email": "mansi@themavericksindia.com",
+    "clients": [
+      "Clinikally",
+      "Decentro",
+      "PayGlocal",
+      "Pronto"
+    ]
+  },
+  "manvi@themavericksindia.com": {
+    "name": "Manvi Singh",
+    "clients": [
+      "FUJIFILM",
+      "Google",
+      "Nuuk"
+    ],
+    "email": "manvi@themavericksindia.com",
+    "role": "team"
+  },
+  "mitali.p@themavericksindia.com": {
+    "email": "mitali.p@themavericksindia.com",
+    "role": "core",
+    "clients": [
+      "Angara",
+      "Boston Scientific",
+      "Chupps",
+      "Clinikally",
+      "Eruditus",
+      "FUJIFILM",
+      "GNFZ",
+      "Google",
+      "JCI",
+      "JOshTalks",
+      "Milliken",
+      "NEC",
+      "Noise",
+      "Nuuk",
+      "People Matteras",
+      "People Matters",
+      "QUBO (HEPL)",
+      "Truworth",
+      "Vivo",
+      "Wadhwani"
+    ],
+    "name": "Mitali Darbari Prakash"
+  },
+  "mohamed.hisham@themavericksindia.com": {
+    "role": "team",
+    "email": "mohamed.hisham@themavericksindia.com",
+    "name": "Mohamed Hisham M",
+    "clients": []
+  },
+  "muskaan.bhardwaj@themavericksindia.com": {
+    "name": "Muskaan Bhardwaj",
+    "clients": [
+      "CapitaLand",
+      "Eruditus",
+      "NEC"
+    ],
+    "role": "team",
+    "email": "muskaan.bhardwaj@themavericksindia.com"
+  },
+  "muskaan@themavericksindia.com": {
+    "name": "Muskaan Bhatia",
+    "clients": [
+      "Angara",
+      "BD - OGS",
+      "Google"
+    ],
+    "email": "muskaan@themavericksindia.com",
+    "role": "manager"
+  },
+  "neha@themavericksindia.com": {
+    "clients": [],
+    "name": "Neha Pasupuleti",
+    "email": "neha@themavericksindia.com",
+    "role": "team"
+  },
+  "nikita.chaurasia@themavericksindia.com": {
+    "role": "team",
+    "name": "Nikita Chaurasia",
+    "email": "nikita.chaurasia@themavericksindia.com",
+    "clients": [
+      "BCG"
+    ]
+  },
+  "nikita.hooper@themavericksindia.com": {
+    "name": "Nikita Hooper",
+    "email": "nikita.hooper@themavericksindia.com",
+    "clients": [
+      "Cumin Co.",
+      "Goldi Solar",
+      "QUBO (HEPL)"
+    ],
+    "role": "team"
+  },
+  "pavithra@themavericksindia.com": {
+    "name": "Pavithra Ramesh",
+    "clients": [
+      "AVPN",
+      "JCI",
+      "NEC",
+      "Udaiti"
+    ],
+    "role": "manager",
+    "email": "pavithra@themavericksindia.com"
+  },
+  "pihu@themavericksindia.com": {
+    "name": "Pihu Arora",
+    "role": "team",
+    "email": "pihu@themavericksindia.com",
+    "clients": [
+      "BD - Pickyourtrail",
+      "College Vidya"
+    ]
+  },
+  "pooja@themavericksindia.com": {
+    "email": "pooja@themavericksindia.com",
+    "role": "core",
+    "clients": [],
+    "name": "Pooja Rana"
+  },
+  "prisha@themavericksindia.com": {
+    "name": "Prisha Raturi",
+    "email": "prisha@themavericksindia.com",
+    "role": "team",
+    "clients": []
+  },
+  "priyadarshini@themavericksindia.com": {
+    "email": "priyadarshini@themavericksindia.com",
+    "role": "team",
+    "name": "Priyadarshini Singh",
+    "clients": []
+  },
+  "raayan@themavericksindia.com": {
+    "role": "team",
+    "clients": [
+      "BD - e3 Electric",
+      "FUJIFILM",
+      "Noise"
+    ],
+    "email": "raayan@themavericksindia.com",
+    "name": "Raayan Ukil"
+  },
+  "rajvi@themavericksindia.com": {
+    "name": "Rajvi Bhansali",
+    "clients": [
+      "BD - e3 Electric"
+    ],
+    "role": "manager",
+    "email": "rajvi@themavericksindia.com"
+  },
+  "reshita@themavericksindia.com": {
+    "email": "reshita@themavericksindia.com",
+    "role": "team",
+    "clients": [],
+    "name": "Reshita Midya"
+  },
+  "ridhi@themavericksindia.com": {
+    "role": "team",
+    "email": "ridhi@themavericksindia.com",
+    "name": "Ridhi Pandita",
+    "clients": [
+      "Angara",
+      "Google",
+      "Pronto"
+    ]
+  },
+  "rishika@themavericksindia.com": {
+    "name": "Rishika Bujurke",
+    "clients": [
+      "AVPN",
+      "FACE",
+      "PayGlocal",
+      "mPokket"
+    ],
+    "role": "team",
+    "email": "rishika@themavericksindia.com"
+  },
+  "ritik@themavericksindia.com": {
+    "name": "Ritik Pandey",
+    "email": "ritik@themavericksindia.com",
+    "role": "team",
+    "clients": [
+      "Chargezone",
+      "Google"
+    ]
+  },
+  "ritika@themavericksindia.com": {
+    "clients": [
+      "Merrakki",
+      "Milliken",
+      "iCreate"
+    ],
+    "name": "Ritika Goel",
+    "role": "team",
+    "email": "ritika@themavericksindia.com"
+  },
+  "riya.rupani@themavericksindia.com": {
+    "role": "team",
+    "clients": [
+      "Google",
+      "Optiemus Infracom",
+      "Pearl Academy",
+      "Vivo"
+    ],
+    "name": "Riya Rupani",
+    "email": "riya.rupani@themavericksindia.com"
+  },
+  "rohan.jolly@themavericksindia.com": {
+    "role": "team",
+    "clients": [
+      "BCG",
+      "Google",
+      "Wadhwani"
+    ],
+    "email": "rohan.jolly@themavericksindia.com",
+    "name": "Rohan Jolly"
+  },
+  "roshni@themavericksindia.com": {
+    "clients": [],
+    "name": "Roshni Rai",
+    "email": "roshni@themavericksindia.com",
+    "role": "team"
+  },
+  "saanvi@themavericksindia.com": {
+    "email": "saanvi@themavericksindia.com",
+    "name": "Saanvi Sharma",
+    "clients": [
+      "Angara",
+      "Eruditus",
+      "FUJIFILM",
+      "Google",
+      "Merrakki",
+      "Musashi",
+      "Sense AI",
+      "iCreate"
+    ],
+    "role": "team"
+  },
+  "samrat@themavericksindia.com": {
+    "name": "Samrat Nath",
+    "clients": [],
+    "role": "manager",
+    "email": "samrat@themavericksindia.com"
+  },
+  "sanya.maini@themavericksindia.com": {
+    "role": "team",
+    "clients": [],
+    "email": "sanya.maini@themavericksindia.com",
+    "name": "Sanya Maini"
+  },
+  "sanya.p@themavericksindia.com": {
+    "clients": [
+      "Goldi Solar",
+      "Google",
+      "NEC",
+      "Oister"
+    ],
+    "name": "Sanya Prasad",
+    "role": "team",
+    "email": "sanya.p@themavericksindia.com"
+  },
+  "satyam.singh@themavericksindia.com": {
+    "clients": [],
+    "name": "Satyam Kumar Singh",
+    "email": "satyam.singh@themavericksindia.com",
+    "role": "core"
+  },
+  "shreshtha.chaturvedi@themavericksindia.com": {
+    "email": "shreshtha.chaturvedi@themavericksindia.com",
+    "role": "team",
+    "clients": [
+      "BCG",
+      "CapitaLand",
+      "Google"
+    ],
+    "name": "Shreshtha Chaturvedi"
+  },
+  "shrestha@themavericksindia.com": {
+    "role": "manager",
+    "email": "shrestha@themavericksindia.com",
+    "name": "Shrestha Banerjee",
+    "clients": []
+  },
+  "smita@themavericksindia.com": {
+    "name": "Smita Polite",
+    "role": "team",
+    "clients": [
+      "Adda Education",
+      "College Vidya",
+      "MFF",
+      "Plaksha"
+    ],
+    "email": "smita@themavericksindia.com"
+  },
+  "smriti@themavericksindia.com": {
+    "name": "Smriti Raghunandan",
+    "clients": [
+      "AVPN",
+      "BCG",
+      "BD - Bright Money",
+      "Cumin Co.",
+      "Decentro",
+      "FACE",
+      "Industrial47",
+      "MFF",
+      "Oister",
+      "Olster",
+      "PYT",
+      "Paasa",
+      "PayGlocal",
+      "Pixel",
+      "Pixxel",
+      "Plum",
+      "Pronto",
+      "Protectt.ai",
+      "Room to Read",
+      "SCALE",
+      "Scapia",
+      "Sense AI",
+      "Straive",
+      "TrueFan AI",
+      "Udaiti",
+      "Udhyam",
+      "mPokket"
+    ],
+    "email": "smriti@themavericksindia.com",
+    "role": "core"
+  },
+  "sneh@themavericksindia.com": {
+    "clients": [],
+    "role": "team",
+    "email": "sneh@themavericksindia.com",
+    "name": "Sneh S Jain"
+  },
+  "snigdha@themavericksindia.com": {
+    "clients": [
+      "BD - Boston Scientific",
+      "Google",
+      "Omnicom Global Solutions"
+    ],
+    "role": "team",
+    "email": "snigdha@themavericksindia.com",
+    "name": "Snigdha Sharma"
+  },
+  "srishtee@themavericksindia.com": {
+    "name": "Srishtee Sharma",
+    "clients": [],
+    "email": "srishtee@themavericksindia.com",
+    "role": "manager"
+  },
+  "srishti.chanda@themavericksindia.com": {
+    "clients": [
+      "Omnicom Global Solutions",
+      "Scapia",
+      "Straive",
+      "mPokket"
+    ],
+    "name": "Srishti Chanda",
+    "email": "srishti.chanda@themavericksindia.com",
+    "role": "team"
+  },
+  "surya@themavericksindia.com": {
+    "name": "Surya Jothi",
+    "email": "surya@themavericksindia.com",
+    "clients": [
+      "Omnicom Global",
+      "Straive"
+    ],
+    "role": "team"
+  },
+  "sushant@themavericksindia.com": {
+    "role": "team",
+    "clients": [],
+    "email": "sushant@themavericksindia.com",
+    "name": "Sushant Pal"
+  },
+  "svetlana.dogra@themavericksindia.com": {
+    "name": "Svetlana Dogra",
+    "clients": [
+      "AVPN",
+      "Deep Holistics",
+      "Scapia"
+    ],
+    "email": "svetlana.dogra@themavericksindia.com",
+    "role": "team"
+  },
+  "tech@themavericksindia.com": {
+    "name": "tech",
+    "email": "tech@themavericksindia.com",
+    "clients": [],
+    "role": "team"
+  },
+  "tonmoyee@themavericksindia.com": {
+    "email": "tonmoyee@themavericksindia.com",
+    "role": "team",
+    "clients": [],
+    "name": "Tonmoyee Kashyap"
+  },
+  "triyanshi@themavericksindia.com": {
+    "role": "team",
+    "email": "triyanshi@themavericksindia.com",
+    "clients": [],
+    "name": "Triyanshi Parihar"
+  },
+  "udbhav@themavericksindia.com": {
+    "role": "team",
+    "email": "udbhav@themavericksindia.com",
+    "clients": [],
+    "name": "Udbhav Singh"
+  },
+  "udita@themavericksindia.com": {
+    "role": "team",
+    "clients": [
+      "BD - Boston Scientific",
+      "FUJIFILM",
+      "Google",
+      "Murf AI",
+      "Wadhwani"
+    ],
+    "email": "udita@themavericksindia.com",
+    "name": "Udita Singhal"
+  },
+  "vanshika@themavericksindia.com": {
+    "clients": [],
+    "role": "team",
+    "email": "vanshika@themavericksindia.com",
+    "name": "Vanshika Srivastava"
+  },
+  "vibhu@themavericksindia.com": {
+    "clients": [
+      "FUJIFILM",
+      "Merrakki",
+      "Sense AI"
+    ],
+    "role": "team",
+    "email": "vibhu@themavericksindia.com",
+    "name": "Vibhu Varshney"
+  },
+  "vibhuti@themavericksindia.com": {
+    "name": "Vibhuti Tandon",
+    "clients": [
+      "Google",
+      "GradRight",
+      "Noise"
+    ],
+    "email": "vibhuti@themavericksindia.com",
+    "role": "manager"
+  },
+  "vishakha@themavericksindia.com": {
+    "role": "team",
+    "clients": [
+      "Merrakki",
+      "Musashi"
+    ],
+    "email": "vishakha@themavericksindia.com",
+    "name": "Vishakha Baudhh"
+  }
+}

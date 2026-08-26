@@ -41,6 +41,74 @@ const PressTracker = () => {
     const [sortColumn, setSortColumn] = useState(null);
     const [sortDirection, setSortDirection] = useState('asc');
 
+    const handleViewNewWindow = (docItem) => {
+        if (!docItem) return;
+        if (docItem.type === 'excel' && docItem.rows && docItem.headers) {
+            const newWindow = window.open();
+            if (newWindow) {
+                let tableHtml = `
+                    <html>
+                    <head>
+                        <title>${docItem.fileName}</title>
+                        <style>
+                            body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; padding: 25px; background: #f8fafc; color: #1e293b; }
+                            .header { margin-bottom: 20px; border-bottom: 2px solid #e2e8f0; padding-bottom: 10px; }
+                            h3 { margin: 0; font-size: 16px; font-weight: 800; color: #0f172a; }
+                            p { margin: 5px 0 0 0; font-size: 11px; color: #64748b; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; }
+                            .table-container { overflow-x: auto; border: 1px solid #cbd5e1; border-radius: 12px; background: white; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05); }
+                            table { border-collapse: collapse; width: 100%; }
+                            th, td { border-bottom: 1px solid #cbd5e1; padding: 10px 14px; text-align: left; font-size: 12px; }
+                            th { background: #f1f5f9; font-weight: bold; color: #334155; text-transform: uppercase; font-size: 10px; letter-spacing: 0.05em; }
+                            tr:last-child td { border-bottom: none; }
+                            tr:hover { background: #f8fafc; }
+                            a { color: #3b82f6; text-decoration: none; font-weight: 600; }
+                            a:hover { text-decoration: underline; }
+                        </style>
+                    </head>
+                    <body>
+                        <div class="header">
+                            <h3>${docItem.fileName}</h3>
+                            <p>Client: ${docItem.client} | Ingested via Gmail</p>
+                        </div>
+                        <div class="table-container">
+                            <table>
+                                <thead>
+                                    <tr>
+                                        ${docItem.headers.map(h => `<th>${h}</th>`).join('')}
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    ${docItem.rows.map(row => `
+                                        <tr>
+                                            ${docItem.headers.map(h => {
+                                                const val = row[h] !== undefined ? row[h] : '';
+                                                if (h === 'Link' && val) {
+                                                    return `<td><a href="${val}" target="_blank" rel="noopener noreferrer">View Link</a></td>`;
+                                                }
+                                                return `<td>${val}</td>`;
+                                            }).join('')}
+                                        </tr>
+                                    `).join('')}
+                                </tbody>
+                            </table>
+                        </div>
+                    </body>
+                    </html>
+                `;
+                newWindow.document.write(tableHtml);
+                newWindow.document.close();
+            }
+        } else if (docItem.type === 'docx' && docItem.content) {
+            const blob = new Blob([docItem.content], { type: 'text/html;charset=utf-8' });
+            const url = URL.createObjectURL(blob);
+            window.open(url, '_blank');
+        } else if (docItem.fileData) {
+            window.open(docItem.fileData, '_blank');
+        } else {
+            alert("No preview source available to open in new tab.");
+        }
+    };
+
     // Filter to selected client or logged-in client
     const clientToFilter = isClientRole ? (user?.clientBrand || '') : selectedClient;
     const clientCompany = user?.organization?.companyName || '';
@@ -261,21 +329,54 @@ const PressTracker = () => {
                                 </p>
                             </div>
 
-                            <button
-                                onClick={handleCloseModal}
-                                className="p-2 text-slate-400 hover:text-slate-800 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-900 rounded-xl transition-all cursor-pointer"
-                            >
-                                <X size={20} />
-                            </button>
+                            <div className="flex items-center gap-2">
+                                <button
+                                    onClick={() => handleViewNewWindow(selectedExcelReport)}
+                                    className="p-2 text-slate-400 hover:text-indigo-650 dark:hover:text-indigo-400 hover:bg-slate-100 dark:hover:bg-slate-900 rounded-xl transition-all cursor-pointer"
+                                    title="Open in New Tab"
+                                >
+                                    <ExternalLink size={20} />
+                                </button>
+                                <button
+                                    onClick={handleCloseModal}
+                                    className="p-2 text-slate-400 hover:text-slate-800 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-900 rounded-xl transition-all cursor-pointer"
+                                >
+                                    <X size={20} />
+                                </button>
+                            </div>
                         </div>
 
                         {/* Modal Body Content (Word Document html OR Excel Table) */}
                         {selectedExcelReport.type === 'docx' ? (
-                            <div className="flex-1 overflow-auto p-8 bg-slate-50 dark:bg-slate-900/10 flex justify-center">
-                                <div className="bg-white dark:bg-slate-900 w-full max-w-4xl p-10 rounded-2xl border border-slate-150 dark:border-slate-800 shadow-sm overflow-y-auto prose dark:prose-invert prose-slate select-text text-sm leading-relaxed max-h-full">
-                                    <div 
-                                        dangerouslySetInnerHTML={{ __html: selectedExcelReport.content }}
-                                        className="space-y-4"
+                            <div className="flex-1 overflow-hidden p-6 bg-slate-50 dark:bg-slate-900/10 flex justify-center h-full">
+                                <div className="bg-white w-full max-w-5xl h-full rounded-2xl border border-slate-150 dark:border-slate-800 shadow-sm overflow-hidden flex flex-col">
+                                    <iframe 
+                                        srcDoc={
+                                            selectedExcelReport.content.includes('<html') || selectedExcelReport.content.includes('<!DOCTYPE')
+                                                ? selectedExcelReport.content
+                                                : `<!DOCTYPE html>
+                                                   <html>
+                                                   <head>
+                                                       <meta charset="utf-8">
+                                                       <style>
+                                                           body {
+                                                               font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+                                                               padding: 30px;
+                                                               line-height: 1.6;
+                                                               color: #1e293b;
+                                                               background-color: #ffffff;
+                                                           }
+                                                           img { max-width: 100%; height: auto; }
+                                                       </style>
+                                                   </head>
+                                                   <body>
+                                                       ${selectedExcelReport.content}
+                                                   </body>
+                                                   </html>`
+                                        }
+                                        title="Mailer Preview"
+                                        className="w-full h-full border-none bg-white"
+                                        sandbox="allow-same-origin"
                                     />
                                 </div>
                             </div>

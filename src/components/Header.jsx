@@ -36,49 +36,12 @@ export default function Header() {
 
                 {/* Right: Auth Actions */}
                 <div className="flex-1 flex items-center justify-end gap-6 relative">
-                    {/* Sign In Dropdown */}
-                    <div
-                        className="relative"
-                        onMouseEnter={() => setShowSignIn(true)}
-                        onMouseLeave={() => setShowSignIn(false)}
+                    <Link 
+                        to="/login?role=anexar" 
+                        className="flex items-center gap-1.5 text-sm font-semibold text-white bg-brand-charcoal hover:bg-brand-amber px-6 py-2.5 rounded-full shadow-soft transition-all duration-300 cursor-pointer"
                     >
-                        <button className="flex items-center gap-1 text-sm font-semibold text-brand-charcoal hover:text-brand-amber transition-colors py-2 cursor-pointer">
-                            Sign In
-                            <ChevronDown size={14} className={`transform transition-transform duration-200 ${showSignIn ? 'rotate-180 text-brand-amber' : ''}`} />
-                        </button>
-                        {showSignIn && (
-                            <div className="absolute right-0 mt-0.5 w-48 bg-white/95 backdrop-blur-md border border-brand-border/30 rounded-xl shadow-lg p-1.5 z-50 flex flex-col gap-1">
-                                <Link to="/login?role=client" className="px-3.5 py-2 text-xs font-semibold text-brand-charcoal hover:bg-brand-beige/50 hover:text-brand-amber rounded-lg transition-colors">
-                                    Sign In as Client
-                                </Link>
-                                <Link to="/login?role=anexar" className="px-3.5 py-2 text-xs font-semibold text-brand-charcoal hover:bg-brand-beige/50 hover:text-brand-amber rounded-lg transition-colors">
-                                    Sign In as Mavericks
-                                </Link>
-                            </div>
-                        )}
-                    </div>
-
-                    {/* Sign Up Dropdown */}
-                    <div
-                        className="relative"
-                        onMouseEnter={() => setShowSignUp(true)}
-                        onMouseLeave={() => setShowSignUp(false)}
-                    >
-                        <button className="flex items-center gap-1.5 text-sm font-semibold text-white bg-brand-charcoal hover:bg-brand-amber px-5 py-2.5 rounded-full shadow-soft transition-all duration-300 cursor-pointer">
-                            Sign Up
-                            <ChevronDown size={14} className={`transform transition-transform duration-200 ${showSignUp ? 'rotate-180' : ''}`} />
-                        </button>
-                        {showSignUp && (
-                            <div className="absolute right-0 mt-0.5 w-48 bg-white/95 backdrop-blur-md border border-brand-border/30 rounded-xl shadow-lg p-1.5 z-50 flex flex-col gap-1">
-                                <Link to="/signup?role=client" className="px-3.5 py-2 text-xs font-semibold text-brand-charcoal hover:bg-brand-beige/50 hover:text-brand-amber rounded-lg transition-colors">
-                                    Sign Up as Client
-                                </Link>
-                                <Link to="/signup?role=anexar" className="px-3.5 py-2 text-xs font-semibold text-brand-charcoal hover:bg-brand-beige/50 hover:text-brand-amber rounded-lg transition-colors">
-                                    Sign Up as Mavericks
-                                </Link>
-                            </div>
-                        )}
-                    </div>
+                        Sign In
+                    </Link>
                 </div>
 
             </div>

@@ -41,7 +41,7 @@ const GROQ_KEY = process.env.GROQ_API_KEY || '';
 
 const SERPER_URL = 'https://google.serper.dev/search';
 const GROQ_URL = 'https://api.groq.com/openai/v1/chat/completions';
-const GROQ_MODEL = 'llama-3.1-8b-instant';
+const GROQ_MODEL = 'openai/gpt-oss-120b';
 
 const SECTOR_QUERIES = {
   "BFSI": [

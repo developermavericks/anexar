@@ -18,6 +18,8 @@ import {
 import { db } from '../../lib/firebaseClient';
 import { collection, doc, onSnapshot, orderBy, query, writeBatch, runTransaction } from 'firebase/firestore';
 
+import { useAuth } from '../../context/AuthContext';
+
 // Seed data used only to populate Firestore the first time the collection is empty
 import defaultEvents from '../../data/events_data.json';
 
@@ -26,6 +28,8 @@ const SEED_BATCH_SIZE = 400; // stay safely under Firestore's 500-write batch li
 const SEED_LOCK_REF_PATH = ['events_awards_meta', 'seed_lock'];
 
 export default function EventsAwards() {
+    const { user } = useAuth();
+    const isSatyam = user?.email?.toLowerCase().includes('satyam');
     // ----------------------------------------------------
     // STATE MANAGEMENT
     // ----------------------------------------------------
@@ -303,7 +307,7 @@ export default function EventsAwards() {
     };
 
     return (
-        <div className="space-y-6 max-w-7xl mx-auto px-4 py-6 font-sans">
+        <div className="space-y-6 w-full font-sans">
             
             {/* Real-time Status Overlay Modal */}
             <AnimatePresence>
@@ -441,6 +445,14 @@ export default function EventsAwards() {
                                 const finalVenue = localEv?.venue || ev.venue || 'N/A';
                                 const finalDeadline = localEv?.nomination_deadline || ev.nomination_deadline;
                                 const finalLink = localEv?.source_url || ev.source_url;
+                                
+                                // Format the URL safely
+                                let formattedLink = finalLink ? finalLink.trim() : '';
+                                if (!formattedLink || formattedLink === '#' || formattedLink.toLowerCase() === 'n/a') {
+                                    formattedLink = `https://www.google.com/search?q=${encodeURIComponent(finalName)}`;
+                                } else if (!/^https?:\/\//i.test(formattedLink)) {
+                                    formattedLink = `https://${formattedLink}`;
+                                }
 
                                 return (
                                     <button
@@ -465,9 +477,9 @@ export default function EventsAwards() {
                                             {finalDeadline && <p className="text-[10px] text-rose-500 font-bold mt-0.5">Deadline: {finalDeadline}</p>}
                                         </div>
                                         <p className="flex-1 text-xs text-slate-600 dark:text-slate-400 leading-relaxed mt-0.5">{ev.reason}</p>
-                                        {finalLink ? (
+                                        {formattedLink ? (
                                             <a
-                                                href={finalLink}
+                                                href={formattedLink}
                                                 target="_blank"
                                                 rel="noopener noreferrer"
                                                 onClick={(e) => e.stopPropagation()}
@@ -523,33 +535,37 @@ export default function EventsAwards() {
             {/* Actions Panel with Play & Stop controls */}
             <div className="bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 p-4 rounded-2xl shadow-3xs flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                 <div className="flex items-center gap-2">
-                    {/* START BUTTON */}
-                    <button
-                        onClick={startFetching}
-                        disabled={isFetching}
-                        className={`flex items-center gap-2 px-5 py-2.5 rounded-xl text-xs font-bold uppercase tracking-wider transition-all cursor-pointer shadow-md ${
-                            isFetching 
-                            ? 'bg-slate-100 dark:bg-slate-800 text-gray-400' 
-                            : 'bg-emerald-600 hover:bg-emerald-500 text-white shadow-emerald-600/10 hover:-translate-y-0.5'
-                        }`}
-                    >
-                        <Play size={11} fill="currentColor" />
-                        Start Fetching
-                    </button>
+                    {isSatyam && (
+                        <>
+                            {/* START BUTTON */}
+                            <button
+                                onClick={startFetching}
+                                disabled={isFetching}
+                                className={`flex items-center gap-2 px-5 py-2.5 rounded-xl text-xs font-bold uppercase tracking-wider transition-all cursor-pointer shadow-md ${
+                                    isFetching 
+                                    ? 'bg-slate-100 dark:bg-slate-800 text-gray-400' 
+                                    : 'bg-emerald-600 hover:bg-emerald-500 text-white shadow-emerald-600/10 hover:-translate-y-0.5'
+                                }`}
+                            >
+                                <Play size={11} fill="currentColor" />
+                                Start Fetching
+                            </button>
 
-                    {/* STOP BUTTON */}
-                    <button
-                        onClick={stopFetching}
-                        disabled={!isFetching}
-                        className={`flex items-center gap-2 px-5 py-2.5 rounded-xl text-xs font-bold uppercase tracking-wider transition-all cursor-pointer shadow-md ${
-                            !isFetching 
-                            ? 'bg-slate-100 dark:bg-slate-800 text-gray-400' 
-                            : 'bg-rose-600 hover:bg-rose-500 text-white shadow-rose-600/10 hover:-translate-y-0.5'
-                        }`}
-                    >
-                        <Square size={11} fill="currentColor" />
-                        Stop Fetching
-                    </button>
+                            {/* STOP BUTTON */}
+                            <button
+                                onClick={stopFetching}
+                                disabled={!isFetching}
+                                className={`flex items-center gap-2 px-5 py-2.5 rounded-xl text-xs font-bold uppercase tracking-wider transition-all cursor-pointer shadow-md ${
+                                    !isFetching 
+                                    ? 'bg-slate-100 dark:bg-slate-800 text-gray-400' 
+                                    : 'bg-rose-600 hover:bg-rose-500 text-white shadow-rose-600/10 hover:-translate-y-0.5'
+                                }`}
+                            >
+                                <Square size={11} fill="currentColor" />
+                                Stop Fetching
+                            </button>
+                        </>
+                    )}
                 </div>
                 
                 <div className="flex items-center gap-2">
@@ -744,15 +760,26 @@ export default function EventsAwards() {
 
                                             {/* Source */}
                                             <td className="p-4 pr-6">
-                                                <a 
-                                                    href={e.source_url || '#'} 
-                                                    target="_blank" 
-                                                    rel="noreferrer" 
-                                                    className="flex items-center gap-1 text-[10px] font-bold text-indigo-500 hover:text-indigo-600 dark:text-indigo-400 dark:hover:text-indigo-300 uppercase tracking-wider outline-none"
-                                                >
-                                                    <span>Link</span>
-                                                    <ExternalLink size={10} />
-                                                </a>
+                                                {(() => {
+                                                    let url = e.source_url ? e.source_url.trim() : '';
+                                                    if (!url || url === '#' || url.toLowerCase() === 'n/a') {
+                                                        const queryName = e.event_name || e.name || '';
+                                                        url = `https://www.google.com/search?q=${encodeURIComponent(queryName)}`;
+                                                    } else if (!/^https?:\/\//i.test(url)) {
+                                                        url = `https://${url}`;
+                                                    }
+                                                    return (
+                                                        <a 
+                                                            href={url} 
+                                                            target="_blank" 
+                                                            rel="noreferrer" 
+                                                            className="flex items-center gap-1 text-[10px] font-bold text-indigo-500 hover:text-indigo-600 dark:text-indigo-400 dark:hover:text-indigo-300 uppercase tracking-wider outline-none"
+                                                        >
+                                                            <span>Link</span>
+                                                            <ExternalLink size={10} />
+                                                        </a>
+                                                    );
+                                                })()}
                                             </td>
                                         </tr>
                                     );

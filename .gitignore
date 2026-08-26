@@ -16,6 +16,8 @@ functions/reach_lens/
 *.local
 .env
 .env.*
+credentials.json
+token.json
 report.json
 *output*.txt
 log.txt
