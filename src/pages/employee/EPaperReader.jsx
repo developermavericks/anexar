@@ -196,12 +196,6 @@ const formatReviewedAt = (dateInput) => {
 const isAllowedTrainer = (email) => {
   if (!email) return false;
   const lower = email.toLowerCase().trim();
-  
-  // Bypass authorization check on localhost for easy development testing
-  if (window.location.hostname === "localhost" || window.location.hostname === "127.0.0.1") {
-    return true;
-  }
-
   const allowedPrefixes = ["pooja", "satyam", "divyansh", "arun", "chetan", "udbhav", "tanvi", "aditya"];
   const prefix = lower.split('@')[0];
   return allowedPrefixes.some(p => prefix.startsWith(p));
@@ -209,8 +203,7 @@ const isAllowedTrainer = (email) => {
 
 export default function EPaperReader() {
   const { user } = useAuth();
-  const isLocal = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
-  const showTrainerFeatures = isLocal || (user && isAllowedTrainer(user.email));
+  const showTrainerFeatures = Boolean(user && isAllowedTrainer(user.email));
   const [selectedDate, setSelectedDate] = useState(new Date().toISOString().split('T')[0]);
   const [epapers, setEpapers] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -902,60 +895,62 @@ export default function EPaperReader() {
       {/* Library Grid View */}
       {currentTab === "library" && (
         <>
-          {/* Daily ePaper Assignments Reference Grid */}
-          <div className="bg-white dark:bg-[#1E293B] border border-[#EAE8E4] dark:border-slate-800 rounded-3xl p-5 shadow-sm space-y-3 mb-6 animate-fade-in">
-            <h4 className="text-[10px] font-black text-slate-450 dark:text-slate-500 uppercase tracking-wider">Daily ePaper Assignments</h4>
-            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-7 gap-4">
-              <div className="bg-slate-50 dark:bg-slate-900/60 p-3 rounded-2xl border border-slate-100 dark:border-slate-800/40">
-                <div className="text-[10px] text-slate-450 dark:text-slate-500 font-bold">👩‍💻 Tanvi</div>
-                <div className="text-xs font-extrabold text-slate-850 dark:text-white mt-1 leading-tight flex flex-wrap gap-1">
-                  <a href="https://www.careerswave.in/the-hindu-epaper-pdf-download-for-upsc/" target="_blank" rel="noopener noreferrer" className="text-blue-500 hover:text-blue-600 dark:text-blue-400 dark:hover:text-blue-300 hover:underline">Hindu ↗</a>,
-                  <a href="https://www.careerswave.in/business-standard-newspaper-in-pdf/" target="_blank" rel="noopener noreferrer" className="text-blue-500 hover:text-blue-600 dark:text-blue-400 dark:hover:text-blue-300 hover:underline">Business Standard ↗</a>
+          {/* Daily ePaper Assignments Reference Grid - Only shown to assigned trainers */}
+          {showTrainerFeatures && (
+            <div className="bg-white dark:bg-[#1E293B] border border-[#EAE8E4] dark:border-slate-800 rounded-3xl p-5 shadow-sm space-y-3 mb-6 animate-fade-in">
+              <h4 className="text-[10px] font-black text-slate-450 dark:text-slate-500 uppercase tracking-wider">Daily ePaper Assignments</h4>
+              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-7 gap-4">
+                <div className="bg-slate-50 dark:bg-slate-900/60 p-3 rounded-2xl border border-slate-100 dark:border-slate-800/40">
+                  <div className="text-[10px] text-slate-450 dark:text-slate-500 font-bold">👩‍💻 Tanvi</div>
+                  <div className="text-xs font-extrabold text-slate-850 dark:text-white mt-1 leading-tight flex flex-wrap gap-1">
+                    <a href="https://www.careerswave.in/the-hindu-epaper-pdf-download-for-upsc/" target="_blank" rel="noopener noreferrer" className="text-blue-500 hover:text-blue-600 dark:text-blue-400 dark:hover:text-blue-300 hover:underline">Hindu ↗</a>,
+                    <a href="https://www.careerswave.in/business-standard-newspaper-in-pdf/" target="_blank" rel="noopener noreferrer" className="text-blue-500 hover:text-blue-600 dark:text-blue-400 dark:hover:text-blue-300 hover:underline">Business Standard ↗</a>
+                  </div>
                 </div>
-              </div>
-              <div className="bg-slate-50 dark:bg-slate-900/60 p-3 rounded-2xl border border-slate-100 dark:border-slate-800/40">
-                <div className="text-[10px] text-slate-450 dark:text-slate-500 font-bold">👩‍💻 Pooja</div>
-                <div className="text-xs font-extrabold text-slate-850 dark:text-white mt-1 leading-tight flex flex-wrap gap-1">
-                  <a href="https://www.careerswave.in/economic-times-epaper-pdf-free-download/" target="_blank" rel="noopener noreferrer" className="text-blue-500 hover:text-blue-600 dark:text-blue-400 dark:hover:text-blue-300 hover:underline">Econ ↗</a>,
-                  <a href="https://www.careerswave.in/times-of-india-epaper-pdf-free-download/" target="_blank" rel="noopener noreferrer" className="text-blue-500 hover:text-blue-600 dark:text-blue-400 dark:hover:text-blue-300 hover:underline">TOI ↗</a>
+                <div className="bg-slate-50 dark:bg-slate-900/60 p-3 rounded-2xl border border-slate-100 dark:border-slate-800/40">
+                  <div className="text-[10px] text-slate-450 dark:text-slate-500 font-bold">👩‍💻 Pooja</div>
+                  <div className="text-xs font-extrabold text-slate-850 dark:text-white mt-1 leading-tight flex flex-wrap gap-1">
+                    <a href="https://www.careerswave.in/economic-times-epaper-pdf-free-download/" target="_blank" rel="noopener noreferrer" className="text-blue-500 hover:text-blue-600 dark:text-blue-400 dark:hover:text-blue-300 hover:underline">Econ ↗</a>,
+                    <a href="https://www.careerswave.in/times-of-india-epaper-pdf-free-download/" target="_blank" rel="noopener noreferrer" className="text-blue-500 hover:text-blue-600 dark:text-blue-400 dark:hover:text-blue-300 hover:underline">TOI ↗</a>
+                  </div>
                 </div>
-              </div>
-              <div className="bg-slate-50 dark:bg-slate-900/60 p-3 rounded-2xl border border-slate-100 dark:border-slate-800/40">
-                <div className="text-[10px] text-slate-450 dark:text-slate-500 font-bold">👨‍💻 Satyam</div>
-                <div className="text-xs font-extrabold text-slate-850 dark:text-white mt-1 leading-tight flex flex-wrap gap-1">
-                  <a href="https://www.careerswave.in/business-line-epaper-pdf-free-download/" target="_blank" rel="noopener noreferrer" className="text-blue-500 hover:text-blue-600 dark:text-blue-400 dark:hover:text-blue-300 hover:underline">Business Line ↗</a>,
-                  <a href="https://www.careerswave.in/mint-epaper-pdf-free-download/" target="_blank" rel="noopener noreferrer" className="text-blue-500 hover:text-blue-600 dark:text-blue-400 dark:hover:text-blue-300 hover:underline">Mint ↗</a>
+                <div className="bg-slate-50 dark:bg-slate-900/60 p-3 rounded-2xl border border-slate-100 dark:border-slate-800/40">
+                  <div className="text-[10px] text-slate-450 dark:text-slate-500 font-bold">👨‍💻 Satyam</div>
+                  <div className="text-xs font-extrabold text-slate-850 dark:text-white mt-1 leading-tight flex flex-wrap gap-1">
+                    <a href="https://www.careerswave.in/business-line-epaper-pdf-free-download/" target="_blank" rel="noopener noreferrer" className="text-blue-500 hover:text-blue-600 dark:text-blue-400 dark:hover:text-blue-300 hover:underline">Business Line ↗</a>,
+                    <a href="https://www.careerswave.in/mint-epaper-pdf-free-download/" target="_blank" rel="noopener noreferrer" className="text-blue-500 hover:text-blue-600 dark:text-blue-400 dark:hover:text-blue-300 hover:underline">Mint ↗</a>
+                  </div>
                 </div>
-              </div>
-              <div className="bg-slate-50 dark:bg-slate-900/60 p-3 rounded-2xl border border-slate-100 dark:border-slate-800/40">
-                <div className="text-[10px] text-slate-450 dark:text-slate-500 font-bold">👨‍💻 Divyansh</div>
-                <div className="text-xs font-extrabold text-slate-850 dark:text-white mt-1 leading-tight flex flex-wrap gap-1">
-                  <a href="https://indianexpress.com" target="_blank" rel="noopener noreferrer" className="text-blue-500 hover:text-blue-600 dark:text-blue-400 dark:hover:text-blue-300 hover:underline">Indian Express ↗</a>,
-                  <a href="https://www.livemint.com" target="_blank" rel="noopener noreferrer" className="text-blue-500 hover:text-blue-600 dark:text-blue-400 dark:hover:text-blue-300 hover:underline">Live Mint ↗</a>
+                <div className="bg-slate-50 dark:bg-slate-900/60 p-3 rounded-2xl border border-slate-100 dark:border-slate-800/40">
+                  <div className="text-[10px] text-slate-450 dark:text-slate-500 font-bold">👨‍💻 Divyansh</div>
+                  <div className="text-xs font-extrabold text-slate-850 dark:text-white mt-1 leading-tight flex flex-wrap gap-1">
+                    <a href="https://indianexpress.com" target="_blank" rel="noopener noreferrer" className="text-blue-500 hover:text-blue-600 dark:text-blue-400 dark:hover:text-blue-300 hover:underline">Indian Express ↗</a>,
+                    <a href="https://www.livemint.com" target="_blank" rel="noopener noreferrer" className="text-blue-500 hover:text-blue-600 dark:text-blue-400 dark:hover:text-blue-300 hover:underline">Live Mint ↗</a>
+                  </div>
                 </div>
-              </div>
-              <div className="bg-slate-50 dark:bg-slate-900/60 p-3 rounded-2xl border border-slate-100 dark:border-slate-800/40">
-                <div className="text-[10px] text-slate-450 dark:text-slate-500 font-bold">👨‍💻 Arun</div>
-                <div className="text-xs font-extrabold text-slate-850 dark:text-white mt-1 leading-tight flex flex-wrap gap-1">
-                  <a href="https://www.careerswave.in/the-financial-express-epaper-pdf-free-download/" target="_blank" rel="noopener noreferrer" className="text-blue-500 hover:text-blue-600 dark:text-blue-400 dark:hover:text-blue-300 hover:underline">Financial Express ↗</a>
+                <div className="bg-slate-50 dark:bg-slate-900/60 p-3 rounded-2xl border border-slate-100 dark:border-slate-800/40">
+                  <div className="text-[10px] text-slate-450 dark:text-slate-500 font-bold">👨‍💻 Arun</div>
+                  <div className="text-xs font-extrabold text-slate-850 dark:text-white mt-1 leading-tight flex flex-wrap gap-1">
+                    <a href="https://www.careerswave.in/the-financial-express-epaper-pdf-free-download/" target="_blank" rel="noopener noreferrer" className="text-blue-500 hover:text-blue-600 dark:text-blue-400 dark:hover:text-blue-300 hover:underline">Financial Express ↗</a>
+                  </div>
                 </div>
-              </div>
-              <div className="bg-slate-50 dark:bg-slate-900/60 p-3 rounded-2xl border border-slate-100 dark:border-slate-800/40">
-                <div className="text-[10px] text-slate-450 dark:text-slate-500 font-bold">👨‍💻 Aditya</div>
-                <div className="text-xs font-extrabold text-slate-850 dark:text-white mt-1 leading-tight flex flex-wrap gap-1">
-                  <a href="https://www.marca.com" target="_blank" rel="noopener noreferrer" className="text-blue-500 hover:text-blue-600 dark:text-blue-400 dark:hover:text-blue-300 hover:underline">La Marca ↗</a>,
-                  <a href="https://thediplomat.com" target="_blank" rel="noopener noreferrer" className="text-blue-500 hover:text-blue-600 dark:text-blue-400 dark:hover:text-blue-300 hover:underline">The Diplomat ↗</a>
+                <div className="bg-slate-50 dark:bg-slate-900/60 p-3 rounded-2xl border border-slate-100 dark:border-slate-800/40">
+                  <div className="text-[10px] text-slate-450 dark:text-slate-500 font-bold">👨‍💻 Aditya</div>
+                  <div className="text-xs font-extrabold text-slate-850 dark:text-white mt-1 leading-tight flex flex-wrap gap-1">
+                    <a href="https://www.marca.com" target="_blank" rel="noopener noreferrer" className="text-blue-500 hover:text-blue-600 dark:text-blue-400 dark:hover:text-blue-300 hover:underline">La Marca ↗</a>,
+                    <a href="https://thediplomat.com" target="_blank" rel="noopener noreferrer" className="text-blue-500 hover:text-blue-600 dark:text-blue-400 dark:hover:text-blue-300 hover:underline">The Diplomat ↗</a>
+                  </div>
                 </div>
-              </div>
-              <div className="bg-slate-50 dark:bg-slate-900/60 p-3 rounded-2xl border border-slate-100 dark:border-slate-800/40">
-                <div className="text-[10px] text-slate-450 dark:text-slate-500 font-bold">👨‍💻 Udbhav</div>
-                <div className="text-xs font-extrabold text-slate-850 dark:text-white mt-1 leading-tight flex flex-wrap gap-1">
-                  <a href="https://www.careerswave.in/hindustan-times-epaper-pdf-free-download/" target="_blank" rel="noopener noreferrer" className="text-blue-500 hover:text-blue-600 dark:text-blue-400 dark:hover:text-blue-300 hover:underline">Hindustan Times ↗</a>,
-                  <a href="https://www.careerswave.in/dainik-bhaskar-epaper-pdf-free-download/" target="_blank" rel="noopener noreferrer" className="text-blue-500 hover:text-blue-600 dark:text-blue-400 dark:hover:text-blue-300 hover:underline">Dainik Bhaskar ↗</a>
+                <div className="bg-slate-50 dark:bg-slate-900/60 p-3 rounded-2xl border border-slate-100 dark:border-slate-800/40">
+                  <div className="text-[10px] text-slate-450 dark:text-slate-500 font-bold">👨‍💻 Udbhav</div>
+                  <div className="text-xs font-extrabold text-slate-850 dark:text-white mt-1 leading-tight flex flex-wrap gap-1">
+                    <a href="https://www.careerswave.in/hindustan-times-epaper-pdf-free-download/" target="_blank" rel="noopener noreferrer" className="text-blue-500 hover:text-blue-600 dark:text-blue-400 dark:hover:text-blue-300 hover:underline">Hindustan Times ↗</a>,
+                    <a href="https://www.careerswave.in/dainik-bhaskar-epaper-pdf-free-download/" target="_blank" rel="noopener noreferrer" className="text-blue-500 hover:text-blue-600 dark:text-blue-400 dark:hover:text-blue-300 hover:underline">Dainik Bhaskar ↗</a>
+                  </div>
                 </div>
               </div>
             </div>
-          </div>
+          )}
           {loading ? (
             <div className="py-32 text-center text-slate-400">Loading daily editions...</div>
           ) : epapers.length === 0 ? (

@@ -66,24 +66,24 @@ const DISPLAY_NAMES = {
 };
 
 const CAREERSWAVE_PAPERS = [
-  { name: 'Dainik Bhaskar', url: 'https://www.careerswave.in/dainik-bhaskar-epaper-pdf-free-download/' },
-  { name: 'Dainik Jagran', url: 'https://www.careerswave.in/dainik-jagran-epaper-pdf-free-download/' },
-  { name: 'Amar Ujala', url: 'https://www.careerswave.in/amar-ujala-epaper-pdf-free-download/' },
-  { name: 'Hindustan', url: 'https://www.careerswave.in/hindustan-epaper-pdf-free-download/' },
-  { name: 'Jansatta', url: 'https://www.careerswave.in/jansatta-epaper-pdf-free-download/' },
-  { name: 'Navbharat Times', url: 'https://www.careerswave.in/navbharat-times-epaper-pdf-free-download/' },
-  { name: 'Hindustan Times', url: 'https://www.careerswave.in/hindustan-times-epaper-pdf-free-download/' },
-  { name: 'Dainik Navajyoti', url: 'https://www.careerswave.in/dainik-navajyoti-epaper-pdf-free-download/' },
-  { name: 'Punjab Kesari', url: 'https://www.careerswave.in/punjab-kesari-epaper-pdf-free-download/' },
-  { name: 'Rashtriya Sahara', url: 'https://www.careerswave.in/rashtriya-sahara-epaper-pdf-free-download/' },
-  { name: 'Prabhat Khabar', url: 'https://www.careerswave.in/prabhat-khabar-epaper-pdf-free-download/' },
-  { name: 'The Hindu', url: 'https://www.careerswave.in/the-hindu-epaper-pdf-download-for-upsc/' },
-  { name: 'Business Line', url: 'https://www.careerswave.in/business-line-epaper-pdf-free-download/' },
-  { name: 'The Economic Times', url: 'https://www.careerswave.in/economic-times-epaper-pdf-free-download/' },
-  { name: 'Times of India', url: 'https://www.careerswave.in/times-of-india-epaper-pdf-free-download/' },
-  { name: 'Business Standard', url: 'https://www.careerswave.in/business-standard-newspaper-in-pdf/' },
-  { name: 'Livemint', url: 'https://www.careerswave.in/mint-epaper-pdf-free-download/' },
-  { name: 'Financial Express', url: 'https://www.careerswave.in/the-financial-express-epaper-pdf-free-download/' }
+  { name: 'Dainik Bhaskar', url: 'https://www.careerswave.in/dainik-bhaskar-epaper-pdf-free-download/', language: 'Hindi' },
+  { name: 'Dainik Jagran', url: 'https://www.careerswave.in/dainik-jagran-epaper-pdf-free-download/', language: 'Hindi' },
+  { name: 'Amar Ujala', url: 'https://www.careerswave.in/amar-ujala-epaper-pdf-free-download/', language: 'Hindi' },
+  { name: 'Hindustan', url: 'https://www.careerswave.in/hindustan-epaper-pdf-free-download/', language: 'Hindi' },
+  { name: 'Jansatta', url: 'https://www.careerswave.in/jansatta-epaper-pdf-free-download/', language: 'Hindi' },
+  { name: 'Navbharat Times', url: 'https://www.careerswave.in/navbharat-times-epaper-pdf-free-download/', language: 'Hindi' },
+  { name: 'Hindustan Times', url: 'https://www.careerswave.in/hindustan-times-epaper-pdf-free-download/', language: 'English' },
+  { name: 'Dainik Navajyoti', url: 'https://www.careerswave.in/dainik-navajyoti-epaper-pdf-free-download/', language: 'Hindi' },
+  { name: 'Punjab Kesari', url: 'https://www.careerswave.in/punjab-kesari-epaper-pdf-free-download/', language: 'Hindi' },
+  { name: 'Rashtriya Sahara', url: 'https://www.careerswave.in/rashtriya-sahara-epaper-pdf-free-download/', language: 'Hindi' },
+  { name: 'Prabhat Khabar', url: 'https://www.careerswave.in/prabhat-khabar-epaper-pdf-free-download/', language: 'Hindi' },
+  { name: 'The Hindu', url: 'https://www.careerswave.in/the-hindu-epaper-pdf-download-for-upsc/', language: 'English' },
+  { name: 'Business Line', url: 'https://www.careerswave.in/business-line-epaper-pdf-free-download/', language: 'English' },
+  { name: 'The Economic Times', url: 'https://www.careerswave.in/economic-times-epaper-pdf-free-download/', language: 'English' },
+  { name: 'Times of India', url: 'https://www.careerswave.in/times-of-india-epaper-pdf-free-download/', language: 'English' },
+  { name: 'Business Standard', url: 'https://www.careerswave.in/business-standard-newspaper-in-pdf/', language: 'English' },
+  { name: 'Livemint', url: 'https://www.careerswave.in/mint-epaper-pdf-free-download/', language: 'English' },
+  { name: 'Financial Express', url: 'https://www.careerswave.in/the-financial-express-epaper-pdf-free-download/', language: 'English' }
 ];
 
 const getOfficialName = (name) => DISPLAY_NAMES[name] || name;
@@ -207,7 +207,16 @@ async function run() {
       for (const row of rows) {
         const dateText = row.querySelector('.elm-links__date')?.textContent.trim();
         if (dateText && dateText.toLowerCase().includes(targetDateLabel.toLowerCase())) {
-          driveLink = row.querySelector('a.elm-links__download')?.getAttribute('href');
+          const downloadLinks = Array.from(row.querySelectorAll('a.elm-links__download'));
+          if (downloadLinks.length > 0) {
+            if (paper.language === 'English') {
+              const englishLink = downloadLinks.find(a => a.textContent.trim().toLowerCase().includes('english'));
+              driveLink = (englishLink || downloadLinks[downloadLinks.length - 1]).getAttribute('href');
+            } else {
+              const hindiLink = downloadLinks.find(a => a.textContent.trim().toLowerCase().includes('hindi'));
+              driveLink = (hindiLink || downloadLinks[0]).getAttribute('href');
+            }
+          }
           break;
         }
       }
